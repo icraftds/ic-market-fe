@@ -14,6 +14,9 @@ const buyerPhone = ref('')
 const buyerEmail = ref('')
 const buyerNotes = ref('')
 const agreeTerms = ref(false)
+const checkoutCart = ref([])
+const isSubmitting = ref(false)
+const checkoutError = ref('')
 
 // Payment Method Toggle
 const methods = [
@@ -36,8 +39,55 @@ const copyAccNum = () => {
   setTimeout(() => { copyText.value = 'Salin' }, 2000)
 }
 
-const placeOrder = () => {
-  if (!buyerName.value || !buyerEmail.value || !buyerPhone.value) {
+const getCheckoutCart = () => {
+  try {
+    return JSON.parse(localStorage.getItem('icmarket_cart')) || []
+  } catch (e) {
+    return []
+  }
+}
+
+const createOrderPayload = (orderId) => {
+  const subtotal = checkoutCart.value.reduce((sum, item) => sum + (item.isFree ? 0 : Number(item.price) || 0), 0)
+  const discount = Number(localStorage.getItem('icmarket_discount')) || 0
+  const total = Math.max(0, subtotal - discount)
+
+  return {
+    orderId,
+    buyer: {
+      name: buyerName.value.trim(),
+      email: buyerEmail.value.trim(),
+      phone: buyerPhone.value.trim(),
+      notes: buyerNotes.value.trim()
+    },
+    payment: {
+      method: selectedMethod.value,
+      bank: selectedMethod.value === 'bank_transfer' ? selectedBank.value : null
+    },
+    items: checkoutCart.value.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: Number(item.price) || 0,
+      quantity: Number(item.quantity) || 1,
+      store: item.store || 'Toko iCraft',
+      storeSlug: item.storeSlug || null,
+      isFree: Boolean(item.isFree)
+    })),
+    totals: {
+      subtotal,
+      discount,
+      total
+    },
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  }
+}
+
+const placeOrder = async () => {
+  if (isSubmitting.value) return
+  checkoutError.value = ''
+
+  if (!buyerName.value.trim() || !buyerEmail.value.trim() || !buyerPhone.value.trim()) {
     alert('Mohon lengkapi data diri Anda terlebih dahulu.')
     return
   }
@@ -50,22 +100,40 @@ const placeOrder = () => {
     return
   }
 
-  localStorage.setItem('icmarket_buyer', JSON.stringify({ 
-    name: buyerName.value, 
-    email: buyerEmail.value, 
-    phone: buyerPhone.value 
-  }))
-  localStorage.setItem('icmarket_method', selectedMethod.value)
+  checkoutCart.value = getCheckoutCart()
+  if (checkoutCart.value.length === 0) {
+    alert('Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.')
+    router.push('/cart')
+    return
+  }
 
-  const orderId = 'ICM-' + Date.now().toString(36).toUpperCase()
-  localStorage.setItem('icmarket_order_id', orderId)
+  isSubmitting.value = true
 
-  router.push('/payment')
+  try {
+    const orderId = 'ICM-' + Date.now().toString(36).toUpperCase()
+    const orderPayload = createOrderPayload(orderId)
+
+    // Adapter frontend sementara: siap diganti dengan POST /api/orders/create
+    // ketika backend/payment gateway sudah tersedia.
+    localStorage.setItem('icmarket_order_payload', JSON.stringify(orderPayload))
+    localStorage.setItem('icmarket_buyer', JSON.stringify(orderPayload.buyer))
+    localStorage.setItem('icmarket_method', selectedMethod.value)
+    localStorage.setItem('icmarket_order_id', orderId)
+    localStorage.setItem('icmarket_order_status', 'pending')
+
+    router.push('/payment')
+  } catch (error) {
+    console.error('Gagal menyiapkan pesanan:', error)
+    checkoutError.value = 'Pesanan belum dapat diproses. Silakan coba lagi.'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 onMounted(() => {
   try {
     const cart = JSON.parse(localStorage.getItem('icmarket_cart')) || []
+    checkoutCart.value = cart
     if (cart.length === 0) {
       alert('Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.')
       router.push('/cart')
@@ -216,8 +284,12 @@ onMounted(() => {
               <span>Saya menyetujui <a href="#" style="color:var(--accent-2);font-weight:600;">Syarat & Ketentuan</a> dan <a href="#" style="color:var(--accent-2);font-weight:600;">Kebijakan Privasi</a>.</span>
             </label>
 
-            <button class="flow-cta" @click="placeOrder">
-              Konfirmasi Pesanan <i class="fa-solid fa-arrow-right"></i>
+            <div v-if="checkoutError" class="flow-alert warn" style="margin-bottom:12px;">
+              <i class="fa-solid fa-triangle-exclamation"></i> {{ checkoutError }}
+            </div>
+            <button class="flow-cta" :disabled="isSubmitting" @click="placeOrder">
+              <span v-if="isSubmitting">Menyiapkan Pesanan…</span>
+              <span v-else>Konfirmasi Pesanan <i class="fa-solid fa-arrow-right"></i></span>
             </button>
             <div class="security-row">
               <div class="security-badge"><i class="fa-solid fa-lock"></i> Transaksi Aman</div>
@@ -240,6 +312,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.flow-cta:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .bank-sel-btn {
   padding: 6px 16px;
   border: 1.5px solid var(--border);

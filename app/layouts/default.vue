@@ -1,9 +1,8 @@
 <template>
-  <div style="display: contents;">
-    <slot />
+  <div class="app-shell">
+    <SiteNav />
+    <main>
+      <slot />
+    </main>
   </div>
 </template>
-
-<style>
-/* Default layout inherits global styles */
-</style>

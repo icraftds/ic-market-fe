@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 definePageMeta({ layout: 'flow' })
@@ -16,19 +16,46 @@ const PROMO_CODES = { 'ICFIRST10': 10, 'HEMAT20': 20 }
 
 const formatRp = (n) => 'Rp ' + n.toLocaleString('id-ID')
 
+const slugifyStore = (store = '') => String(store)
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '') || 'toko-icraft'
+
+const normalizeCartItem = (item) => {
+  const store = item.store || 'Toko iCraft'
+  return { ...item, store, storeSlug: item.storeSlug || slugifyStore(store) }
+}
+
 const loadCart = () => {
   const savedCart = localStorage.getItem('icmarket_cart')
   if (savedCart === null) {
     const demo = [
-      { id: 'product-1', name: 'Template E-Commerce Super', category: 'Web Template', tags: ['HTML','E-Commerce'], price: 350000, img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=200&q=80', isFree: false },
-      { id: 'product-2', name: 'UI/UX Startup Kit', category: 'UI Kit', tags: ['Figma','Design'], price: 150000, img: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=200&q=80', isFree: false }
+      { id: 'product-1', name: 'Template E-Commerce Super', category: 'Web Template', tags: ['HTML','E-Commerce'], price: 350000, store: 'Creative Studio', storeSlug: 'creative-studio', img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=200&q=80', isFree: false },
+      { id: 'product-2', name: 'UI/UX Startup Kit', category: 'UI Kit', tags: ['Figma','Design'], price: 150000, store: 'Pixel Works', storeSlug: 'pixel-works', img: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=200&q=80', isFree: false }
     ]
     cart.value = demo
     saveCart()
   } else {
-    try { cart.value = JSON.parse(savedCart) || [] } catch (e) { cart.value = [] }
+    try {
+      const parsed = JSON.parse(savedCart) || []
+      cart.value = parsed.map(normalizeCartItem)
+    } catch (e) {
+      cart.value = []
+    }
   }
 }
+
+const groupedCart = computed(() => {
+  const groups = {}
+  cart.value.forEach((item, index) => {
+    const storeName = item.store || 'Toko iCraft'
+    const storeSlug = item.storeSlug || slugifyStore(storeName)
+    if (!groups[storeSlug]) groups[storeSlug] = { name: storeName, slug: storeSlug, items: [] }
+    groups[storeSlug].items.push({ ...item, cartIndex: index })
+  })
+  return Object.values(groups)
+})
 
 const saveCart = () => {
   localStorage.setItem('icmarket_cart', JSON.stringify(cart.value))
@@ -108,21 +135,28 @@ onMounted(() => {
               </NuxtLink>
             </div>
 
-            <div v-else>
-              <div v-for="(item, idx) in cart" :key="idx" class="cart-item">
-                <img class="cart-item-thumb" :src="item.img" :alt="item.name">
-                <div class="cart-item-info">
-                  <div class="cart-item-category">{{ item.category }}</div>
-                  <div class="cart-item-name">{{ item.name }}</div>
-                  <div class="cart-item-tags">
-                    <span v-for="tag in item.tags || []" :key="tag" class="cart-item-tag">{{ tag }}</span>
-                  </div>
+            <div v-else class="cart-groups">
+              <div v-for="group in groupedCart" :key="group.slug" class="cart-store-group">
+                <div class="cart-store-header">
+                  <i class="fa-solid fa-store"></i>
+                  <span>{{ group.name }}</span>
+                  <span class="cart-store-count">{{ group.items.length }} produk</span>
                 </div>
-                <div class="cart-item-right">
-                  <div class="cart-item-price" :class="{ free: item.isFree }">{{ item.isFree ? 'Gratis' : formatRp(item.price) }}</div>
-                  <button class="cart-remove-btn" @click="removeItem(idx)">
-                    <i class="fa-regular fa-trash-can"></i> Hapus
-                  </button>
+                <div v-for="item in group.items" :key="item.id" class="cart-item">
+                  <img class="cart-item-thumb" :src="item.img" :alt="item.name">
+                  <div class="cart-item-info">
+                    <div class="cart-item-category">{{ item.category }}</div>
+                    <div class="cart-item-name">{{ item.name }}</div>
+                    <div class="cart-item-tags">
+                      <span v-for="tag in item.tags || []" :key="tag" class="cart-item-tag">{{ tag }}</span>
+                    </div>
+                  </div>
+                  <div class="cart-item-right">
+                    <div class="cart-item-price" :class="{ free: item.isFree }">{{ item.isFree ? 'Gratis' : formatRp(item.price) }}</div>
+                    <button class="cart-remove-btn" @click="removeItem(item.cartIndex)">
+                      <i class="fa-regular fa-trash-can"></i> Hapus
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -186,3 +220,13 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.cart-groups { display: flex; flex-direction: column; gap: 18px; }
+.cart-store-group { border: 1px solid var(--border, #e5e7eb); border-radius: 12px; overflow: hidden; }
+.cart-store-header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: var(--surface-2, #f8fafc); color: var(--text, #1f2937); font-size: 0.85rem; font-weight: 700; }
+.cart-store-header i { color: var(--accent-2, #6366f1); }
+.cart-store-count { margin-left: auto; color: var(--muted, #6b7280); font-size: 0.72rem; font-weight: 500; }
+.cart-store-group .cart-item { border-radius: 0; border-left: 0; border-right: 0; }
+.cart-store-group .cart-item:last-child { border-bottom: 0; }
+</style>

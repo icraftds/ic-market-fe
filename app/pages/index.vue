@@ -67,7 +67,7 @@ onMounted(() => {
         /* ── Cart (localStorage) ── */
         const CART_KEY = 'icmarket_cart';
         function getCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } }
-        function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); }
+        function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); window.dispatchEvent(new CustomEvent('icmarket-cart-updated')); }
 
         function addToCart(card) {
             const cart = getCart();
@@ -75,6 +75,7 @@ onMounted(() => {
                 id:       card.dataset.title.replace(/\s+/g,'-').toLowerCase() + '-' + Date.now(),
                 name:     card.dataset.title,
                 category: card.dataset.category,
+                store:    card.dataset.store || 'iCraft Demo Store',
                 tags:     (card.dataset.tags || '').split(',').map(t => t.trim()),
                 price:    parseInt(card.dataset.price) || 0,
                 img:      card.dataset.img || '',
@@ -218,7 +219,7 @@ onMounted(() => {
         previewModal.addEventListener('click', e => {
             if (e.target === previewModal) closePreviewModal();
         });
-        document.querySelector('.modal-drag-bar').addEventListener('click', closePreviewModal);
+        document.querySelector('.modal-drag-bar')?.addEventListener('click', closePreviewModal);
 
         document.getElementById('modal-buy-direct-btn').addEventListener('click', () => {
             const btn  = document.getElementById('modal-buy-direct-btn');
@@ -236,7 +237,8 @@ onMounted(() => {
 
             // Flying Dot Animation
             const rect = btn.getBoundingClientRect();
-            const cartBtnRect = document.getElementById('cart-btn').getBoundingClientRect();
+            const cartButton = document.getElementById('cart-btn');
+            const cartBtnRect = cartButton ? cartButton.getBoundingClientRect() : null;
             
             const dot = document.createElement('div');
             dot.className = 'flying-dot';
@@ -245,9 +247,13 @@ onMounted(() => {
             document.body.appendChild(dot);
             
             requestAnimationFrame(() => {
-                dot.style.left = (cartBtnRect.left + cartBtnRect.width/2 - 10) + 'px';
-                dot.style.top = (cartBtnRect.top + cartBtnRect.height/2 - 10) + 'px';
-                dot.style.transform = 'scale(0.2)';
+                if (cartBtnRect) {
+                    dot.style.left = (cartBtnRect.left + cartBtnRect.width/2 - 10) + 'px';
+                    dot.style.top = (cartBtnRect.top + cartBtnRect.height/2 - 10) + 'px';
+                    dot.style.transform = 'scale(0.2)';
+                } else {
+                    dot.style.opacity = '0';
+                }
             });
             
             setTimeout(() => {
@@ -264,15 +270,15 @@ onMounted(() => {
         const listBtn = document.getElementById('list-view-btn');
         const productGrid = document.getElementById('product-grid');
         
-        gridBtn.addEventListener('click', () => {
+        gridBtn?.addEventListener('click', () => {
             gridBtn.classList.add('active');
-            listBtn.classList.remove('active');
-            productGrid.classList.remove('list-view');
+            listBtn?.classList.remove('active');
+            productGrid?.classList.remove('list-view');
         });
-        listBtn.addEventListener('click', () => {
+        listBtn?.addEventListener('click', () => {
             listBtn.classList.add('active');
-            gridBtn.classList.remove('active');
-            productGrid.classList.add('list-view');
+            gridBtn?.classList.remove('active');
+            productGrid?.classList.add('list-view');
         });
 
         // Quick view buttons
@@ -316,7 +322,8 @@ onMounted(() => {
 
                 // Flying Dot Animation
                 const rect = btn.getBoundingClientRect();
-                const cartBtnRect = document.getElementById('cart-btn').getBoundingClientRect();
+                const cartButton = document.getElementById('cart-btn');
+            const cartBtnRect = cartButton ? cartButton.getBoundingClientRect() : null;
                 
                 const dot = document.createElement('div');
                 dot.className = 'flying-dot';
@@ -378,24 +385,7 @@ onMounted(() => {
 
 
     <!-- ======= HEADER ======= -->
-    <header class="site-header">
-        <div class="header-left">
-            <div class="logo"><span>IC</span> Market</div>
-        </div>
-
-
-
-        <div class="header-right">
-            <button class="icon-btn" title="Filter" id="sidebar-toggle-btn">
-                <i class="fa-solid fa-sliders"></i>
-            </button>
-            <button class="cart-btn" id="cart-btn">
-                <i class="fa-solid fa-bag-shopping"></i>
-                <span class="cart-text">Keranjang</span>
-                <span class="cart-count" id="cart-count">0</span>
-            </button>
-        </div>
-    </header>
+    
 
     <!-- ======= HERO ======= -->
     <section class="hero-strip">
@@ -432,6 +422,7 @@ onMounted(() => {
                 <!-- Card 3 — paling belakang -->
                 <article class="stack-card stack-card--3 product-card"
                     data-title="Admin Dashboard Pro"
+                    data-store="Creative Studio"
                     data-category="Web Template"
                     data-price="199000"
                     data-img="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
@@ -442,6 +433,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">Web Template</span>
+                        <a class="card-store" href="/store/creative-studio">Oleh: Creative Studio</a>
                         <h3 class="card-title">Admin Dashboard Pro</h3>
                         <div class="card-footer">
                             <span class="card-price">Rp 199.000</span>
@@ -462,6 +454,7 @@ onMounted(() => {
                 <!-- Card 2 — tengah -->
                 <article class="stack-card stack-card--2 product-card"
                     data-title="UI/UX Startup Kit"
+                    data-store="Pixel Art Lab"
                     data-category="UI Kit"
                     data-price="150000"
                     data-img="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80"
@@ -472,6 +465,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">UI Kit</span>
+                        <a class="card-store" href="/store/pixel-art-lab">Oleh: Pixel Art Lab</a>
                         <h3 class="card-title">UI/UX Startup Kit</h3>
                         <div class="card-footer">
                             <span class="card-price">Rp 150.000</span>
@@ -492,6 +486,7 @@ onMounted(() => {
                 <!-- Card 1 — paling depan (aktif) -->
                 <article class="stack-card stack-card--1 stack-active product-card"
                     data-title="Template E-Commerce Super"
+                    data-store="Creative Studio"
                     data-category="Web Template"
                     data-price="350000"
                     data-img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
@@ -502,6 +497,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">Web Template</span>
+                        <a class="card-store" href="/store/creative-studio">Oleh: Creative Studio</a>
                         <h3 class="card-title">Template E-Commerce Super</h3>
                         <div class="card-footer">
                             <span class="card-price">Rp 350.000</span>
@@ -693,6 +689,7 @@ onMounted(() => {
                     data-price="250000"
                     data-img="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=800&q=80"
                     data-title="Laravel Point of Sales"
+                    data-store="CodeCraft Store"
                     data-desc="Aplikasi POS berbasis web lengkap dengan manajemen stok, laporan penjualan, dan dukungan cetak struk thermal. Dibangun dengan Laravel 10 dan Livewire."
                     data-features="Inventory Management,Thermal Printing,Sales Reports,Laravel 10,Livewire"
                     data-tags="Source Code,Laravel,PHP"
@@ -707,6 +704,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">Source Code</span>
+                        <a class="card-store" href="/store/codecraft-store">Oleh: CodeCraft Store</a>
                         <h3 class="card-title">Laravel Point of Sales</h3>
                         <div class="card-footer">
                             <span class="card-price">Rp 250.000</span>
@@ -769,6 +767,7 @@ onMounted(() => {
                     data-price="120000"
                     data-img="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80"
                     data-title="Mobile App UI Kit"
+                    data-store="Pixel Art Lab"
                     data-desc="Koleksi 200+ screen desain aplikasi mobile dalam format Figma. Mencakup onboarding, autentikasi, home, profile, dan banyak lagi. Siap untuk handoff ke developer."
                     data-features="200+ Screens,iOS & Android,Auto Layout,Dev-Ready,Prototype Included"
                     data-tags="UI Kit,Mobile,Figma"
@@ -783,6 +782,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">UI Kit</span>
+                        <a class="card-store" href="/store/pixel-art-lab">Oleh: Pixel Art Lab</a>
                         <h3 class="card-title">Mobile App UI Kit</h3>
                         <div class="card-footer">
                             <span class="card-price">Rp 120.000</span>
@@ -807,6 +807,7 @@ onMounted(() => {
                     data-price="0"
                     data-img="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80"
                     data-title="Wireframe Pack — Gratis"
+                    data-store="Design Hub"
                     data-desc="Paket wireframe gratis untuk referensi awal desain UI Anda. Tersedia dalam format Figma dan PDF, mencakup lebih dari 80 layout berbeda untuk berbagai jenis aplikasi."
                     data-features="80+ Layouts,Figma & PDF,Free Forever,Regular Updates,Community Support"
                     data-tags="Free,Figma,Wireframe"
@@ -822,6 +823,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">Source Code</span>
+                        <a class="card-store" href="/store/design-hub">Oleh: Design Hub</a>
                         <h3 class="card-title">Wireframe Pack — Gratis</h3>
                         <div class="card-footer">
                             <span class="card-price free-price">Gratis</span>

@@ -1,3 +1,115 @@
+
+/* ========================
+   GLOBAL NAVIGATION
+   ======================== */
+.global-nav {
+    position: sticky;
+    top: 0;
+    z-index: 300;
+    width: 100%;
+    background: rgba(247, 247, 245, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+}
+
+.global-nav__inner {
+    min-height: 68px;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.global-nav__brand {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+}
+
+.global-nav__brand span {
+    color: var(--accent-2);
+}
+
+.global-nav__links,
+.global-nav__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.global-nav__links {
+    flex: 1;
+    justify-content: center;
+}
+
+.global-nav__link,
+.global-nav__login,
+.global-nav__register {
+    padding: 9px 13px;
+    border-radius: var(--radius-sm);
+    font-size: 0.86rem;
+    font-weight: 600;
+    transition: background var(--transition), color var(--transition), opacity var(--transition);
+}
+
+.global-nav__link {
+    color: var(--muted);
+}
+
+.global-nav__link:hover,
+.global-nav__link.router-link-active {
+    color: var(--text);
+    background: var(--subtle);
+}
+
+.global-nav__login {
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.global-nav__login:hover {
+    background: var(--subtle);
+}
+
+.global-nav__register {
+    background: var(--accent);
+    color: #fff;
+}
+
+.global-nav__register:hover {
+    opacity: 0.85;
+}
+
+@media (max-width: 760px) {
+    .global-nav__inner {
+        padding: 10px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .global-nav__links {
+        order: 3;
+        flex-basis: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 2px;
+    }
+
+    .global-nav__link,
+    .global-nav__login,
+    .global-nav__register {
+        font-size: 0.78rem;
+        padding: 8px 10px;
+        white-space: nowrap;
+    }
+}
+
 /* =============================================
    IC MARKET v2 — Minimalist E-Commerce
    Fonts: Fredoka, Outfit, Inter, JetBrains Mono
@@ -771,6 +883,15 @@ a { text-decoration: none; color: inherit; }
     flex: 1;
 }
 
+.card-store {
+    display: block;
+    margin-top: -6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--muted);
+}
+
 .card-category {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
@@ -1463,4 +1584,26 @@ a { text-decoration: none; color: inherit; }
 }
 #__nuxt {
     display: contents;
+}
+
+
+.global-nav__cart {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.cart-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 21px;
+    height: 21px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1;
 }
