@@ -12,9 +12,9 @@ const discountPct = ref(0)
 const promoMsg = ref('')
 const promoSuccess = ref(false)
 
-const PROMO_CODES = { 'ICFIRST10': 10, 'HEMAT20': 20 }
+const PROMO_CODES = { ICFIRST10: 10, HEMAT20: 20 }
 
-const formatRp = (n) => 'Rp ' + n.toLocaleString('id-ID')
+const formatRp = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 
 const slugifyStore = (store = '') => String(store)
   .trim()
@@ -22,43 +22,95 @@ const slugifyStore = (store = '') => String(store)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || 'toko-icraft'
 
-const normalizeCartItem = (item) => {
-  const store = item.store || 'Toko iCraft'
-  return { ...item, store, storeSlug: item.storeSlug || slugifyStore(store) }
+const normalizeCartItem = (item = {}) => {
+  const store = item.store || item.storeName || item.seller || 'iCraft Demo Store'
+  const rawStoreSlug = item.storeSlug || slugifyStore(store)
+  const slugAliases = { 'pixel-works': 'pixel-art-lab', 'toko-icraft': 'icraft-demo-store' }
+  const storeSlug = slugAliases[rawStoreSlug] || rawStoreSlug
+  const productId = item.productId || item.id || ''
+  const catalogId = item.catalogId || `${storeSlug}:${productId}`
+
+  return {
+    ...item,
+    id: item.id || catalogId,
+    productId,
+    catalogId,
+    name: item.name || 'Produk',
+    category: item.category || 'Produk Digital',
+    tags: Array.isArray(item.tags) ? item.tags : [],
+    price: Math.max(0, Number(item.price || 0)),
+    quantity: Math.max(1, Number(item.quantity || item.qty || 1)),
+    type: item.type || 'Digital',
+    digitalFiles: Array.isArray(item.digitalFiles) ? item.digitalFiles : [],
+    store,
+    storeName: store,
+    storeSlug,
+    storeId: item.storeId || '',
+    storeApplicationId: item.storeApplicationId || '',
+    tenantSchema: item.tenantSchema || '',
+    img: item.img || item.thumbnailUrl || '',
+    isFree: Boolean(item.isFree) || Number(item.price || 0) === 0
+  }
 }
 
+const itemIdentity = (item) =>
+  item.catalogId || `${item.storeSlug}:${item.productId || item.id || item.name}`
+
 const loadCart = () => {
-  const savedCart = localStorage.getItem('icmarket_cart')
-  if (savedCart === null) {
-    const demo = [
-      { id: 'product-1', name: 'Template E-Commerce Super', category: 'Web Template', tags: ['HTML','E-Commerce'], price: 350000, store: 'Creative Studio', storeSlug: 'creative-studio', img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=200&q=80', isFree: false },
-      { id: 'product-2', name: 'UI/UX Startup Kit', category: 'UI Kit', tags: ['Figma','Design'], price: 150000, store: 'Pixel Works', storeSlug: 'pixel-works', img: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=200&q=80', isFree: false }
-    ]
-    cart.value = demo
+  try {
+    const parsed = JSON.parse(localStorage.getItem('icmarket_cart') || '[]')
+    const source = Array.isArray(parsed) ? parsed : []
+    const seen = new Set()
+
+    cart.value = source
+      .map(normalizeCartItem)
+      .filter((item) => {
+        const identity = itemIdentity(item)
+        if (seen.has(identity)) return false
+        seen.add(identity)
+        return true
+      })
+
+    // Simpan kembali format baru agar checkout selalu mendapat identitas tenant lengkap.
     saveCart()
-  } else {
-    try {
-      const parsed = JSON.parse(savedCart) || []
-      cart.value = parsed.map(normalizeCartItem)
-    } catch (e) {
-      cart.value = []
-    }
+  } catch {
+    cart.value = []
   }
 }
 
 const groupedCart = computed(() => {
   const groups = {}
+
   cart.value.forEach((item, index) => {
     const storeName = item.store || 'Toko iCraft'
     const storeSlug = item.storeSlug || slugifyStore(storeName)
-    if (!groups[storeSlug]) groups[storeSlug] = { name: storeName, slug: storeSlug, items: [] }
+
+    if (!groups[storeSlug]) {
+      groups[storeSlug] = {
+        name: storeName,
+        slug: storeSlug,
+        storeId: item.storeId || '',
+        storeApplicationId: item.storeApplicationId || '',
+        tenantSchema: item.tenantSchema || '',
+        items: []
+      }
+    }
+
     groups[storeSlug].items.push({ ...item, cartIndex: index })
   })
-  return Object.values(groups)
+
+  return Object.values(groups).map((group) => ({
+    ...group,
+    subtotal: group.items.reduce(
+      (sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || 1)),
+      0
+    )
+  }))
 })
 
 const saveCart = () => {
   localStorage.setItem('icmarket_cart', JSON.stringify(cart.value))
+  window.dispatchEvent(new CustomEvent('icmarket-cart-updated'))
 }
 
 const removeItem = (idx) => {
@@ -72,6 +124,7 @@ const removeItem = (idx) => {
 
 const applyPromo = () => {
   const code = promoCode.value.trim().toUpperCase()
+
   if (PROMO_CODES[code]) {
     discountPct.value = PROMO_CODES[code]
     promoSuccess.value = true
@@ -79,29 +132,40 @@ const applyPromo = () => {
   } else {
     discountPct.value = 0
     promoSuccess.value = false
-    promoMsg.value = `Kode promo tidak valid.`
+    promoMsg.value = 'Kode promo tidak valid.'
   }
+
   updateTotals()
 }
 
-// OrderSummary component exposes a refresh method, we can trigger it or just use v-if to remount it
 const orderSummaryRef = ref(null)
 
 const updateTotals = () => {
-  const subtotal = cart.value.reduce((s, i) => s + (i.isFree ? 0 : i.price), 0)
+  const subtotal = cart.value.reduce(
+    (sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || 1)),
+    0
+  )
   const discount = Math.round(subtotal * discountPct.value / 100)
-  const total = subtotal - discount
-  
+  const total = Math.max(0, subtotal - discount)
+
   localStorage.setItem('icmarket_subtotal', subtotal)
   localStorage.setItem('icmarket_discount', discount)
   localStorage.setItem('icmarket_total', total)
-  
+
   if (orderSummaryRef.value) {
     orderSummaryRef.value.refresh()
   }
 }
 
 const goCheckout = () => {
+  if (!cart.value.length) return
+
+  // Snapshot multi-vendor untuk step checkout/order berikutnya.
+  localStorage.setItem(
+    'icmarket_checkout_groups',
+    JSON.stringify(groupedCart.value)
+  )
+
   router.push('/checkout')
 }
 
@@ -139,8 +203,12 @@ onMounted(() => {
               <div v-for="group in groupedCart" :key="group.slug" class="cart-store-group">
                 <div class="cart-store-header">
                   <i class="fa-solid fa-store"></i>
-                  <span>{{ group.name }}</span>
-                  <span class="cart-store-count">{{ group.items.length }} produk</span>
+                  <NuxtLink :to="`/store/${group.slug}`" class="cart-store-link">
+                    {{ group.name }}
+                  </NuxtLink>
+                  <span class="cart-store-count">
+                    {{ group.items.length }} produk · {{ formatRp(group.subtotal) }}
+                  </span>
                 </div>
                 <div v-for="item in group.items" :key="item.id" class="cart-item">
                   <img class="cart-item-thumb" :src="item.img" :alt="item.name">
@@ -226,6 +294,8 @@ onMounted(() => {
 .cart-store-group { border: 1px solid var(--border, #e5e7eb); border-radius: 12px; overflow: hidden; }
 .cart-store-header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: var(--surface-2, #f8fafc); color: var(--text, #1f2937); font-size: 0.85rem; font-weight: 700; }
 .cart-store-header i { color: var(--accent-2, #6366f1); }
+.cart-store-link { color: inherit; text-decoration: none; font-weight: 700; }
+.cart-store-link:hover { color: var(--accent-2, #6366f1); text-decoration: underline; }
 .cart-store-count { margin-left: auto; color: var(--muted, #6b7280); font-size: 0.72rem; font-weight: 500; }
 .cart-store-group .cart-item { border-radius: 0; border-left: 0; border-right: 0; }
 .cart-store-group .cart-item:last-child { border-bottom: 0; }

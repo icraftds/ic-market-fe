@@ -1,7 +1,30 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
+
+const { session, syncSession } = useDemoAuth()
+const {
+  readApplications,
+  getUserApplications,
+  setActiveApplication,
+  upsertApplication,
+  writeApplications,
+  removeApplication
+} = useSellerApplications()
+
+const {
+  getStoreStorageKey,
+  clearStoreContext,
+  refreshStores
+} = useActiveStore()
+
+const applications = ref([])
+const editingApplication = ref(null)
+const showForm = ref(false)
+const errors = ref({})
+const isSubmitting = ref(false)
+const notice = ref('')
 
 const form = reactive({
   storeName: '',
@@ -14,22 +37,83 @@ const form = reactive({
   accountHolder: ''
 })
 
-const submitted = ref(false)
-const errors = ref({})
-const isSubmitting = ref(false)
+const approvedStores = computed(() =>
+  applications.value.filter((item) => item.status === 'Approved')
+)
 
-const slugPreview = computed(() => {
-  if (form.storeSlug.trim()) return form.storeSlug.trim().toLowerCase()
-  return form.storeName
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-})
+const pendingStores = computed(() =>
+  applications.value.filter((item) => item.status === 'Submitted')
+)
 
-function validate() {
+const isSeller = computed(() => session.value?.role === 'seller')
+
+const statusLabel = (status) => ({
+  Submitted: 'Menunggu Review',
+  Approved: 'Disetujui',
+  Rejected: 'Ditolak',
+  Cancelled: 'Dibatalkan'
+}[status] || status)
+
+const slugify = (value) => String(value || '')
+  .toLowerCase()
+  .trim()
+  .replace(/[^a-z0-9\s-]/g, '')
+  .replace(/\s+/g, '-')
+  .replace(/-+/g, '-')
+  .replace(/^-|-$/g, '')
+
+const slugPreview = computed(() =>
+  slugify(form.storeSlug || form.storeName)
+)
+
+const fillForm = (data = {}) => {
+  form.storeName = data.storeName || ''
+  form.storeSlug = data.storeSlug || ''
+  form.description = data.description || ''
+  form.category = data.category || ''
+  form.ownerName = data.ownerName || session.value?.name || ''
+  form.bankName = data.bankName || ''
+  form.accountNumber = data.accountNumber || ''
+  form.accountHolder = data.accountHolder || session.value?.name || ''
+}
+
+const appendHistory = (current, status, note = '') => [
+  ...(Array.isArray(current?.history) ? current.history : []),
+  {
+    status,
+    note,
+    at: new Date().toISOString()
+  }
+]
+
+const refreshApplications = () => {
+  applications.value = getUserApplications(session.value)
+    .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
+}
+
+const startNewStore = () => {
+  editingApplication.value = null
+  fillForm()
+  errors.value = {}
+  showForm.value = true
+}
+
+const editApplication = (application) => {
+  editingApplication.value = application
+  fillForm(application)
+  errors.value = {}
+  showForm.value = true
+}
+
+const closeForm = () => {
+  editingApplication.value = null
+  errors.value = {}
+  showForm.value = false
+}
+
+const validate = () => {
   const nextErrors = {}
+
   if (!form.storeName.trim()) nextErrors.storeName = 'Nama toko wajib diisi.'
   if (!slugPreview.value) nextErrors.storeSlug = 'Slug toko wajib diisi.'
   if (!form.ownerName.trim()) nextErrors.ownerName = 'Nama pemilik wajib diisi.'
@@ -38,77 +122,390 @@ function validate() {
   if (!/^[0-9]{8,25}$/.test(form.accountNumber.trim())) {
     nextErrors.accountNumber = 'Nomor rekening harus 8–25 digit.'
   }
-  if (!form.accountHolder.trim()) nextErrors.accountHolder = 'Nama pemilik rekening wajib diisi.'
+  if (!form.accountHolder.trim()) {
+    nextErrors.accountHolder = 'Nama pemilik rekening wajib diisi.'
+  }
+
+  const allApplications = readApplications()
+  const duplicateSlug = allApplications.some((item) =>
+    item.applicationId !== editingApplication.value?.applicationId &&
+    slugify(item.storeSlug || item.storeName) === slugPreview.value &&
+    item.status !== 'Cancelled'
+  )
+
+  if (duplicateSlug) {
+    nextErrors.storeSlug = 'Slug tersebut sudah digunakan oleh pengajuan/toko lain.'
+  }
+
   errors.value = nextErrors
   return Object.keys(nextErrors).length === 0
 }
 
-function submitApplication() {
+const submitApplication = () => {
   if (!validate()) return
 
   isSubmitting.value = true
-  const application = {
-    ...form,
-    storeSlug: slugPreview.value,
-    status: 'Menunggu Review',
-    submittedAt: new Date().toISOString()
-  }
 
   try {
-    localStorage.setItem('icmarket_seller_application', JSON.stringify(application))
-    submitted.value = true
-  } catch (error) {
-    errors.value = { general: 'Data belum bisa disimpan di browser ini.' }
+    const now = new Date().toISOString()
+    const previous = editingApplication.value
+    const isResubmission = Boolean(previous)
+
+    const nextApplication = {
+      ...(previous || {}),
+      ...form,
+      storeSlug: slugPreview.value,
+      applicationId:
+        previous?.applicationId ||
+        `APP-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      userId: previous?.userId || session.value?.id || session.value?.email || '',
+      userEmail: previous?.userEmail || session.value?.email || '',
+      userName: previous?.userName || session.value?.name || form.ownerName,
+      status: 'Submitted',
+      archived: false,
+      rejectionReason: '',
+      reviewedAt: null,
+      cancelledAt: null,
+      submittedAt: now,
+      firstSubmittedAt: previous?.firstSubmittedAt || previous?.submittedAt || now,
+      resubmittedAt: isResubmission ? now : null,
+      history: appendHistory(
+        previous,
+        'Submitted',
+        isResubmission
+          ? 'Pengajuan diperbaiki dan dikirim ulang oleh seller.'
+          : 'Pengajuan toko baru dibuat oleh seller.'
+      )
+    }
+
+    upsertApplication(nextApplication, session.value)
+    refreshApplications()
+    editingApplication.value = null
+    showForm.value = false
   } finally {
     isSubmitting.value = false
   }
 }
+
+const cancelApplication = (application) => {
+  if (application.status === 'Approved') return
+
+  if (!window.confirm(`Batalkan pengajuan toko "${application.storeName}"?`)) return
+
+  const allApplications = readApplications()
+  const index = allApplications.findIndex(
+    (item) => item.applicationId === application.applicationId
+  )
+
+  if (index < 0) return
+
+  const now = new Date().toISOString()
+  allApplications[index] = {
+    ...allApplications[index],
+    status: 'Cancelled',
+    cancelledAt: now,
+    history: appendHistory(
+      allApplications[index],
+      'Cancelled',
+      'Pengajuan dibatalkan oleh seller.'
+    )
+  }
+
+  writeApplications(allApplications)
+  refreshApplications()
+}
+
+const readJson = (key, fallback) => {
+  try {
+    return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
+const hasBlockingStoreActivity = (application) => {
+  if (application.status !== 'Approved') {
+    return null
+  }
+
+  const storeId = application.applicationId
+  const financeKey = getStoreStorageKey('finance', storeId)
+  const ordersKey = getStoreStorageKey('orders', storeId)
+
+  const finance = financeKey
+    ? readJson(financeKey, null)
+    : null
+
+  const holding = Number(finance?.wallet?.balanceHolding || 0)
+  const available = Number(finance?.wallet?.balanceAvailable || 0)
+
+  if (holding > 0 || available > 0) {
+    return 'Toko masih memiliki saldo Holding/Available. Selesaikan finance dan payout terlebih dahulu.'
+  }
+
+  const storeOrders = ordersKey
+    ? readJson(ordersKey, [])
+    : []
+
+  const hasOpenOrders = Array.isArray(storeOrders) && storeOrders.some((order) =>
+    ['pending_payment', 'paid', 'processing'].includes(String(order.status || '').toLowerCase())
+  )
+
+  if (hasOpenOrders) {
+    return 'Toko masih memiliki pesanan aktif. Selesaikan atau batalkan pesanan tersebut terlebih dahulu.'
+  }
+
+  const payouts = readJson('icmarket_admin_payouts', [])
+  const hasPendingPayout = Array.isArray(payouts) && payouts.some((payout) =>
+    String(payout.storeApplicationId || '') === String(storeId) &&
+    ['scheduled', 'approved', 'processing'].includes(String(payout.status || '').toLowerCase())
+  )
+
+  if (hasPendingPayout) {
+    return 'Toko masih memiliki payout yang sedang berjalan. Tunggu payout selesai sebelum menghapus toko.'
+  }
+
+  return null
+}
+
+const deleteStore = (application) => {
+  notice.value = ''
+
+  if (!isSeller.value) {
+    notice.value = 'Hanya akun Seller yang dapat menghapus toko.'
+    return
+  }
+
+  const blocker = hasBlockingStoreActivity(application)
+
+  if (blocker) {
+    notice.value = blocker
+    return
+  }
+
+  const label = application.status === 'Approved'
+    ? 'toko'
+    : 'pengajuan toko'
+
+  const confirmed = window.confirm(
+    `Hapus ${label} "${application.storeName}"?\n\n` +
+    'Produk dan data operasional toko ini akan dihapus dari Seller Center. ' +
+    'Riwayat order/payout global yang sudah selesai tetap dipertahankan sebagai catatan.'
+  )
+
+  if (!confirmed) return
+
+  const applicationId = application.applicationId
+  const storeSlug = application.storeSlug || ''
+
+  const removed = removeApplication(applicationId, session.value)
+
+  if (!removed) {
+    notice.value = 'Toko gagal dihapus karena ownership akun tidak cocok.'
+    return
+  }
+
+  // Hapus tenant dari registry admin agar tidak muncul lagi sebagai toko aktif.
+  const adminStores = readJson('icmarket_admin_stores', [])
+
+  if (Array.isArray(adminStores)) {
+    localStorage.setItem(
+      'icmarket_admin_stores',
+      JSON.stringify(
+        adminStores.filter((store) =>
+          String(store.applicationId || '') !== String(applicationId) &&
+          String(store.slug || '') !== String(storeSlug)
+        )
+      )
+    )
+  }
+
+  // Hapus data tenant lokal. Global audit order/payout tidak dihapus.
+  ;['products', 'finance', 'orders'].forEach((resource) => {
+    const key = getStoreStorageKey(resource, applicationId)
+    if (key) localStorage.removeItem(key)
+  })
+
+  clearStoreContext()
+  refreshApplications()
+  refreshStores()
+
+  notice.value = `"${application.storeName}" berhasil dihapus.`
+
+  window.dispatchEvent(new CustomEvent('icmarket-store-deleted', {
+    detail: {
+      applicationId,
+      storeSlug
+    }
+  }))
+}
+
+const openStore = async (application) => {
+  setActiveApplication(application, session.value)
+  await navigateTo('/seller/dashboard')
+}
+
+onMounted(() => {
+  syncSession()
+  refreshApplications()
+
+  // Kalau user belum pernah punya toko, langsung buka form pertama.
+  if (!applications.value.length) {
+    startNewStore()
+  }
+})
 </script>
 
 <template>
-  <main class="seller-register-page">
-    <section class="seller-register-hero">
-      <span class="eyebrow">SELLER CENTER</span>
-      <h1>Buka Toko di IC Market</h1>
-      <p>Lengkapi informasi toko dan rekening untuk mengajukan pembukaan toko.</p>
+  <main class="seller-stores-page">
+    <section class="page-heading">
+      <div>
+        <span class="eyebrow">SELLER CENTER</span>
+        <h1>Toko Saya</h1>
+        <p>Kelola pengajuan toko dan buka toko tambahan dengan akun yang sama.</p>
+      </div>
+
+      <button class="primary-button" type="button" @click="startNewStore">
+        + Buka Toko Baru
+      </button>
     </section>
 
-    <section v-if="submitted" class="application-success" aria-live="polite">
-      <div class="success-icon">✓</div>
-      <h2>Pengajuan berhasil disimpan</h2>
-      <p>Status pengajuan toko lo sekarang adalah <strong>Menunggu Review</strong>.</p>
-      <p class="muted">Ini masih simulasi frontend. Data disimpan di localStorage browser.</p>
-      <NuxtLink class="primary-button" to="/">Kembali ke Beranda</NuxtLink>
+    <div v-if="notice" class="notice" aria-live="polite">
+      {{ notice }}
+    </div>
+
+    <section v-if="applications.length && !showForm" class="overview-grid">
+      <article>
+        <span>Total Pengajuan</span>
+        <strong>{{ applications.length }}</strong>
+      </article>
+      <article>
+        <span>Toko Disetujui</span>
+        <strong>{{ approvedStores.length }}</strong>
+      </article>
+      <article>
+        <span>Menunggu Review</span>
+        <strong>{{ pendingStores.length }}</strong>
+      </article>
     </section>
 
-    <form v-else class="seller-form" @submit.prevent="submitApplication" novalidate>
-      <div v-if="errors.general" class="form-alert">{{ errors.general }}</div>
-
-      <section class="form-card">
-        <div class="section-heading">
-          <span class="section-number">01</span>
+    <section v-if="applications.length && !showForm" class="store-list">
+      <article
+        v-for="application in applications"
+        :key="application.applicationId"
+        class="store-card"
+      >
+        <div class="store-top">
           <div>
-            <h2>Informasi Toko</h2>
-            <p>Data dasar yang akan ditampilkan pada halaman toko.</p>
+            <span class="eyebrow">TOKO</span>
+            <h2>{{ application.storeName }}</h2>
+            <p>/{{ application.storeSlug }}</p>
+          </div>
+
+          <span class="status-badge" :class="application.status.toLowerCase()">
+            {{ statusLabel(application.status) }}
+          </span>
+        </div>
+
+        <div v-if="application.status === 'Rejected'" class="reason-box">
+          <strong>Alasan penolakan</strong>
+          <p>{{ application.rejectionReason || 'Tidak ada alasan yang diberikan.' }}</p>
+        </div>
+
+        <div class="store-meta">
+          <div>
+            <span>Kategori</span>
+            <strong>{{ application.category }}</strong>
+          </div>
+          <div>
+            <span>Dikirim terakhir</span>
+            <strong>{{ new Date(application.submittedAt).toLocaleString('id-ID') }}</strong>
           </div>
         </div>
 
+        <div class="card-actions">
+          <button
+            v-if="application.status === 'Approved'"
+            class="primary-button"
+            type="button"
+            @click="openStore(application)"
+          >
+            Buka Dashboard
+          </button>
+
+          <button
+            v-if="application.status === 'Rejected' || application.status === 'Cancelled'"
+            class="secondary-button"
+            type="button"
+            @click="editApplication(application)"
+          >
+            Perbaiki & Ajukan Ulang
+          </button>
+
+          <button
+            v-if="application.status === 'Submitted' || application.status === 'Rejected'"
+            class="danger-button"
+            type="button"
+            @click="cancelApplication(application)"
+          >
+            Batalkan Pengajuan
+          </button>
+
+          <button
+            v-if="isSeller"
+            class="danger-button delete-button"
+            type="button"
+            @click="deleteStore(application)"
+          >
+            {{ application.status === 'Approved' ? 'Hapus Toko' : 'Hapus Pengajuan' }}
+          </button>
+        </div>
+      </article>
+    </section>
+
+    <form v-if="showForm" class="seller-form" @submit.prevent="submitApplication">
+      <div class="form-heading">
+        <div>
+          <span class="eyebrow">PENGAJUAN TOKO</span>
+          <h2>
+            {{ editingApplication ? 'Perbaiki Pengajuan' : 'Buka Toko Baru' }}
+          </h2>
+        </div>
+
+        <button
+          v-if="applications.length"
+          class="text-button"
+          type="button"
+          @click="closeForm"
+        >
+          Kembali ke Toko Saya
+        </button>
+      </div>
+
+      <div v-if="editingApplication?.status === 'Rejected'" class="reason-box">
+        <strong>Alasan penolakan admin</strong>
+        <p>{{ editingApplication.rejectionReason }}</p>
+      </div>
+
+      <section class="form-card">
+        <h3>Informasi Toko</h3>
+
         <div class="field-grid">
           <label class="field">
-            <span>Nama Toko <b>*</b></span>
-            <input v-model="form.storeName" type="text" placeholder="Contoh: Creative Studio" />
+            <span>Nama Toko *</span>
+            <input v-model="form.storeName" type="text" placeholder="Nama toko" />
             <small v-if="errors.storeName" class="field-error">{{ errors.storeName }}</small>
           </label>
 
           <label class="field">
-            <span>Slug Toko</span>
-            <input v-model="form.storeSlug" type="text" placeholder="creative-studio" />
+            <span>Slug Toko *</span>
+            <input v-model="form.storeSlug" type="text" placeholder="nama-toko" />
             <small class="field-help">Preview: {{ slugPreview || 'nama-toko' }}</small>
             <small v-if="errors.storeSlug" class="field-error">{{ errors.storeSlug }}</small>
           </label>
 
           <label class="field">
-            <span>Kategori <b>*</b></span>
+            <span>Kategori *</span>
             <select v-model="form.category">
               <option value="" disabled>Pilih kategori</option>
               <option>Web Template</option>
@@ -122,39 +519,23 @@ function submitApplication() {
 
           <label class="field field-full">
             <span>Deskripsi Toko</span>
-            <textarea v-model="form.description" rows="4" placeholder="Ceritakan produk dan layanan yang dijual..."></textarea>
+            <textarea v-model="form.description" rows="4" placeholder="Deskripsi toko"></textarea>
           </label>
         </div>
       </section>
 
       <section class="form-card">
-        <div class="section-heading">
-          <span class="section-number">02</span>
-          <div>
-            <h2>Informasi Pemilik</h2>
-            <p>Data pemilik toko untuk kebutuhan pengajuan demo.</p>
-          </div>
-        </div>
-
-        <label class="field">
-          <span>Nama Pemilik <b>*</b></span>
-          <input v-model="form.ownerName" type="text" placeholder="Nama lengkap" />
-          <small v-if="errors.ownerName" class="field-error">{{ errors.ownerName }}</small>
-        </label>
-      </section>
-
-      <section class="form-card">
-        <div class="section-heading">
-          <span class="section-number">03</span>
-          <div>
-            <h2>Informasi Rekening</h2>
-            <p>Data rekening untuk persiapan fitur payout.</p>
-          </div>
-        </div>
+        <h3>Pemilik & Rekening</h3>
 
         <div class="field-grid">
           <label class="field">
-            <span>Bank <b>*</b></span>
+            <span>Nama Pemilik *</span>
+            <input v-model="form.ownerName" type="text" />
+            <small v-if="errors.ownerName" class="field-error">{{ errors.ownerName }}</small>
+          </label>
+
+          <label class="field">
+            <span>Bank *</span>
             <select v-model="form.bankName">
               <option value="" disabled>Pilih bank</option>
               <option>BCA</option>
@@ -169,66 +550,46 @@ function submitApplication() {
           </label>
 
           <label class="field">
-            <span>Nomor Rekening <b>*</b></span>
-            <input v-model="form.accountNumber" type="text" inputmode="numeric" placeholder="Nomor rekening" />
+            <span>Nomor Rekening *</span>
+            <input v-model="form.accountNumber" inputmode="numeric" type="text" />
             <small v-if="errors.accountNumber" class="field-error">{{ errors.accountNumber }}</small>
           </label>
 
-          <label class="field field-full">
-            <span>Nama Pemilik Rekening <b>*</b></span>
-            <input v-model="form.accountHolder" type="text" placeholder="Sesuai nama rekening" />
+          <label class="field">
+            <span>Nama Pemilik Rekening *</span>
+            <input v-model="form.accountHolder" type="text" />
             <small v-if="errors.accountHolder" class="field-error">{{ errors.accountHolder }}</small>
           </label>
         </div>
       </section>
 
-      <div class="form-footer">
-        <p><strong>Catatan:</strong> Ini formulir prototype. Jangan masukkan data rekening asli.</p>
-        <button class="primary-button" type="submit" :disabled="isSubmitting">
-          {{ isSubmitting ? 'Menyimpan...' : 'Ajukan Pembukaan Toko' }}
-        </button>
-      </div>
+      <button class="primary-button submit-button" type="submit" :disabled="isSubmitting">
+        {{ isSubmitting ? 'Menyimpan...' : editingApplication ? 'Kirim Ulang Pengajuan' : 'Ajukan Toko Baru' }}
+      </button>
     </form>
   </main>
 </template>
 
 <style scoped>
-.seller-register-page { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; color: var(--text, #111110); }
-.seller-register-hero { max-width: 700px; margin-bottom: 34px; }
-.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .14em; color: var(--muted, #888); }
-.seller-register-hero h1 { margin: 10px 0 12px; font-size: clamp(30px, 5vw, 48px); line-height: 1.08; }
-.seller-register-hero p, .section-heading p { color: var(--muted, #777); line-height: 1.6; }
-.seller-form { display: grid; gap: 20px; }
-.form-card, .application-success { border: 1px solid var(--border, #e8e8e3); border-radius: 20px; background: var(--surface, #fff); padding: 28px; box-shadow: 0 8px 30px rgba(0,0,0,.035); }
-.section-heading { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 24px; }
-.section-number { display: grid; place-items: center; min-width: 38px; height: 38px; border-radius: 12px; background: var(--subtle, #f0f0ec); font-size: 12px; font-weight: 700; }
-.section-heading h2 { margin: 2px 0 4px; font-size: 22px; }
-.section-heading p { margin: 0; font-size: 14px; }
-.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.field { display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 600; }
-.field-full { grid-column: 1 / -1; }
-.field b { color: #dc2626; }
-.field input, .field select, .field textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--border, #ddd); border-radius: 10px; padding: 13px 14px; background: #fff; color: #111; font: inherit; font-weight: 400; outline: none; }
-.field input:focus, .field select:focus, .field textarea:focus { border-color: #1472ff; box-shadow: 0 0 0 3px rgba(20,114,255,.1); }
-.field textarea { resize: vertical; }
-.field-help, .muted { color: var(--muted, #888); font-size: 12px; font-weight: 400; }
-.field-error { color: #dc2626; font-size: 12px; font-weight: 500; }
-.form-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.form-footer p { max-width: 520px; color: var(--muted, #777); font-size: 12px; line-height: 1.6; }
-.primary-button { display: inline-flex; justify-content: center; align-items: center; border: 0; border-radius: 999px; padding: 13px 22px; background: #111; color: #fff; text-decoration: none; font: inherit; font-weight: 700; cursor: pointer; }
-.primary-button:disabled { opacity: .6; cursor: not-allowed; }
-.form-alert { border-radius: 12px; padding: 14px 16px; background: #fff1f2; color: #be123c; font-size: 14px; }
-.application-success { text-align: center; padding: 48px 28px; }
-.success-icon { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 50%; background: #dcfce7; color: #15803d; font-size: 28px; font-weight: 800; }
-.application-success h2 { margin: 0 0 10px; font-size: 28px; }
-.application-success p { color: var(--muted, #777); line-height: 1.6; }
-.application-success .primary-button { margin-top: 18px; }
-@media (max-width: 700px) {
-  .seller-register-page { padding: 30px 16px 56px; }
-  .form-card, .application-success { padding: 20px; border-radius: 16px; }
-  .field-grid { grid-template-columns: 1fr; }
-  .field-full { grid-column: auto; }
-  .form-footer { align-items: stretch; flex-direction: column; }
-  .primary-button { width: 100%; }
-}
+.seller-stores-page{max-width:1100px;margin:0 auto;padding:48px 24px 80px;color:var(--text)}
+.page-heading,.store-top,.form-heading,.card-actions{display:flex;align-items:center}
+.page-heading,.store-top,.form-heading{justify-content:space-between;gap:24px}
+.page-heading{align-items:flex-start;margin-bottom:28px}
+.eyebrow{color:var(--accent-2);font-size:12px;font-weight:800;letter-spacing:.14em}
+h1{margin:8px 0;font-size:clamp(2rem,4vw,3.2rem)}.page-heading p,.store-top p{margin:0;color:var(--muted)}
+.primary-button,.secondary-button,.danger-button,.text-button{border-radius:10px;padding:11px 15px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.primary-button{border:0;background:var(--accent);color:#fff}.secondary-button{border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.danger-button{border:1px solid #fecaca;background:#fff;color:#b91c1c}.danger-button.delete-button{margin-left:auto}.text-button{border:0;background:transparent;color:var(--accent-2)}
+.notice{margin-bottom:18px;padding:13px 15px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);font-size:13px}.overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}.overview-grid article{padding:18px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.overview-grid span,.store-meta span{display:block;color:var(--muted);font-size:12px}.overview-grid strong{display:block;margin-top:6px;font-size:25px}
+.store-list{display:grid;gap:16px}.store-card,.form-card{padding:24px;border:1px solid var(--border);border-radius:18px;background:var(--surface)}
+.store-top{align-items:flex-start}.store-top h2{margin:6px 0 4px}.status-badge{padding:7px 10px;border-radius:999px;font-size:11px;font-weight:800;background:var(--subtle)}
+.status-badge.approved{background:#dcfce7;color:#166534}.status-badge.rejected{background:#fee2e2;color:#991b1b}.status-badge.submitted{background:#fef3c7;color:#92400e}.status-badge.cancelled{background:#f1f5f9;color:#475569}
+.store-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.store-meta>div{padding:13px;border-radius:12px;background:var(--subtle)}.store-meta strong{display:block;margin-top:5px;font-size:13px}
+.reason-box{margin:18px 0;padding:14px 16px;border-radius:12px;background:#fff1f2;color:#9f1239}.reason-box p{margin:5px 0 0;color:inherit;line-height:1.5}
+.card-actions{gap:9px;flex-wrap:wrap}.seller-form{display:grid;gap:18px}.form-heading h2{margin:5px 0 0}.form-card h3{margin:0 0 18px}
+.field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.field{display:grid;gap:7px;font-size:13px;font-weight:800}.field-full{grid-column:1/-1}
+.field input,.field select,.field textarea{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:10px;padding:12px 13px;background:var(--bg);font:inherit;font-weight:400}.field textarea{resize:vertical}
+.field-help,.field-error{font-size:11px;font-weight:500}.field-help{color:var(--muted)}.field-error{color:var(--red)}.submit-button{justify-self:end}
+@media(max-width:700px){.seller-stores-page{padding:32px 16px 70px}.page-heading,.store-top,.form-heading{align-items:stretch;flex-direction:column}.overview-grid,.field-grid,.store-meta{grid-template-columns:1fr}.primary-button.submit-button{width:100%;justify-self:stretch}}
 </style>

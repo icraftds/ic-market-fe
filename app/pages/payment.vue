@@ -1,96 +1,139 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 definePageMeta({ layout: 'flow' })
 const router = useRouter()
+const { getCurrentOrder, markOrderPaid } = useOrderStore()
 
-const formatRp = (n) => 'Rp ' + Number(n).toLocaleString('id-ID')
+const formatRp = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 
-// State
-const orderId = ref('ICM-DEMO001')
+const orderId = ref('')
 const method = ref('bank_transfer')
+const paymentBank = ref('BCA')
 const total = ref(0)
 const subtotal = ref(0)
 const discount = ref(0)
 const cart = ref([])
 const buyer = ref({})
 const uniqueSuffix = ref(0)
-
 const transferTotal = ref(0)
-
-// Countdown
 const timerText = ref('23:59')
 let timerInterval = null
+let autoPaymentTimer = null
+let autoRedirectTimer = null
 
-// Upload
+const bankAccounts = {
+  BCA: '1234 5678 9012',
+  BNI: '0987 6543 2100',
+  Mandiri: '1357 2468 9990'
+}
+
 const hasFile = ref(false)
 const fileName = ref('')
-
-// Copy
 const copyTextLabel = ref('Salin')
-
-// UI States
 const isVerifying = ref(false)
 const ccProgress = ref(0)
+const paymentError = ref('')
 
-const copyText = (text) => {
-  navigator.clipboard?.writeText(text)
+const copyText = (value) => {
+  navigator.clipboard?.writeText(String(value || '').replace(/\s/g, ''))
   copyTextLabel.value = 'Tersalin'
   setTimeout(() => { copyTextLabel.value = 'Salin' }, 2000)
 }
 
-const handleFileUpload = (e) => {
-  const file = e.target.files[0]
-  if (file) {
-    hasFile.value = true
-    fileName.value = file.name
+const handleFileUpload = (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  hasFile.value = true
+  fileName.value = file.name
+}
+
+const completePayment = async () => {
+  if (isVerifying.value) return
+
+  isVerifying.value = true
+  paymentError.value = ''
+
+  try {
+    const updated = markOrderPaid(orderId.value)
+
+    if (!updated) {
+      paymentError.value = 'Pesanan tidak ditemukan. Silakan kembali ke checkout.'
+      return
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 900))
+    await router.push('/success')
+  } catch (error) {
+    console.error('Gagal memperbarui pembayaran:', error)
+    paymentError.value = 'Pembayaran belum dapat dikonfirmasi. Silakan coba lagi.'
+  } finally {
+    isVerifying.value = false
   }
 }
 
-const confirmPayment = () => {
-  isVerifying.value = true
-  setTimeout(() => {
-    router.push('/success')
-  }, 1800)
-}
+const confirmPayment = () => completePayment()
 
 onMounted(() => {
-  method.value = localStorage.getItem('icmarket_method') || 'bank_transfer'
-  orderId.value = localStorage.getItem('icmarket_order_id') || 'ICM-DEMO001'
-  total.value = Number(localStorage.getItem('icmarket_total')) || 0
-  subtotal.value = Number(localStorage.getItem('icmarket_subtotal')) || 0
-  discount.value = Number(localStorage.getItem('icmarket_discount')) || 0
-  
-  try { cart.value = JSON.parse(localStorage.getItem('icmarket_cart')) || [] } catch (e) { cart.value = [] }
-  try { buyer.value = JSON.parse(localStorage.getItem('icmarket_buyer')) || {} } catch (e) { buyer.value = {} }
-  
-  uniqueSuffix.value = Math.floor(Math.random() * 900) + 100
-  transferTotal.value = total.value + uniqueSuffix.value
+  const order = getCurrentOrder()
 
-  // CC auto redirect
-  if (method.value === 'credit_card') {
-    setTimeout(() => { ccProgress.value = 100 }, 100)
-    setTimeout(() => { router.push('/success') }, 3500)
+  if (!order) {
+    router.push('/cart')
+    return
   }
 
-  // Timer logic
+  orderId.value = order.orderId
+  method.value = order.payment?.method || 'bank_transfer'
+  paymentBank.value = order.payment?.bank || 'BCA'
+  total.value = Number(order.totals?.total || 0)
+  subtotal.value = Number(order.totals?.subtotal || 0)
+  discount.value = Number(order.totals?.discount || 0)
+  cart.value = Array.isArray(order.items) ? order.items : []
+  buyer.value = order.buyer || {}
+
+  localStorage.setItem('icmarket_method', method.value)
+  localStorage.setItem('icmarket_order_id', orderId.value)
+  localStorage.setItem('icmarket_total', String(total.value))
+  localStorage.setItem('icmarket_subtotal', String(subtotal.value))
+  localStorage.setItem('icmarket_discount', String(discount.value))
+
+  uniqueSuffix.value = method.value === 'bank_transfer'
+    ? Math.floor(Math.random() * 900) + 100
+    : 0
+
+  transferTotal.value = total.value + uniqueSuffix.value
+
+  if (method.value === 'credit_card') {
+    autoPaymentTimer = setTimeout(() => {
+      ccProgress.value = 100
+    }, 100)
+
+    autoRedirectTimer = setTimeout(() => {
+      completePayment()
+    }, 3200)
+  }
+
   let seconds = 24 * 60 - 1
   timerInterval = setInterval(() => {
-    if (seconds <= 0) { 
+    if (seconds <= 0) {
       clearInterval(timerInterval)
       timerText.value = '00:00'
       return
     }
+
     seconds--
-    const m = String(Math.floor(seconds / 60)).padStart(2,'0')
-    const s = String(seconds % 60).padStart(2,'0')
-    timerText.value = m + ':' + s
+    const minutes = String(Math.floor(seconds / 60)).padStart(2, '0')
+    const second = String(seconds % 60).padStart(2, '0')
+    timerText.value = `${minutes}:${second}`
   }, 1000)
 })
 
 onUnmounted(() => {
   if (timerInterval) clearInterval(timerInterval)
+  if (autoPaymentTimer) clearTimeout(autoPaymentTimer)
+  if (autoRedirectTimer) clearTimeout(autoRedirectTimer)
 })
 </script>
 
@@ -137,9 +180,9 @@ onUnmounted(() => {
             <div style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace;margin-bottom:6px;">Rekening Tujuan</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div class="bank-account-row">
-                <div class="bank-logo">BCA</div>
-                <div class="bank-account-num">1234 5678 9012</div>
-                <button class="copy-btn" :class="{ copied: copyTextLabel === 'Tersalin' }" @click="copyText('123456789012')">
+                <div class="bank-logo">{{ paymentBank }}</div>
+                <div class="bank-account-num">{{ bankAccounts[paymentBank] || bankAccounts.BCA }}</div>
+                <button class="copy-btn" :class="{ copied: copyTextLabel === 'Tersalin' }" @click="copyText(bankAccounts[paymentBank] || bankAccounts.BCA)">
                   <i :class="copyTextLabel === 'Salin' ? 'fa-regular fa-copy' : 'fa-solid fa-check'"></i> {{ copyTextLabel }}
                 </button>
               </div>
@@ -255,10 +298,15 @@ onUnmounted(() => {
               <i class="fa-brands fa-paypal"></i>
               Klik tombol di bawah untuk diarahkan ke halaman PayPal. Setelah pembayaran, Anda akan dikembalikan ke sini secara otomatis.
             </div>
-            <NuxtLink to="/success" class="flow-cta" style="background:#0070ba;">
-              <i class="fa-brands fa-paypal"></i> Lanjut ke PayPal
-            </NuxtLink>
+            <button class="flow-cta" style="background:#0070ba;" :disabled="isVerifying" @click="completePayment">
+              <i class="fa-brands fa-paypal"></i>
+              {{ isVerifying ? 'Memverifikasi…' : 'Lanjut ke PayPal' }}
+            </button>
           </div>
+        </div>
+
+        <div v-if="paymentError" class="flow-alert warn">
+          <i class="fa-solid fa-triangle-exclamation"></i> {{ paymentError }}
         </div>
 
         <!-- Submit -->

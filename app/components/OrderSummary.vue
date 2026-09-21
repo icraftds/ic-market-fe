@@ -38,7 +38,7 @@ defineExpose({ refresh })
           <img :src="item.img" style="width:44px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;">
           <div style="flex:1;min-width:0;">
             <div style="font-size:0.83rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.name }}</div>
-            <div style="font-size:0.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ item.category }}</div>
+            <div style="font-size:0.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ item.category }}<span v-if="item.store || item.storeName"> · {{ item.store || item.storeName }}</span></div>
           </div>
           <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:0.88rem;color:var(--text);white-space:nowrap;">
             {{ item.isFree ? 'Gratis' : formatRp(item.price) }}

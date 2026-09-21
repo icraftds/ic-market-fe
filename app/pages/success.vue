@@ -1,66 +1,88 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'flow' })
 
-const orderId = ref('ICM-DEMO001')
-const buyerEmail = ref('pembeli@email.com')
+const {
+  getCurrentOrder,
+  clearCheckoutState
+} = useOrderStore()
+
+const orderId = ref('')
+const buyerEmail = ref('')
 const cart = ref([])
 const method = ref('bank_transfer')
+const paymentStatus = ref('paid')
 
-// Ratings
 const rated = ref(false)
 const litStars = ref(0)
 const hoverStars = ref(0)
+
+const allDigital = computed(() =>
+  cart.value.length > 0 && cart.value.every(
+    (item) => String(item.type || 'Digital') === 'Digital'
+  )
+)
+
+const successDescription = computed(() => {
+  if (allDigital.value) {
+    return `Produk digital Anda sudah siap. Informasi pesanan tersimpan untuk ${buyerEmail.value || 'email pembeli'}.`
+  }
+
+  return `Pembayaran sudah dikonfirmasi. Seller akan memproses pesanan Anda dan pembaruan status dapat dilihat di Riwayat Pesanan.`
+})
 
 const setRating = (star) => {
   if (rated.value) return
   rated.value = true
   litStars.value = star
+
+  if (import.meta.client && orderId.value) {
+    localStorage.setItem(`icmarket_rating_${orderId.value}`, String(star))
+  }
 }
+
+const canDownload = (item) =>
+  paymentStatus.value === 'paid' &&
+  (Boolean(item.isFree) || String(item.type || 'Digital') === 'Digital')
 
 const downloadItem = (item) => {
   if (!canDownload(item)) return
   item.downloaded = true
 }
 
-const canDownload = (item) => {
-  const isInstant = ['credit_card','qris','paypal'].includes(method.value)
-  return isInstant || item.isFree
-}
-
 const copyOrderId = () => {
   navigator.clipboard?.writeText(orderId.value)
-  // Optional: Add toast or inline success state
 }
 
 const confettiPieces = ref([])
 
 onMounted(() => {
-  orderId.value = localStorage.getItem('icmarket_order_id') || 'ICM-DEMO001'
-  method.value = localStorage.getItem('icmarket_method') || 'bank_transfer'
-  
-  try {
-    const buyer = JSON.parse(localStorage.getItem('icmarket_buyer')) || {}
-    if (buyer.email) buyerEmail.value = buyer.email
-  } catch (e) {}
+  const order = getCurrentOrder()
 
-  try { 
-    cart.value = JSON.parse(localStorage.getItem('icmarket_cart')) || [] 
-  } catch (e) { 
-    cart.value = [] 
+  if (!order) {
+    navigateTo('/orders')
+    return
   }
 
-  // Fallback demo
-  if (cart.value.length === 0) {
-    cart.value = [
-      { id: 'product-1', name: 'Template E-Commerce Super', category: 'Web Template', price: 350000, img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=200&q=80', isFree: false }
-    ]
+  orderId.value = order.orderId
+  method.value = order.payment?.method || 'bank_transfer'
+  paymentStatus.value = order.paymentStatus || 'paid'
+  buyerEmail.value = order.buyer?.email || 'pembeli@email.com'
+  cart.value = (Array.isArray(order.items) ? order.items : []).map((item) => ({
+    ...item,
+    downloaded: false
+  }))
+
+  const savedRating = Number(localStorage.getItem(`icmarket_rating_${order.orderId}`) || 0)
+  if (savedRating >= 1 && savedRating <= 5) {
+    rated.value = true
+    litStars.value = savedRating
   }
 
-  // Generate Confetti
   const colors = ['#1472FF','#00f0ff','#22c55e','#f59e0b','#a855f7','#ef4444','#111110']
   const pieces = []
+
   for (let i = 0; i < 80; i++) {
     const size = Math.random() * 8 + 5
     pieces.push({
@@ -74,10 +96,11 @@ onMounted(() => {
       animationDelay: (Math.random() * 1.5) + 's'
     })
   }
-  confettiPieces.value = pieces
 
+  confettiPieces.value = pieces
   setTimeout(() => { confettiPieces.value = [] }, 5000)
-  setTimeout(() => { localStorage.removeItem('icmarket_cart') }, 3000)
+
+  clearCheckoutState()
 })
 </script>
 
@@ -104,7 +127,7 @@ onMounted(() => {
 
         <h1 class="success-title">Pembayaran Berhasil!</h1>
         <p class="success-sub">
-          Terima kasih atas pembelian Anda! Produk digital Anda sudah siap dan link download telah dikirim ke email <strong>{{ buyerEmail }}</strong>.
+          Terima kasih atas pembelian Anda! {{ successDescription }}
         </p>
 
         <div class="order-id-badge">
@@ -159,8 +182,8 @@ onMounted(() => {
           <div class="next-step-item">
             <div class="next-step-num">2</div>
             <div class="next-step-text">
-              <div class="next-step-title">Download & Ekstrak File</div>
-              <div class="next-step-desc">Unduh file ZIP dari link yang diberikan, lalu ikuti dokumentasi yang disertakan untuk memulai penggunaan.</div>
+              <div class="next-step-title">Akses Produk / Pantau Pesanan</div>
+              <div class="next-step-desc">Produk digital dapat diakses setelah pembayaran. Untuk produk fisik, pantau proses seller melalui Riwayat Pesanan.</div>
             </div>
           </div>
           <div class="next-step-item">
@@ -177,7 +200,7 @@ onMounted(() => {
           <NuxtLink to="/" class="flow-cta">
             <i class="fa-solid fa-store"></i> Lihat Produk Lainnya
           </NuxtLink>
-          <NuxtLink to="/cart" class="flow-cta secondary">
+          <NuxtLink to="/orders" class="flow-cta secondary">
             <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Pesanan
           </NuxtLink>
         </div>

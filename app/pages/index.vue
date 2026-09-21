@@ -1,9 +1,55 @@
 <script setup>
-import { onMounted } from 'vue';
+import { nextTick, onMounted } from 'vue';
 
 definePageMeta({ layout: 'default' })
 
-onMounted(() => {
+
+const {
+    products: catalogProducts,
+    refreshCatalog
+} = useProductCatalog();
+
+const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80';
+
+const catalogImage = (product) =>
+    product?.thumbnailUrl ||
+    product?.images?.[0]?.imageUrl ||
+    FALLBACK_PRODUCT_IMAGE;
+
+const catalogTags = (product) => {
+    if (Array.isArray(product?.tags) && product.tags.length) return product.tags;
+    return [product?.category, product?.type].filter(Boolean);
+};
+
+const catalogFeatures = (product) => {
+    if (Array.isArray(product?.features) && product.features.length) return product.features;
+    return [
+        `Dijual oleh ${product?.storeName || 'Seller IC Market'}`,
+        product?.type === 'Digital' ? 'Produk digital' : 'Produk marketplace',
+        'Dukungan seller'
+    ];
+};
+
+
+const catalogSpecifications = (product) => ({
+    lastUpdated:
+        product?.specifications?.lastUpdated ||
+        new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' })
+            .format(new Date(product?.updatedAt || product?.createdAt || Date.now())),
+    support: product?.specifications?.support || '30 Hari',
+    fileFormat:
+        product?.specifications?.fileFormat ||
+        (product?.type === 'Digital' ? 'File Digital' : 'Produk Fisik'),
+    license: product?.specifications?.license || 'Personal'
+});
+
+const catalogRating = (product) => Number(product?.rating || 0);
+const catalogReviews = (product) => Number(product?.reviews || 0);
+
+onMounted(async () => {
+
+    refreshCatalog();
+    await nextTick();
 
     (() => {
         'use strict';
@@ -12,6 +58,7 @@ onMounted(() => {
         const catItems = document.querySelectorAll('.cat-item');
         const cards    = document.querySelectorAll('.product-card');
         const countEl  = document.getElementById('product-count');
+        if (countEl) countEl.textContent = cards.length;
 
         function filterCards(cat) {
             let visible = 0;
@@ -72,17 +119,24 @@ onMounted(() => {
         function addToCart(card) {
             const cart = getCart();
             const item = {
-                id:       card.dataset.title.replace(/\s+/g,'-').toLowerCase() + '-' + Date.now(),
+                id:       card.dataset.catalogId || card.dataset.productId || (card.dataset.title.replace(/\s+/g,'-').toLowerCase() + '-' + Date.now()),
+                catalogId: card.dataset.catalogId || '',
+                productId: card.dataset.productId || '',
                 name:     card.dataset.title,
                 category: card.dataset.category,
                 store:    card.dataset.store || 'iCraft Demo Store',
-                tags:     (card.dataset.tags || '').split(',').map(t => t.trim()),
+                storeSlug: card.dataset.storeSlug || '',
+                storeId: card.dataset.storeId || '',
+                storeApplicationId: card.dataset.storeApplicationId || '',
+                tenantSchema: card.dataset.tenantSchema || '',
+                tags:     (card.dataset.tags || '').split(',').map(t => t.trim()).filter(Boolean),
                 price:    parseInt(card.dataset.price) || 0,
                 img:      card.dataset.img || '',
-                isFree:   card.dataset.free === 'true'
+                isFree:   card.dataset.free === 'true',
+                type:     card.dataset.type || 'Digital'
             };
             // Prevent duplicate titles
-            if (!cart.find(i => i.name === item.name)) cart.push(item);
+            if (!cart.find(i => (item.catalogId && i.catalogId === item.catalogId) || (i.name === item.name && i.store === item.store))) cart.push(item);
             saveCart(cart);
             updateCartBadge();
         }
@@ -114,7 +168,7 @@ onMounted(() => {
         stackCards.forEach(card => {
             card.addEventListener('click', (e) => {
                 // If clicked on the buy button, don't rotate
-                if (e.target.closest('.hero-featured-btn')) return;
+                if (e.target.closest('.hero-featured-btn') || e.target.closest('.card-store')) return;
 
                 const clickedIndex = order.indexOf(card);
                 if (clickedIndex === 0) return; // already front
@@ -150,6 +204,8 @@ onMounted(() => {
                     price:    btn.dataset.price,
                     img:      btn.dataset.img,
                     tags:     btn.dataset.tags,
+                    store:    btn.dataset.store || '',
+                    storeSlug: btn.dataset.storeSlug || '',
                     free:     'false'
                 }};
                 addToCart(fakeCard);
@@ -164,6 +220,15 @@ onMounted(() => {
         function openPreview(card) {
             document.getElementById('modal-img').src = card.dataset.img || '';
             document.getElementById('modal-title').textContent = card.dataset.title || '—';
+
+            const sellerLink = document.getElementById('modal-seller-link');
+            const sellerName = card.dataset.store || 'iCraft Demo Store';
+            const sellerSlug = card.dataset.storeSlug || '';
+            if (sellerLink) {
+                sellerLink.textContent = `Oleh: ${sellerName}`;
+                sellerLink.href = sellerSlug ? `/store/${sellerSlug}` : '#';
+                sellerLink.style.pointerEvents = sellerSlug ? 'auto' : 'none';
+            }
 
             const isFree = card.dataset.free === 'true';
             const priceEl = document.getElementById('modal-price');
@@ -190,6 +255,17 @@ onMounted(() => {
                 li.textContent = f.trim();
                 featEl.appendChild(li);
             });
+
+
+            const specUpdated = document.getElementById('modal-spec-updated');
+            const specSupport = document.getElementById('modal-spec-support');
+            const specFormat = document.getElementById('modal-spec-format');
+            const specLicense = document.getElementById('modal-spec-license');
+
+            if (specUpdated) specUpdated.textContent = card.dataset.specUpdated || 'Agustus 2026';
+            if (specSupport) specSupport.textContent = card.dataset.specSupport || '30 Hari';
+            if (specFormat) specFormat.textContent = card.dataset.specFormat || '.ZIP + Docs';
+            if (specLicense) specLicense.textContent = card.dataset.specLicense || 'Extended';
 
             const buyDirectBtn = document.getElementById('modal-buy-direct-btn');
             const addCartBtn   = document.getElementById('modal-add-cart-btn');
@@ -292,7 +368,7 @@ onMounted(() => {
         // Whole card click opens preview
         cards.forEach(card => {
             card.addEventListener('click', e => {
-                if (!e.target.closest('.btn-primary') && !e.target.closest('.btn-icon')) {
+                if (!e.target.closest('.btn-primary') && !e.target.closest('.btn-icon') && !e.target.closest('.card-store')) {
                     openPreview(card);
                 }
             });
@@ -423,6 +499,7 @@ onMounted(() => {
                 <article class="stack-card stack-card--3 product-card"
                     data-title="Admin Dashboard Pro"
                     data-store="Creative Studio"
+                    data-store-slug="creative-studio"
                     data-category="Web Template"
                     data-price="199000"
                     data-img="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
@@ -440,6 +517,8 @@ onMounted(() => {
                             <div class="card-rating"><i class="fa-solid fa-star"></i> 4.8</div>
                         </div>
                         <div class="card-actions hero-featured-btn" style="padding:0; margin-top:8px;" data-title="Admin Dashboard Pro"
+                                data-store="Creative Studio"
+                                data-store-slug="creative-studio"
                                 data-category="Web Template"
                                 data-price="199000"
                                 data-img="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
@@ -455,6 +534,7 @@ onMounted(() => {
                 <article class="stack-card stack-card--2 product-card"
                     data-title="UI/UX Startup Kit"
                     data-store="Pixel Art Lab"
+                    data-store-slug="pixel-art-lab"
                     data-category="UI Kit"
                     data-price="150000"
                     data-img="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80"
@@ -472,6 +552,8 @@ onMounted(() => {
                             <div class="card-rating"><i class="fa-solid fa-star"></i> 5.0</div>
                         </div>
                         <div class="card-actions hero-featured-btn" style="padding:0; margin-top:8px;" data-title="UI/UX Startup Kit"
+                                data-store="Pixel Art Lab"
+                                data-store-slug="pixel-art-lab"
                                 data-category="UI Kit"
                                 data-price="150000"
                                 data-img="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80"
@@ -487,6 +569,7 @@ onMounted(() => {
                 <article class="stack-card stack-card--1 stack-active product-card"
                     data-title="Template E-Commerce Super"
                     data-store="Creative Studio"
+                    data-store-slug="creative-studio"
                     data-category="Web Template"
                     data-price="350000"
                     data-img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
@@ -504,6 +587,8 @@ onMounted(() => {
                             <div class="card-rating"><i class="fa-solid fa-star"></i> 4.9</div>
                         </div>
                         <div class="card-actions hero-featured-btn" style="padding:0; margin-top:8px;" data-title="Template E-Commerce Super"
+                                data-store="Creative Studio"
+                                data-store-slug="creative-studio"
                                 data-category="Web Template"
                                 data-price="350000"
                                 data-img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
@@ -613,6 +698,8 @@ onMounted(() => {
                     data-price="350000"
                     data-img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80"
                     data-title="Template E-Commerce Super"
+                    data-store="Creative Studio"
+                    data-store-slug="creative-studio"
                     data-desc="Template e-commerce lengkap dengan fitur checkout, keranjang belanja, manajemen produk, dan integrasi payment gateway. Dibangun dengan HTML/CSS/JS murni, performa tinggi, dan mudah dikustomisasi."
                     data-features="Checkout Flow,Responsive Design,Payment Gateway Ready,Clean Code,SEO Optimized"
                     data-tags="Web Template,HTML,E-Commerce"
@@ -627,6 +714,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">Web Template</span>
+                        <a class="card-store" href="/store/creative-studio">Oleh: Creative Studio</a>
                         <h3 class="card-title">Template E-Commerce Super</h3>
                         <div class="card-footer">
                             <span class="card-price">Rp 350.000</span>
@@ -651,6 +739,8 @@ onMounted(() => {
                     data-price="150000"
                     data-img="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80"
                     data-title="UI/UX Startup Kit"
+                    data-store="Pixel Art Lab"
+                    data-store-slug="pixel-art-lab"
                     data-desc="Ratusan komponen Figma dengan Auto Layout, design system lengkap, dan panduan penggunaan. Cocok untuk tim yang ingin mempercepat proses desain MVP dari nol."
                     data-features="Auto Layout,Design System,Figma Components,Light & Dark Mode,Icon Set"
                     data-tags="UI Kit,Figma,Design"
@@ -665,6 +755,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">UI Kit</span>
+                        <a class="card-store" href="/store/pixel-art-lab">Oleh: Pixel Art Lab</a>
                         <h3 class="card-title">UI/UX Startup Kit</h3>
                         <div class="card-footer">
                             <span class="card-price">Rp 150.000</span>
@@ -690,6 +781,7 @@ onMounted(() => {
                     data-img="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=800&q=80"
                     data-title="Laravel Point of Sales"
                     data-store="CodeCraft Store"
+                    data-store-slug="codecraft-store"
                     data-desc="Aplikasi POS berbasis web lengkap dengan manajemen stok, laporan penjualan, dan dukungan cetak struk thermal. Dibangun dengan Laravel 10 dan Livewire."
                     data-features="Inventory Management,Thermal Printing,Sales Reports,Laravel 10,Livewire"
                     data-tags="Source Code,Laravel,PHP"
@@ -729,6 +821,8 @@ onMounted(() => {
                     data-price="199000"
                     data-img="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
                     data-title="Admin Dashboard Pro"
+                    data-store="Creative Studio"
+                    data-store-slug="creative-studio"
                     data-desc="Template admin dashboard modern dengan chart animasi, manajemen user, dark mode, dan lebih dari 40 komponen UI siap pakai. Integrasi API sangat mudah dilakukan."
                     data-features="40+ Components,Animated Charts,Dark Mode,API Ready,Responsive"
                     data-tags="Web Template,Dashboard,HTML"
@@ -743,6 +837,7 @@ onMounted(() => {
                     </div>
                     <div class="card-body">
                         <span class="card-category">Web Template</span>
+                        <a class="card-store" href="/store/creative-studio">Oleh: Creative Studio</a>
                         <h3 class="card-title">Admin Dashboard Pro</h3>
                         <div class="card-footer">
                             <span class="card-price">Rp 199.000</span>
@@ -768,6 +863,7 @@ onMounted(() => {
                     data-img="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80"
                     data-title="Mobile App UI Kit"
                     data-store="Pixel Art Lab"
+                    data-store-slug="pixel-art-lab"
                     data-desc="Koleksi 200+ screen desain aplikasi mobile dalam format Figma. Mencakup onboarding, autentikasi, home, profile, dan banyak lagi. Siap untuk handoff ke developer."
                     data-features="200+ Screens,iOS & Android,Auto Layout,Dev-Ready,Prototype Included"
                     data-tags="UI Kit,Mobile,Figma"
@@ -808,6 +904,7 @@ onMounted(() => {
                     data-img="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80"
                     data-title="Wireframe Pack — Gratis"
                     data-store="Design Hub"
+                    data-store-slug="design-hub"
                     data-desc="Paket wireframe gratis untuk referensi awal desain UI Anda. Tersedia dalam format Figma dan PDF, mencakup lebih dari 80 layout berbeda untuk berbagai jenis aplikasi."
                     data-features="80+ Layouts,Figma & PDF,Free Forever,Regular Updates,Community Support"
                     data-tags="Free,Figma,Wireframe"
@@ -834,6 +931,80 @@ onMounted(() => {
                         <div class="card-actions">
                             <button class="btn-primary download card-add-cart" aria-label="Download gratis" style="width: 100%;">
                                 <i class="fa-solid fa-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+
+                <!-- Produk seller dinamis: memakai UI card yang sama dengan file ZIP -->
+                <article
+                    v-for="product in catalogProducts"
+                    :key="product.catalogId"
+                    class="product-card"
+                    :data-category="String(product.category || '').toLowerCase()"
+                    :data-price="product.price"
+                    :data-img="catalogImage(product)"
+                    :data-title="product.name"
+                    :data-store="product.storeName"
+                    :data-store-slug="product.storeSlug"
+                    :data-store-id="product.storeId"
+                    :data-store-application-id="product.storeApplicationId"
+                    :data-tenant-schema="product.tenantSchema"
+                    :data-product-id="product.id"
+                    :data-catalog-id="product.catalogId"
+                    :data-desc="product.description || 'Produk dari seller IC Market.'"
+                    :data-features="catalogFeatures(product).join(',')"
+                    :data-spec-updated="catalogSpecifications(product).lastUpdated"
+                    :data-spec-support="catalogSpecifications(product).support"
+                    :data-spec-format="catalogSpecifications(product).fileFormat"
+                    :data-spec-license="catalogSpecifications(product).license"
+                    :data-tags="catalogTags(product).join(',')"
+                    :data-rating="catalogRating(product)"
+                    :data-reviews="catalogReviews(product)"
+                    :data-free="product.price === 0 ? 'true' : 'false'"
+                    :data-type="product.type || 'Digital'"
+                >
+                    <div class="card-thumb">
+                        <img :src="catalogImage(product)" :alt="product.name" loading="lazy">
+                        <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
+                            {{ product.price === 0 ? 'Gratis' : 'Seller' }}
+                        </span>
+                        <button class="card-quick-view" aria-label="Quick View">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <span class="card-category">{{ product.category }}</span>
+                        <a class="card-store" :href="`/store/${product.storeSlug}`">
+                            Oleh: {{ product.storeName }}
+                        </a>
+                        <h3 class="card-title">{{ product.name }}</h3>
+                        <div class="card-footer">
+                            <span class="card-price" :class="{ 'free-price': product.price === 0 }">
+                                {{ product.price === 0 ? 'Gratis' : `Rp ${Number(product.price).toLocaleString('id-ID')}` }}
+                            </span>
+                            <div class="card-rating">
+                                <i class="fa-solid fa-star"></i>
+                                {{ catalogReviews(product) > 0 ? `${catalogRating(product).toFixed(1)} (${catalogReviews(product)})` : 'Baru' }}
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <button
+                                v-if="product.price > 0"
+                                class="btn-primary card-buy-direct"
+                                aria-label="Beli Langsung"
+                            >
+                                <i class="fa-solid fa-bolt"></i> Beli
+                            </button>
+                            <button
+                                class="btn-icon card-add-cart"
+                                :class="{ 'btn-primary download': product.price === 0 }"
+                                :style="product.price === 0 ? 'width:100%;' : ''"
+                                :aria-label="product.price === 0 ? 'Download gratis' : 'Tambahkan Keranjang'"
+                            >
+                                <i :class="product.price === 0 ? 'fa-solid fa-download' : 'fa-solid fa-cart-plus'"></i>
+                                <template v-if="product.price === 0"> Download</template>
                             </button>
                         </div>
                     </div>
@@ -1100,6 +1271,7 @@ onMounted(() => {
                 <div class="modal-detail-header">
                     <div class="modal-tags" id="modal-tags"></div>
                     <h2 class="modal-title" id="modal-title">—</h2>
+                    <a id="modal-seller-link" class="card-store" href="#" style="margin-top:0; margin-bottom:2px; width:max-content;">Oleh: —</a>
                     <div class="modal-price-row">
                         <span class="modal-price" id="modal-price">—</span>
                         <div class="modal-stars" id="modal-stars">
@@ -1122,19 +1294,19 @@ onMounted(() => {
                         <div class="specs-row">
                             <div class="spec-pill">
                                 <span class="spec-pill-label">Terakhir Update</span>
-                                <span class="spec-pill-val"><i class="fa-regular fa-calendar"></i>Agustus 2026</span>
+                                <span class="spec-pill-val"><i class="fa-regular fa-calendar"></i><span id="modal-spec-updated">Agustus 2026</span></span>
                             </div>
                             <div class="spec-pill">
                                 <span class="spec-pill-label">Dukungan</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-headset"></i>30 Hari</span>
+                                <span class="spec-pill-val"><i class="fa-solid fa-headset"></i><span id="modal-spec-support">30 Hari</span></span>
                             </div>
                             <div class="spec-pill">
                                 <span class="spec-pill-label">Format File</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-file-zipper"></i>.ZIP + Docs</span>
+                                <span class="spec-pill-val"><i class="fa-solid fa-file-zipper"></i><span id="modal-spec-format">.ZIP + Docs</span></span>
                             </div>
                             <div class="spec-pill">
                                 <span class="spec-pill-label">Lisensi</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-shield"></i>Extended</span>
+                                <span class="spec-pill-val"><i class="fa-solid fa-shield"></i><span id="modal-spec-license">Extended</span></span>
                             </div>
                         </div>
                     </div>

@@ -1,30 +1,384 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
 
-const form = reactive({ email: '', password: '' })
-const error = ref('')
-const loggedIn = ref(false)
+const route = useRoute()
+const { setSession } = useDemoAuth()
+const {
+  readApplications,
+  writeApplications,
+  setActiveApplication,
+  claimApplicationOwnership
+} = useSellerApplications()
 
-function submitLogin() {
+const form = reactive({
+  email: '',
+  password: ''
+})
+
+const error = ref('')
+
+const DUMMY_ACCOUNTS = [
+  {
+    id: 'dummy-buyer',
+    name: 'IC Market Buyer',
+    email: 'buyer@icmarket.test',
+    password: 'buyer123',
+    role: 'buyer'
+  },
+  {
+    id: 'dummy-seller',
+    name: 'IC Market Seller',
+    email: 'seller@icmarket.test',
+    password: 'seller123',
+    role: 'seller'
+  },
+  {
+    id: 'dummy-admin',
+    name: 'IC Market Admin',
+    email: 'admin@icmarket.test',
+    password: 'admin123',
+    role: 'admin'
+  },
+  {
+    id: 'dummy-finance',
+    name: 'IC Market Finance',
+    email: 'finance@icmarket.test',
+    password: 'finance123',
+    role: 'finance'
+  }
+]
+
+const redirectTarget = computed(() => {
+  const redirect = String(route.query.redirect || '/')
+  return redirect.startsWith('/') ? redirect : '/'
+})
+
+const ensureSellerDummyContext = (user) => {
+  if (!import.meta.client || user.role !== 'seller') return
+
+  try {
+    let applications = readApplications()
+
+    let existing = applications.find((application) =>
+      String(application.userId || '') === String(user.id || '') ||
+      String(application.userEmail || '').toLowerCase() === String(user.email || '').toLowerCase()
+    )
+
+    // Migrasi aman untuk project versi lama: jika akun seller belum punya
+    // toko dan hanya ada satu record legacy tanpa owner, seller boleh
+    // mengambil ownership record tersebut. Buyer tidak pernah menjalankan ini.
+    if (!existing) {
+      const unownedLegacy = applications.filter((application) =>
+        !application.userId && !application.userEmail
+      )
+
+      if (unownedLegacy.length === 1) {
+        claimApplicationOwnership(unownedLegacy[0].applicationId, user)
+        applications = readApplications()
+        existing = applications.find((application) =>
+          String(application.userId || '') === String(user.id || '') ||
+          String(application.userEmail || '').toLowerCase() === String(user.email || '').toLowerCase()
+        )
+      }
+    }
+
+    if (existing) {
+      // Tandai akun dummy seller sudah pernah memiliki seed store. Jika toko
+      // kemudian dihapus oleh seller, login berikutnya tidak membuatnya lagi.
+      if (user.id === 'dummy-seller') {
+        localStorage.setItem('icmarket_dummy_seller_seeded', '1')
+      }
+
+      if (existing.status === 'Approved') {
+        setActiveApplication(existing, user)
+      }
+
+      return
+    }
+
+    // Hanya akun dummy seller yang boleh mendapat toko seed otomatis.
+    // Akun seller sungguhan harus berasal dari onboarding/approval miliknya.
+    if (user.id !== 'dummy-seller') return
+
+    if (localStorage.getItem('icmarket_dummy_seller_seeded') === '1') {
+      return
+    }
+
+    const now = new Date().toISOString()
+    const application = {
+      applicationId: 'APP-DUMMY-SELLER',
+      userId: user.id,
+      userEmail: user.email,
+      userName: user.name,
+      storeName: 'Demo Seller Store',
+      storeSlug: 'demo-seller-store',
+      description: 'Toko seller untuk pengujian alur marketplace.',
+      category: 'Digital Product',
+      ownerName: user.name,
+      bankName: 'BCA',
+      accountNumber: '1234567890',
+      accountHolder: user.name,
+      status: 'Approved',
+      archived: false,
+      rejectionReason: '',
+      submittedAt: now,
+      firstSubmittedAt: now,
+      reviewedAt: now,
+      history: [{ status: 'Approved', note: 'Akun seller dummy.', at: now }]
+    }
+
+    writeApplications([...applications, application])
+    setActiveApplication(application, user)
+    localStorage.setItem('icmarket_dummy_seller_seeded', '1')
+  } catch {
+    // Login tetap berjalan walaupun konteks seller tidak dapat dibuat.
+  }
+}
+
+const resolveRoleFromApprovedStore = (user) => {
+  if (!import.meta.client || user.role !== 'buyer') return user
+
+  try {
+    const approved = readApplications().some((application) =>
+      application.status === 'Approved' &&
+      (
+        String(application.userId || '') === String(user.id || '') ||
+        String(application.userEmail || '').toLowerCase() === String(user.email || '').toLowerCase()
+      )
+    )
+
+    return approved ? { ...user, role: 'seller' } : user
+  } catch {
+    return user
+  }
+}
+const finishLogin = async (user) => {
+  const resolvedUser = resolveRoleFromApprovedStore(user)
+
+  const safeUser = {
+    id: resolvedUser.id,
+    name: resolvedUser.name,
+    email: resolvedUser.email,
+    role: resolvedUser.role
+  }
+
+  ensureSellerDummyContext(safeUser)
+  setSession(safeUser)
+
+  await navigateTo(redirectTarget.value)
+}
+
+async function submitLogin() {
   error.value = ''
-  const saved = JSON.parse(localStorage.getItem('icmarket_demo_user') || 'null')
-  if (!form.email || !form.password) { error.value = 'Email dan password wajib diisi.'; return }
-  if (!saved || saved.email !== form.email) { error.value = 'Akun demo tidak ditemukan. Silakan register terlebih dahulu.'; return }
-  loggedIn.value = true
+
+  const email = form.email.trim().toLowerCase()
+  const password = form.password
+
+  if (!email || !password) {
+    error.value = 'Email dan password wajib diisi.'
+    return
+  }
+
+  const dummyAccount = DUMMY_ACCOUNTS.find(
+    (account) =>
+      account.email.toLowerCase() === email &&
+      account.password === password
+  )
+
+  if (dummyAccount) {
+    await finishLogin(dummyAccount)
+    return
+  }
+
+  let registeredUser = null
+
+  try {
+    registeredUser = JSON.parse(
+      localStorage.getItem('icmarket_demo_user') || 'null'
+    )
+  } catch {
+    registeredUser = null
+  }
+
+  if (
+    registeredUser &&
+    String(registeredUser.email || '').toLowerCase() === email
+  ) {
+    const savedPassword = String(registeredUser.password || '')
+
+    if (savedPassword && savedPassword !== password) {
+      error.value = 'Email atau password salah.'
+      return
+    }
+
+    await finishLogin({
+      ...registeredUser,
+      role: registeredUser.role || 'buyer'
+    })
+    return
+  }
+
+  error.value = 'Email atau password salah.'
 }
 </script>
 
 <template>
-  <main class="auth-page"><section class="auth-card">
-    <div class="auth-heading"><span class="eyebrow">IC MARKET</span><h1>Login</h1><p>Masuk ke akun IC Market kamu.</p></div>
-    <div v-if="loggedIn" class="success-box"><h2>Login Berhasil</h2><p>Simulasi login Buyer berhasil. Integrasi SSO akan dilakukan saat backend tersedia.</p><NuxtLink class="primary-btn" to="/">Kembali ke Homepage</NuxtLink></div>
-    <form v-else @submit.prevent="submitLogin"><label>Email<input v-model="form.email" type="email" placeholder="nama@email.com" /></label><label>Password<input v-model="form.password" type="password" placeholder="Password" /></label><p v-if="error" class="error-text">{{ error }}</p><button class="primary-btn" type="submit">Masuk</button></form>
-    <p class="switch-text">Belum punya akun? <NuxtLink to="/register">Daftar di sini</NuxtLink></p>
-  </section></main>
+  <main class="auth-page">
+    <section class="auth-card">
+      <div class="auth-heading">
+        <span class="eyebrow">IC MARKET</span>
+        <h1>Login</h1>
+        <p>Masuk ke akun IC Market kamu.</p>
+      </div>
+
+      <div v-if="route.query.reason === 'auth'" class="info-box">
+        Login diperlukan untuk membuka halaman tersebut.
+      </div>
+
+      <form @submit.prevent="submitLogin">
+        <label>
+          Email
+          <input
+            v-model="form.email"
+            type="email"
+            autocomplete="email"
+            placeholder="nama@email.com"
+          />
+        </label>
+
+        <label>
+          Password
+          <input
+            v-model="form.password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Password"
+          />
+        </label>
+
+        <p v-if="error" class="error-text">
+          {{ error }}
+        </p>
+
+        <button class="primary-btn" type="submit">
+          Masuk
+        </button>
+      </form>
+
+      <p class="switch-text">
+        Belum punya akun?
+        <NuxtLink to="/register">Daftar di sini</NuxtLink>
+      </p>
+    </section>
+  </main>
 </template>
 
 <style scoped>
-.auth-page{min-height:100vh;display:grid;place-items:center;padding:32px 16px;background:var(--bg,#f6f7fb)}.auth-card{width:min(100%,460px);padding:32px;border:1px solid var(--border,#e5e7eb);border-radius:20px;background:var(--surface,#fff);box-shadow:0 12px 35px #0000000d}.auth-heading{text-align:center;margin-bottom:24px}.eyebrow{font-size:12px;font-weight:800;letter-spacing:2px;color:var(--primary,#635bff)}h1{margin:8px 0;font-size:30px}p{color:var(--muted,#6b7280);line-height:1.6}form{display:grid;gap:16px}label{display:grid;gap:7px;font-weight:700;font-size:14px}input{width:100%;box-sizing:border-box;padding:12px 13px;border:1px solid var(--border,#d1d5db);border-radius:10px;font:inherit}.primary-btn{display:inline-flex;justify-content:center;align-items:center;width:100%;box-sizing:border-box;padding:13px 16px;border:0;border-radius:10px;background:var(--primary,#635bff);color:white;font-weight:800;text-decoration:none;cursor:pointer}.error-text{color:#dc2626;font-size:14px;margin:0}.success-box{text-align:center}.switch-text{text-align:center;font-size:14px;margin:22px 0 0}.switch-text a{font-weight:800;color:var(--primary,#635bff)}
+.auth-page {
+  min-height: calc(100vh - 68px);
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background: var(--bg, #f6f7fb);
+}
+
+.auth-card {
+  width: min(100%, 500px);
+  padding: 32px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 20px;
+  background: var(--surface, #fff);
+  box-shadow: 0 12px 35px #0000000d;
+}
+
+.auth-heading {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.eyebrow {
+  color: var(--accent-2, #1472ff);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+h1 {
+  margin: 8px 0;
+  font-size: 30px;
+}
+
+p {
+  color: var(--muted, #6b7280);
+  line-height: 1.6;
+}
+
+form {
+  display: grid;
+  gap: 16px;
+}
+
+label {
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 13px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 10px;
+  font: inherit;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--accent-2, #1472ff);
+  box-shadow: 0 0 0 3px rgba(20, 114, 255, .1);
+}
+
+.primary-btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent, #111);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.info-box {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--subtle, #f0f0ec);
+  font-size: 13px;
+}
+
+.error-text {
+  margin: 0;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.switch-text {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+.switch-text a {
+  color: var(--accent-2, #1472ff);
+  font-weight: 800;
+}
 </style>

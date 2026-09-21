@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 definePageMeta({
@@ -7,18 +7,19 @@ definePageMeta({
 })
 
 const router = useRouter()
+const { session, syncSession } = useDemoAuth()
+const { createOrder, markOrderPaid, lastError } = useOrderStore()
 
-// Data Pembeli
 const buyerName = ref('')
 const buyerPhone = ref('')
 const buyerEmail = ref('')
 const buyerNotes = ref('')
 const agreeTerms = ref(false)
 const checkoutCart = ref([])
+const checkoutGroups = ref([])
 const isSubmitting = ref(false)
 const checkoutError = ref('')
 
-// Payment Method Toggle
 const methods = [
   { id: 'bank_transfer', name: 'Transfer Bank', sub: 'BCA, BNI, Mandiri', icon: 'fa-solid fa-building-columns' },
   { id: 'qris', name: 'QRIS', sub: 'GoPay, OVO, DANA, dll', icon: 'fa-solid fa-qrcode' },
@@ -27,11 +28,26 @@ const methods = [
 ]
 const selectedMethod = ref('bank_transfer')
 
-// Bank Selector
 const banks = ['BCA', 'BNI', 'Mandiri']
 const selectedBank = ref('BCA')
 const bankAccounts = { BCA: '1234 5678 9012', BNI: '0987 6543 2100', Mandiri: '1357 2468 9990' }
 const copyText = ref('Salin')
+
+const formatRp = (value) => new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  maximumFractionDigits: 0
+}).format(Number(value || 0))
+
+const groupSubtotal = (group) => (group.items || []).reduce(
+  (sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || item.qty || 1)),
+  0
+)
+
+const checkoutSubtotal = computed(() => checkoutCart.value.reduce(
+  (sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || item.qty || 1)),
+  0
+))
 
 const copyAccNum = () => {
   navigator.clipboard?.writeText(bankAccounts[selectedBank.value].replace(/\s/g, ''))
@@ -39,48 +55,46 @@ const copyAccNum = () => {
   setTimeout(() => { copyText.value = 'Salin' }, 2000)
 }
 
-const getCheckoutCart = () => {
+const readJson = (key, fallback) => {
   try {
-    return JSON.parse(localStorage.getItem('icmarket_cart')) || []
-  } catch (e) {
-    return []
+    const parsed = JSON.parse(localStorage.getItem(key) || 'null')
+    return parsed ?? fallback
+  } catch {
+    return fallback
   }
 }
 
-const createOrderPayload = (orderId) => {
-  const subtotal = checkoutCart.value.reduce((sum, item) => sum + (item.isFree ? 0 : Number(item.price) || 0), 0)
-  const discount = Number(localStorage.getItem('icmarket_discount')) || 0
-  const total = Math.max(0, subtotal - discount)
+const buildGroupsFromCart = (cart) => {
+  const bucket = {}
 
-  return {
-    orderId,
-    buyer: {
-      name: buyerName.value.trim(),
-      email: buyerEmail.value.trim(),
-      phone: buyerPhone.value.trim(),
-      notes: buyerNotes.value.trim()
-    },
-    payment: {
-      method: selectedMethod.value,
-      bank: selectedMethod.value === 'bank_transfer' ? selectedBank.value : null
-    },
-    items: checkoutCart.value.map(item => ({
-      id: item.id,
-      name: item.name,
-      price: Number(item.price) || 0,
-      quantity: Number(item.quantity) || 1,
-      store: item.store || 'Toko iCraft',
-      storeSlug: item.storeSlug || null,
-      isFree: Boolean(item.isFree)
-    })),
-    totals: {
-      subtotal,
-      discount,
-      total
-    },
-    status: 'pending',
-    createdAt: new Date().toISOString()
+  for (const item of cart) {
+    const key = item.storeApplicationId || item.storeSlug || item.store || 'icmarket'
+
+    if (!bucket[key]) {
+      bucket[key] = {
+        name: item.store || item.storeName || 'Toko IC Market',
+        slug: item.storeSlug || '',
+        storeId: item.storeId || '',
+        storeApplicationId: item.storeApplicationId || '',
+        tenantSchema: item.tenantSchema || '',
+        items: []
+      }
+    }
+
+    bucket[key].items.push(item)
   }
+
+  return Object.values(bucket)
+}
+
+const loadCheckoutData = () => {
+  const cart = readJson('icmarket_cart', [])
+  checkoutCart.value = Array.isArray(cart) ? cart : []
+
+  const savedGroups = readJson('icmarket_checkout_groups', [])
+  checkoutGroups.value = Array.isArray(savedGroups) && savedGroups.length
+    ? savedGroups
+    : buildGroupsFromCart(checkoutCart.value)
 }
 
 const placeOrder = async () => {
@@ -88,21 +102,23 @@ const placeOrder = async () => {
   checkoutError.value = ''
 
   if (!buyerName.value.trim() || !buyerEmail.value.trim() || !buyerPhone.value.trim()) {
-    alert('Mohon lengkapi data diri Anda terlebih dahulu.')
-    return
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail.value)) {
-    alert('Format email tidak valid.')
-    return
-  }
-  if (!agreeTerms.value) {
-    alert('Anda harus menyetujui Syarat & Ketentuan untuk melanjutkan.')
+    checkoutError.value = 'Mohon lengkapi nama, email, dan nomor WhatsApp.'
     return
   }
 
-  checkoutCart.value = getCheckoutCart()
-  if (checkoutCart.value.length === 0) {
-    alert('Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.')
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail.value)) {
+    checkoutError.value = 'Format email tidak valid.'
+    return
+  }
+
+  if (!agreeTerms.value) {
+    checkoutError.value = 'Anda harus menyetujui Syarat & Ketentuan untuk melanjutkan.'
+    return
+  }
+
+  loadCheckoutData()
+
+  if (!checkoutCart.value.length) {
     router.push('/cart')
     return
   }
@@ -110,16 +126,40 @@ const placeOrder = async () => {
   isSubmitting.value = true
 
   try {
-    const orderId = 'ICM-' + Date.now().toString(36).toUpperCase()
-    const orderPayload = createOrderPayload(orderId)
+    const discount = Number(localStorage.getItem('icmarket_discount')) || 0
 
-    // Adapter frontend sementara: siap diganti dengan POST /api/orders/create
-    // ketika backend/payment gateway sudah tersedia.
-    localStorage.setItem('icmarket_order_payload', JSON.stringify(orderPayload))
-    localStorage.setItem('icmarket_buyer', JSON.stringify(orderPayload.buyer))
+    const order = createOrder({
+      buyer: {
+        userId: session.value?.id || '',
+        name: buyerName.value.trim(),
+        email: buyerEmail.value.trim().toLowerCase(),
+        phone: buyerPhone.value.trim(),
+        notes: buyerNotes.value.trim()
+      },
+      payment: {
+        method: selectedMethod.value,
+        bank: selectedMethod.value === 'bank_transfer' ? selectedBank.value : null
+      },
+      groups: checkoutGroups.value,
+      cart: checkoutCart.value,
+      discount
+    })
+
+    if (!order) {
+      checkoutError.value = lastError.value || 'Pesanan belum dapat dibuat. Silakan kembali ke keranjang.'
+      return
+    }
+
+    localStorage.setItem('icmarket_buyer', JSON.stringify(order.buyer))
     localStorage.setItem('icmarket_method', selectedMethod.value)
-    localStorage.setItem('icmarket_order_id', orderId)
+    localStorage.setItem('icmarket_order_id', order.orderId)
     localStorage.setItem('icmarket_order_status', 'pending')
+
+    if (Number(order.totals?.total || 0) === 0) {
+      markOrderPaid(order.orderId)
+      router.push('/success')
+      return
+    }
 
     router.push('/payment')
   } catch (error) {
@@ -131,15 +171,24 @@ const placeOrder = async () => {
 }
 
 onMounted(() => {
-  try {
-    const cart = JSON.parse(localStorage.getItem('icmarket_cart')) || []
-    checkoutCart.value = cart
-    if (cart.length === 0) {
-      alert('Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.')
-      router.push('/cart')
-    }
-  } catch (e) {
+  syncSession()
+  loadCheckoutData()
+
+  if (!checkoutCart.value.length) {
     router.push('/cart')
+    return
+  }
+
+  if (session.value) {
+    buyerName.value = session.value.name || ''
+    buyerEmail.value = session.value.email || ''
+  } else {
+    const savedBuyer = readJson('icmarket_buyer', null)
+    if (savedBuyer) {
+      buyerName.value = savedBuyer.name || ''
+      buyerEmail.value = savedBuyer.email || ''
+      buyerPhone.value = savedBuyer.phone || ''
+    }
   }
 })
 </script>
@@ -180,6 +229,35 @@ onMounted(() => {
             <div class="form-group">
               <label class="form-label">Catatan (opsional)</label>
               <textarea v-model="buyerNotes" class="form-textarea" placeholder="Ada instruksi khusus? Tulis di sini…"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multi-vendor Order -->
+        <div class="flow-box">
+          <div class="flow-box-header">
+            <div class="flow-box-title"><i class="fa-solid fa-store"></i> Pesanan per Toko</div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);">{{ checkoutGroups.length }} toko</span>
+          </div>
+          <div class="flow-box-body checkout-store-list">
+            <div v-for="group in checkoutGroups" :key="group.storeApplicationId || group.slug || group.name" class="checkout-store-card">
+              <div class="checkout-store-head">
+                <div>
+                  <strong>{{ group.name }}</strong>
+                  <span>{{ group.items?.length || 0 }} produk</span>
+                </div>
+                <strong>{{ formatRp(groupSubtotal(group)) }}</strong>
+              </div>
+              <div class="checkout-store-items">
+                <div v-for="item in group.items" :key="item.catalogId || item.id" class="checkout-store-item">
+                  <span>{{ item.name }}</span>
+                  <span>{{ item.isFree ? 'Gratis' : formatRp(Number(item.price || 0) * Number(item.quantity || item.qty || 1)) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="checkout-store-total">
+              <span>Subtotal seluruh toko</span>
+              <strong>{{ formatRp(checkoutSubtotal) }}</strong>
             </div>
           </div>
         </div>
@@ -331,4 +409,15 @@ onMounted(() => {
 }
 .bank-sel-btn:hover { border-color: #aaa; color: var(--text); background: var(--subtle); }
 .bank-sel-btn.selected { border-color: var(--accent); color: var(--accent); background: #f0f5ff; }
+
+.checkout-store-list { gap: 12px; }
+.checkout-store-card { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.checkout-store-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; background:var(--subtle); }
+.checkout-store-head > div { display:grid; gap:2px; }
+.checkout-store-head span { color:var(--muted); font-size:.72rem; }
+.checkout-store-items { display:grid; gap:8px; padding:12px 14px; }
+.checkout-store-item { display:flex; justify-content:space-between; gap:14px; color:var(--muted); font-size:.78rem; }
+.checkout-store-item span:first-child { color:var(--text); font-weight:600; }
+.checkout-store-total { display:flex; justify-content:space-between; gap:12px; padding-top:2px; font-size:.82rem; }
+
 </style>
