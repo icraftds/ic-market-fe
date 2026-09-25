@@ -57,7 +57,7 @@ onBeforeUnmount(() => {
   <header class="global-nav">
     <div class="global-nav__inner">
       <NuxtLink to="/" class="global-nav__brand">
-        <span>IC</span> Market
+        <img src="/logo-market.png" alt="IC Market Logo" style="height: 36px; width: auto; display: block;" />
       </NuxtLink>
 
       <nav class="global-nav__links" aria-label="Navigasi utama">
