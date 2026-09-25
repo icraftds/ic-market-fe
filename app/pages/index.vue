@@ -116,7 +116,13 @@ onMounted(async () => {
         function getCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } }
         function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); window.dispatchEvent(new CustomEvent('icmarket-cart-updated')); }
 
+        function getSession() { try { return JSON.parse(localStorage.getItem('icmarket_auth_session')); } catch { return null; } }
+
         function addToCart(card) {
+            if (!getSession()) {
+                window.location.href = '/login';
+                return;
+            }
             const cart = getCart();
             const item = {
                 id:       card.dataset.catalogId || card.dataset.productId || (card.dataset.title.replace(/\s+/g,'-').toLowerCase() + '-' + Date.now()),

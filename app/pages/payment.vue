@@ -85,6 +85,11 @@ const completePayment = async () => {
 const confirmPayment = () => completePayment()
 
 onMounted(() => {
+  if (!session.value) {
+    router.push('/login')
+    return
+  }
+
   const order = getCurrentOrder()
 
   if (!order) {

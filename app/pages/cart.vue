@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 definePageMeta({ layout: 'flow' })
 
 const router = useRouter()
+const { session } = useDemoAuth()
 
 const cart = ref([])
 const promoCode = ref('')
@@ -170,6 +171,10 @@ const goCheckout = () => {
 }
 
 onMounted(() => {
+  if (!session.value) {
+    router.push('/login')
+    return
+  }
   loadCart()
   updateTotals()
 })

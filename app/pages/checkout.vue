@@ -178,6 +178,12 @@ const placeOrder = async () => {
 
 onMounted(() => {
   syncSession()
+
+  if (!session.value) {
+    router.push('/login')
+    return
+  }
+
   loadCheckoutData()
 
   if (!checkoutCart.value.length) {

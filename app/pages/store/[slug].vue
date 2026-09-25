@@ -6,6 +6,7 @@ definePageMeta({ layout: 'default' })
 
 const route = useRoute()
 const router = useRouter()
+const { session } = useDemoAuth()
 
 const {
   refreshCatalog,
@@ -180,6 +181,10 @@ const formatRp = (value) =>
     : 'Rp ' + Number(value).toLocaleString('id-ID')
 
 const addToCart = (product) => {
+  if (!session.value) {
+    router.push('/login')
+    return
+  }
   if (!store.value) return
 
   const current = JSON.parse(
