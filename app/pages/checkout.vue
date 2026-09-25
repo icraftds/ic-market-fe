@@ -21,13 +21,9 @@ const isSubmitting = ref(false)
 const checkoutError = ref('')
 
 const methods = [
-  { id: 'bank_transfer', name: 'Transfer Bank', sub: 'BCA, BNI, Mandiri', icon: 'fa-solid fa-building-columns' },
-  { id: 'qris', name: 'QRIS', sub: 'GoPay, OVO, DANA, dll', icon: 'fa-solid fa-qrcode' },
-  { id: 'credit_card', name: 'Kartu Kredit/Debit', sub: 'Visa, Mastercard', icon: 'fa-brands fa-cc-visa' },
-  { id: 'paypal', name: 'PayPal', sub: 'Bayar dalam USD', icon: 'fa-brands fa-paypal' },
-  { id: 'coin', name: 'IC Koin', sub: 'Bayar dengan saldo koin', icon: 'fa-solid fa-coins' }
+  { id: 'coin', name: 'iCoin-Z', sub: 'Bayar dengan saldo iCoin-Z', icon: 'icoin-icon', iconText: 'C' }
 ]
-const selectedMethod = ref('bank_transfer')
+const selectedMethod = ref('coin')
 
 const banks = ['BCA', 'BNI', 'Mandiri']
 const selectedBank = ref('BCA')
@@ -118,7 +114,7 @@ const placeOrder = async () => {
   }
 
   if (selectedMethod.value === 'coin' && (!session.value || session.value.coins < checkoutSubtotal.value)) {
-    checkoutError.value = 'Saldo koin tidak mencukupi untuk melakukan pembayaran.'
+    checkoutError.value = 'Saldo iCoin-Z tidak mencukupi untuk melakukan pembayaran. Silakan top up iCoin-Z terlebih dahulu.'
     return
   }
 
@@ -286,7 +282,10 @@ onMounted(() => {
                    :class="{ selected: selectedMethod === method.id }"
                    @click="selectedMethod = method.id">
                 <div class="pm-radio"></div>
-                <div class="pm-icon"><i :class="method.icon"></i></div>
+                <div class="pm-icon">
+                  <span v-if="method.iconText" :class="method.icon">{{ method.iconText }}</span>
+                  <i v-else :class="method.icon"></i>
+                </div>
                 <div class="pm-info">
                   <div class="pm-name">{{ method.name }}</div>
                   <div class="pm-sub">{{ method.sub }}</div>
@@ -365,11 +364,11 @@ onMounted(() => {
             <div v-if="selectedMethod === 'coin'" class="payment-detail-pane visible">
               <div class="flow-alert info">
                 <i class="fa-solid fa-coins"></i>
-                Saldo Koin Anda: <strong>{{ formatRp(session?.coins || 0).replace('Rp', '') }} Koin</strong>. Total pesanan akan langsung dipotong dari saldo koin.
+                Saldo iCoin-Z Anda: <strong>{{ formatRp(session?.coins || 0).replace('Rp', '') }} iCoin-Z</strong>. Total pesanan akan langsung dipotong dari saldo iCoin-Z.
               </div>
               <div v-if="(session?.coins || 0) < checkoutSubtotal" class="flow-alert warn" style="margin-top: 10px;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                Saldo koin tidak mencukupi untuk pesanan ini.
+                Saldo iCoin-Z tidak mencukupi untuk pesanan ini.
               </div>
             </div>
           </div>

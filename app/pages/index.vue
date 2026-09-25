@@ -123,13 +123,14 @@ onMounted(async () => {
                 window.location.href = '/login';
                 return;
             }
-            const cart = getCart();
+            let cart = getCart();
+            if (!Array.isArray(cart)) cart = [];
             const item = {
-                id:       card.dataset.catalogId || card.dataset.productId || (card.dataset.title.replace(/\s+/g,'-').toLowerCase() + '-' + Date.now()),
+                id:       card.dataset.catalogId || card.dataset.productId || ((card.dataset.title || 'Produk').replace(/\s+/g,'-').toLowerCase() + '-' + Date.now()),
                 catalogId: card.dataset.catalogId || '',
                 productId: card.dataset.productId || '',
-                name:     card.dataset.title,
-                category: card.dataset.category,
+                name:     card.dataset.title || 'Produk',
+                category: card.dataset.category || '',
                 store:    card.dataset.store || 'iCraft Demo Store',
                 storeSlug: card.dataset.storeSlug || '',
                 storeId: card.dataset.storeId || '',
@@ -142,7 +143,9 @@ onMounted(async () => {
                 type:     card.dataset.type || 'Digital'
             };
             // Prevent duplicate titles
-            if (!cart.find(i => (item.catalogId && i.catalogId === item.catalogId) || (i.name === item.name && i.store === item.store))) cart.push(item);
+            if (!cart.find(i => (item.catalogId && i.catalogId === item.catalogId) || (i.name === item.name && i.store === item.store))) {
+                cart.push(item);
+            }
             saveCart(cart);
             updateCartBadge();
         }
@@ -330,6 +333,16 @@ onMounted(async () => {
             // 2. Flying flyer (image)
             const rect = btn.getBoundingClientRect();
             const cartBtn = document.getElementById('cart-btn');
+            
+            // If cartBtn is missing, fallback immediately without animation
+            if (!cartBtn) {
+                setTimeout(() => {
+                    addToCart(card);
+                    showToast(`"${card.dataset.title}" ditambahkan ke keranjang!`);
+                }, 600);
+                return;
+            }
+
             const cartBtnRect = cartBtn.getBoundingClientRect();
             
             const flyer = document.createElement('div');
@@ -420,29 +433,33 @@ onMounted(async () => {
             });
         });
 
-        // Card "Beli Langsung" buttons
-        document.querySelectorAll('.card-buy-direct').forEach(btn => {
-            btn.addEventListener('click', e => {
+        // Use Event Delegation for buttons since dynamic cards are rendered asynchronously
+        document.addEventListener('click', e => {
+            const btnBuyDirect = e.target.closest('.card-buy-direct');
+            if (btnBuyDirect) {
                 e.stopPropagation();
-                const card = btn.closest('.product-card');
-                if (card.dataset.free === 'true') return;
-                addToCart(card);
-                window.location.href = '/checkout';
-            });
-        });
+                const card = btnBuyDirect.closest('.product-card');
+                if (card && card.dataset.free !== 'true') {
+                    addToCart(card);
+                    window.location.href = '/checkout';
+                }
+                return;
+            }
 
-        // Card "Tambahkan Keranjang" buttons
-        document.querySelectorAll('.card-add-cart').forEach(btn => {
-            btn.addEventListener('click', e => {
+            const btnAddCart = e.target.closest('.card-add-cart');
+            if (btnAddCart) {
                 e.stopPropagation();
-                const card = btn.closest('.product-card');
+                const card = btnAddCart.closest('.product-card');
+                if (!card) return;
+                
                 if (card.dataset.free === 'true') {
                     showToast(`Mulai mengunduh "${card.dataset.title}"...`);
                     return;
                 }
 
-                animateAddToCart(btn, card, false);
-            });
+                animateAddToCart(btnAddCart, card, false);
+                return;
+            }
         });
 
         /* ── Toast Notification ── */
@@ -547,7 +564,7 @@ onMounted(async () => {
                                 data-price="199000"
                                 data-img="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
                                 data-tags="Dashboard,HTML">
-                            <button class="btn-primary card-buy-direct" style="width:100%">
+                            <button class="btn-primary" style="width:100%">
                                 <i class="fa-solid fa-cart-shopping"></i> Tambah
                             </button>
                         </div>
@@ -582,7 +599,7 @@ onMounted(async () => {
                                 data-price="150000"
                                 data-img="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80"
                                 data-tags="Figma,Design">
-                            <button class="btn-primary card-buy-direct" style="width:100%">
+                            <button class="btn-primary" style="width:100%">
                                 <i class="fa-solid fa-cart-shopping"></i> Tambah
                             </button>
                         </div>
@@ -617,7 +634,7 @@ onMounted(async () => {
                                 data-price="350000"
                                 data-img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
                                 data-tags="HTML,E-Commerce">
-                            <button class="btn-primary card-buy-direct" style="width:100%">
+                            <button class="btn-primary" style="width:100%">
                                 <i class="fa-solid fa-cart-shopping"></i> Tambah
                             </button>
                         </div>

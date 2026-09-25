@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 definePageMeta({ layout: 'flow' })
 
 const router = useRouter()
-const { session } = useDemoAuth()
+const { session, syncSession } = useDemoAuth()
 
 const cart = ref([])
 const promoCode = ref('')
@@ -171,6 +171,8 @@ const goCheckout = () => {
 }
 
 onMounted(() => {
+  syncSession()
+
   if (!session.value) {
     router.push('/login')
     return
@@ -302,6 +304,6 @@ onMounted(() => {
 .cart-store-link { color: inherit; text-decoration: none; font-weight: 700; }
 .cart-store-link:hover { color: var(--accent-2, #6366f1); text-decoration: underline; }
 .cart-store-count { margin-left: auto; color: var(--muted, #6b7280); font-size: 0.72rem; font-weight: 500; }
-.cart-store-group .cart-item { border-radius: 0; border-left: 0; border-right: 0; }
+.cart-store-group .cart-item { padding: 20px 16px; border-radius: 0; border-left: 0; border-right: 0; }
 .cart-store-group .cart-item:last-child { border-bottom: 0; }
 </style>

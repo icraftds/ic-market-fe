@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'blank' })
 
 const form = reactive({
   name: '',
@@ -47,6 +47,8 @@ function submitRegister() {
 <template>
   <main class="auth-page">
     <section class="auth-card">
+      <button class="back-btn" type="button" @click="$router.push('/')">← Kembali ke Beranda</button>
+
       <div class="auth-heading">
         <span class="eyebrow">IC MARKET</span>
         <h1>Buat Akun</h1>
@@ -143,6 +145,22 @@ function submitRegister() {
 .auth-heading {
   text-align: center;
   margin-bottom: 24px;
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted, #6b7280);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.back-btn:hover {
+  color: var(--accent, #111);
 }
 
 .eyebrow {

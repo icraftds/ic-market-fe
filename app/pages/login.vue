@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
 const { setSession } = useDemoAuth()
@@ -227,6 +227,8 @@ async function submitLogin() {
 <template>
   <main class="auth-page">
     <section class="auth-card">
+      <button class="back-btn" type="button" @click="$router.push('/')">← Kembali ke Beranda</button>
+      
       <div class="auth-heading">
         <span class="eyebrow">IC MARKET</span>
         <h1>Login</h1>
@@ -296,6 +298,22 @@ async function submitLogin() {
 .auth-heading {
   margin-bottom: 24px;
   text-align: center;
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted, #6b7280);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.back-btn:hover {
+  color: var(--accent, #111);
 }
 
 .eyebrow {

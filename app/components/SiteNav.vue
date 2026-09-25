@@ -6,6 +6,14 @@ const { session, syncSession, logout } = useDemoAuth()
 
 const role = computed(() => session.value?.role || null)
 const isLoggedIn = computed(() => Boolean(session.value))
+const isMenuOpen = ref(false)
+const dropdownRef = ref(null)
+
+const handleClickOutside = (e) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+    isMenuOpen.value = false
+  }
+}
 
 const roleLabel = computed(() => {
   const labels = {
@@ -44,12 +52,14 @@ onMounted(() => {
   window.addEventListener('icmarket-cart-updated', readCartCount)
   window.addEventListener('icmarket-auth-updated', refreshNavigation)
   window.addEventListener('storage', refreshNavigation)
+  window.addEventListener('click', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('icmarket-cart-updated', readCartCount)
   window.removeEventListener('icmarket-auth-updated', refreshNavigation)
   window.removeEventListener('storage', refreshNavigation)
+  window.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -63,7 +73,7 @@ onBeforeUnmount(() => {
       <nav class="global-nav__links" aria-label="Navigasi utama">
         <NuxtLink to="/" class="global-nav__link">Beranda</NuxtLink>
 
-        <NuxtLink to="/cart" class="global-nav__link global-nav__cart">
+        <NuxtLink to="/cart" id="cart-btn" class="global-nav__link global-nav__cart">
           <span>Keranjang</span>
           <span v-if="cartCount > 0" class="cart-badge" aria-label="Jumlah produk di keranjang">
             {{ cartCount > 99 ? '99+' : cartCount }}
@@ -115,26 +125,156 @@ onBeforeUnmount(() => {
         <NuxtLink to="/register" class="global-nav__register">Daftar</NuxtLink>
       </div>
 
-      <div v-else class="global-nav__actions logged-actions">
-        <div class="account-summary">
-          <strong>{{ session.name }}</strong>
-          <span style="color:var(--accent-2); font-size: 11px; text-transform: none; font-weight: 700;">
-            <i class="fa-solid fa-coins"></i> {{ Number(session.coins || 0).toLocaleString('id-ID') }} Koin
-          </span>
-          <span>{{ roleLabel }}</span>
+      <div v-else class="global-nav__actions logged-actions" ref="dropdownRef">
+        <button class="user-menu-trigger" @click="isMenuOpen = !isMenuOpen" aria-label="Menu Pengguna">
+          <div class="user-avatar">{{ session.name ? session.name.charAt(0).toUpperCase() : 'U' }}</div>
+          <div class="user-details">
+            <span class="user-name">{{ session.name }}</span>
+            <span class="user-role">{{ roleLabel }}</span>
+          </div>
+        </button>
+
+        <div class="coin-balance-col">
+          <NuxtLink to="/topup" class="coin-amount" title="Top Up iCoin-Z">
+            <span class="icoin-icon">C</span> Rp {{ Number(session.coins || 0).toLocaleString('id-ID') }} iCoin-Z
+          </NuxtLink>
         </div>
-        <button class="logout-button" type="button" @click="handleLogout">Keluar</button>
+
+        <div v-if="isMenuOpen" class="user-dropdown">
+          <NuxtLink to="/orders" class="dropdown-item" @click="isMenuOpen = false">Pesanan Saya</NuxtLink>
+          <NuxtLink to="/cart" class="dropdown-item" @click="isMenuOpen = false">Keranjang</NuxtLink>
+          <NuxtLink to="/profile" class="dropdown-item" @click="isMenuOpen = false">Profile</NuxtLink>
+          <button type="button" class="dropdown-item danger" @click="handleLogout">Keluar</button>
+        </div>
       </div>
     </div>
   </header>
 </template>
 
 <style scoped>
-.logged-actions{gap:10px}
-.account-summary{display:grid;text-align:right;line-height:1.15}
-.account-summary strong{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
-.account-summary span{margin-top:3px;color:var(--accent-2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-.logout-button{border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;background:var(--surface);color:var(--text);font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
-.logout-button:hover{background:var(--subtle)}
-@media(max-width:760px){.account-summary{display:none}}
+.logged-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.user-menu-trigger:hover {
+  background: var(--subtle, #f3f4f6);
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent, #111);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text, #111);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  font-size: 11px;
+  color: var(--muted, #6b7280);
+  text-transform: capitalize;
+}
+
+.coin-balance-col {
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  border-left: 1px solid var(--border, #e5e7eb);
+}
+
+.coin-amount {
+  color: var(--accent-2, #1472ff);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.coin-amount:hover {
+  background: var(--subtle, #f3f4f6);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: #fff;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  z-index: 100;
+}
+
+.dropdown-item {
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text, #111);
+  text-decoration: none;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dropdown-item:hover {
+  background: var(--subtle, #f3f4f6);
+}
+
+.dropdown-item.danger {
+  color: #dc2626;
+  margin-top: 4px;
+  border-top: 1px solid var(--border, #e5e7eb);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+@media(max-width:760px){
+  .user-details, .coin-balance-col { display: none; }
+}
 </style>

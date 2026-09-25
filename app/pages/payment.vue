@@ -300,12 +300,12 @@ onUnmounted(() => {
         <!-- Coin Processing -->
         <div v-if="method === 'coin'" class="flow-box">
           <div class="flow-box-header">
-            <div class="flow-box-title"><i class="fa-solid fa-coins"></i> Memproses Pembayaran Koin</div>
+            <div class="flow-box-title"><span class="icoin-icon">C</span> Memproses Pembayaran iCoin-Z</div>
           </div>
           <div class="auto-confirm">
             <div class="spin-ring"></div>
-            <div class="auto-confirm-title">Memotong Saldo Koin…</div>
-            <div class="auto-confirm-sub">Saldo Koin Anda sedang dipotong. Halaman akan otomatis berlanjut setelah berhasil.</div>
+            <div class="auto-confirm-title">Memotong Saldo iCoin-Z…</div>
+            <div class="auto-confirm-sub">Saldo iCoin-Z Anda sedang dipotong. Halaman akan otomatis berlanjut setelah berhasil.</div>
             <div style="width:100%;height:4px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:8px;">
               <div :style="{ width: ccProgress + '%' }" style="height:100%;background:var(--accent-2);border-radius:99px;transition:width 3s linear;"></div>
             </div>
