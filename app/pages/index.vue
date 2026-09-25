@@ -295,7 +295,72 @@ onMounted(async () => {
         previewModal.addEventListener('click', e => {
             if (e.target === previewModal) closePreviewModal();
         });
-        document.querySelector('.modal-drag-bar')?.addEventListener('click', closePreviewModal);
+        document.querySelector('.modal-drag-bar').addEventListener('click', closePreviewModal);
+
+        function animateAddToCart(btn, card, isModal) {
+            // 1. Success state on button
+            const originalHTML = btn.innerHTML;
+            const originalBg = btn.style.background;
+            const originalColor = btn.style.color;
+            const originalBorder = btn.style.borderColor;
+            
+            btn.style.background = '#10b981';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#10b981';
+            
+            if (isModal) {
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Berhasil!</span>`;
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-check"></i>`;
+            }
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.background = originalBg;
+                btn.style.color = originalColor;
+                btn.style.borderColor = originalBorder;
+            }, 1500);
+
+            // 2. Flying flyer (image)
+            const rect = btn.getBoundingClientRect();
+            const cartBtn = document.getElementById('cart-btn');
+            const cartBtnRect = cartBtn.getBoundingClientRect();
+            
+            const flyer = document.createElement('div');
+            flyer.className = 'flying-flyer';
+            
+            if (card.dataset.img) {
+                flyer.style.backgroundImage = `url(${card.dataset.img})`;
+            }
+            
+            const startSize = 60; 
+            flyer.style.width = startSize + 'px';
+            flyer.style.height = startSize + 'px';
+            flyer.style.left = (rect.left + rect.width/2 - startSize/2) + 'px';
+            flyer.style.top = (rect.top + rect.height/2 - startSize/2) + 'px';
+            
+            document.body.appendChild(flyer);
+            
+            flyer.offsetHeight; // reflow
+            
+            requestAnimationFrame(() => {
+                flyer.style.left = (cartBtnRect.left + cartBtnRect.width/2 - 10) + 'px';
+                flyer.style.top = (cartBtnRect.top + cartBtnRect.height/2 - 10) + 'px';
+                flyer.style.transform = 'scale(0.2) rotate(15deg)';
+                flyer.style.opacity = '0.5';
+            });
+            
+            setTimeout(() => {
+                flyer.remove();
+                
+                cartBtn.classList.remove('cart-bump');
+                void cartBtn.offsetWidth; // reflow
+                cartBtn.classList.add('cart-bump');
+                
+                addToCart(card);
+                showToast(`"${card.dataset.title}" ditambahkan ke keranjang!`);
+            }, 800);
+        }
 
         document.getElementById('modal-buy-direct-btn').addEventListener('click', () => {
             const btn  = document.getElementById('modal-buy-direct-btn');
@@ -311,32 +376,7 @@ onMounted(async () => {
             if (!card) return;
             if (card.dataset.free === 'true') return; // download logic
 
-            // Flying Dot Animation
-            const rect = btn.getBoundingClientRect();
-            const cartButton = document.getElementById('cart-btn');
-            const cartBtnRect = cartButton ? cartButton.getBoundingClientRect() : null;
-            
-            const dot = document.createElement('div');
-            dot.className = 'flying-dot';
-            dot.style.left = (rect.left + rect.width/2 - 10) + 'px';
-            dot.style.top = (rect.top + rect.height/2 - 10) + 'px';
-            document.body.appendChild(dot);
-            
-            requestAnimationFrame(() => {
-                if (cartBtnRect) {
-                    dot.style.left = (cartBtnRect.left + cartBtnRect.width/2 - 10) + 'px';
-                    dot.style.top = (cartBtnRect.top + cartBtnRect.height/2 - 10) + 'px';
-                    dot.style.transform = 'scale(0.2)';
-                } else {
-                    dot.style.opacity = '0';
-                }
-            });
-            
-            setTimeout(() => {
-                dot.remove();
-                addToCart(card);
-                showToast(`"${card.dataset.title}" ditambahkan ke keranjang!`);
-            }, 700);
+            animateAddToCart(btn, card, true);
 
             closePreviewModal();
         });
@@ -395,29 +435,7 @@ onMounted(async () => {
                     return;
                 }
 
-
-                // Flying Dot Animation
-                const rect = btn.getBoundingClientRect();
-                const cartButton = document.getElementById('cart-btn');
-            const cartBtnRect = cartButton ? cartButton.getBoundingClientRect() : null;
-                
-                const dot = document.createElement('div');
-                dot.className = 'flying-dot';
-                dot.style.left = (rect.left + rect.width/2 - 10) + 'px';
-                dot.style.top = (rect.top + rect.height/2 - 10) + 'px';
-                document.body.appendChild(dot);
-                
-                requestAnimationFrame(() => {
-                    dot.style.left = (cartBtnRect.left + cartBtnRect.width/2 - 10) + 'px';
-                    dot.style.top = (cartBtnRect.top + cartBtnRect.height/2 - 10) + 'px';
-                    dot.style.transform = 'scale(0.2)';
-                });
-                
-                setTimeout(() => {
-                    dot.remove();
-                    addToCart(card);
-                    showToast(`"${card.dataset.title}" ditambahkan ke keranjang!`);
-                }, 700);
+                animateAddToCart(btn, card, false);
             });
         });
 

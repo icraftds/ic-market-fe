@@ -383,19 +383,17 @@ a { text-decoration: none; color: inherit; }
 }
 
 /* ── Stack Card Base ── */
-.stack-card {
-    position: absolute;
+.hero-card-stack .stack-card {
+    position: absolute !important;
     top: 0;
     left: 0;
     width: 100%;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
     border-radius: 16px;
     overflow: hidden;
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
     transform-origin: bottom center;
     cursor: pointer;
     user-select: none;
@@ -403,37 +401,37 @@ a { text-decoration: none; color: inherit; }
 
 /* ── Stack Positioning ── */
 /* Card 1 (Front/Active) */
-.stack-card--1 {
+.hero-card-stack .stack-card--1 {
     z-index: 3;
-    transform: translateY(0) scale(1) rotate(0deg);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    transform: translateY(0) scale(1) rotate(0deg) !important;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.3) !important;
 }
 
 /* Card 2 (Middle) */
-.stack-card--2 {
+.hero-card-stack .stack-card--2 {
     z-index: 2;
-    transform: translateY(-15px) translateX(40px) scale(0.92) rotate(12deg);
+    transform: translateY(-15px) translateX(40px) scale(0.92) rotate(12deg) !important;
     opacity: 0.85;
 }
 
 /* Card 3 (Back) */
-.stack-card--3 {
+.hero-card-stack .stack-card--3 {
     z-index: 1;
-    transform: translateY(-15px) translateX(-40px) scale(0.92) rotate(-12deg);
+    transform: translateY(-15px) translateX(-40px) scale(0.92) rotate(-12deg) !important;
     opacity: 0.85;
 }
 
 /* ── Hover Effects (Per-Card) ── */
-.stack-card--1:hover {
-    transform: translateY(-6px) scale(1.02) rotate(0deg);
+.hero-card-stack .stack-card--1:hover {
+    transform: translateY(-6px) scale(1.02) rotate(0deg) !important;
 }
-.stack-card--2:hover {
-    transform: translateY(-20px) translateX(45px) scale(0.95) rotate(14deg);
+.hero-card-stack .stack-card--2:hover {
+    transform: translateY(-20px) translateX(45px) scale(0.95) rotate(14deg) !important;
     opacity: 1;
     z-index: 4; /* Pop to front on hover slightly */
 }
-.stack-card--3:hover {
-    transform: translateY(-20px) translateX(-45px) scale(0.95) rotate(-14deg);
+.hero-card-stack .stack-card--3:hover {
+    transform: translateY(-20px) translateX(-45px) scale(0.95) rotate(-14deg) !important;
     opacity: 1;
     z-index: 4; /* Pop to front on hover slightly */
 }
@@ -1571,16 +1569,27 @@ a { text-decoration: none; color: inherit; }
     .site-footer { grid-template-columns: 1fr; }
 }
 
-/* Flying Dot Animation */
-.flying-dot {
+/* ── Add to Cart Animations ── */
+.flying-flyer {
     position: fixed;
-    width: 20px;
-    height: 20px;
-    background: var(--red); /* Menggunakan warna merah (badge) agar terlihat jelas */
-    border-radius: 50%;
     z-index: 10000;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--primary); /* Fallback color */
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     pointer-events: none;
-    transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+    transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+@keyframes cartBump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2) translateY(-4px); }
+    100% { transform: scale(1); }
+}
+
+.cart-bump {
+    animation: cartBump 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 #__nuxt {
     display: contents;
