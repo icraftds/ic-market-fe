@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 definePageMeta({ layout: 'flow' })
 const router = useRouter()
 const { getCurrentOrder, markOrderPaid } = useOrderStore()
+const { session, setSession } = useDemoAuth()
 
 const formatRp = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 
@@ -57,6 +58,13 @@ const completePayment = async () => {
   paymentError.value = ''
 
   try {
+    if (method.value === 'coin' && session.value) {
+      setSession({
+        ...session.value,
+        coins: Math.max(0, session.value.coins - total.value)
+      })
+    }
+
     const updated = markOrderPaid(orderId.value)
 
     if (!updated) {
@@ -105,7 +113,7 @@ onMounted(() => {
 
   transferTotal.value = total.value + uniqueSuffix.value
 
-  if (method.value === 'credit_card') {
+  if (method.value === 'credit_card' || method.value === 'coin') {
     autoPaymentTimer = setTimeout(() => {
       ccProgress.value = 100
     }, 100)
@@ -284,6 +292,21 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- Coin Processing -->
+        <div v-if="method === 'coin'" class="flow-box">
+          <div class="flow-box-header">
+            <div class="flow-box-title"><i class="fa-solid fa-coins"></i> Memproses Pembayaran Koin</div>
+          </div>
+          <div class="auto-confirm">
+            <div class="spin-ring"></div>
+            <div class="auto-confirm-title">Memotong Saldo Koin…</div>
+            <div class="auto-confirm-sub">Saldo Koin Anda sedang dipotong. Halaman akan otomatis berlanjut setelah berhasil.</div>
+            <div style="width:100%;height:4px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:8px;">
+              <div :style="{ width: ccProgress + '%' }" style="height:100%;background:var(--accent-2);border-radius:99px;transition:width 3s linear;"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- PayPal -->
         <div v-if="method === 'paypal'" class="flow-box">
           <div class="flow-box-header">
@@ -310,7 +333,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Submit -->
-        <div v-if="method !== 'credit_card' && method !== 'paypal'">
+        <div v-if="method !== 'credit_card' && method !== 'paypal' && method !== 'coin'">
           <button class="flow-cta" :disabled="isVerifying" @click="confirmPayment">
             <span v-if="isVerifying"><div style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;"></div> Memverifikasi…</span>
             <span v-else><i class="fa-solid fa-paper-plane"></i> Saya Sudah Bayar</span>

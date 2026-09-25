@@ -118,6 +118,9 @@ onBeforeUnmount(() => {
       <div v-else class="global-nav__actions logged-actions">
         <div class="account-summary">
           <strong>{{ session.name }}</strong>
+          <span style="color:var(--accent-2); font-size: 11px; text-transform: none; font-weight: 700;">
+            <i class="fa-solid fa-coins"></i> {{ Number(session.coins || 0).toLocaleString('id-ID') }} Koin
+          </span>
           <span>{{ roleLabel }}</span>
         </div>
         <button class="logout-button" type="button" @click="handleLogout">Keluar</button>

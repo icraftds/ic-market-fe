@@ -24,7 +24,8 @@ const methods = [
   { id: 'bank_transfer', name: 'Transfer Bank', sub: 'BCA, BNI, Mandiri', icon: 'fa-solid fa-building-columns' },
   { id: 'qris', name: 'QRIS', sub: 'GoPay, OVO, DANA, dll', icon: 'fa-solid fa-qrcode' },
   { id: 'credit_card', name: 'Kartu Kredit/Debit', sub: 'Visa, Mastercard', icon: 'fa-brands fa-cc-visa' },
-  { id: 'paypal', name: 'PayPal', sub: 'Bayar dalam USD', icon: 'fa-brands fa-paypal' }
+  { id: 'paypal', name: 'PayPal', sub: 'Bayar dalam USD', icon: 'fa-brands fa-paypal' },
+  { id: 'coin', name: 'IC Koin', sub: 'Bayar dengan saldo koin', icon: 'fa-solid fa-coins' }
 ]
 const selectedMethod = ref('bank_transfer')
 
@@ -113,6 +114,11 @@ const placeOrder = async () => {
 
   if (!agreeTerms.value) {
     checkoutError.value = 'Anda harus menyetujui Syarat & Ketentuan untuk melanjutkan.'
+    return
+  }
+
+  if (selectedMethod.value === 'coin' && (!session.value || session.value.coins < checkoutSubtotal.value)) {
+    checkoutError.value = 'Saldo koin tidak mencukupi untuk melakukan pembayaran.'
     return
   }
 
@@ -346,6 +352,18 @@ onMounted(() => {
               <div class="flow-alert info">
                 <i class="fa-brands fa-paypal"></i>
                 Anda akan diarahkan ke halaman PayPal setelah konfirmasi. Pembayaran diproses dalam USD berdasarkan kurs saat transaksi.
+              </div>
+            </div>
+
+            <!-- Coin Detail -->
+            <div v-if="selectedMethod === 'coin'" class="payment-detail-pane visible">
+              <div class="flow-alert info">
+                <i class="fa-solid fa-coins"></i>
+                Saldo Koin Anda: <strong>{{ formatRp(session?.coins || 0).replace('Rp', '') }} Koin</strong>. Total pesanan akan langsung dipotong dari saldo koin.
+              </div>
+              <div v-if="(session?.coins || 0) < checkoutSubtotal" class="flow-alert warn" style="margin-top: 10px;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Saldo koin tidak mencukupi untuk pesanan ini.
               </div>
             </div>
           </div>

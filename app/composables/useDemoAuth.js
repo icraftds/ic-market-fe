@@ -16,6 +16,7 @@ export const useDemoAuth = () => {
             name: user.name || user.fullName || 'IC Market User',
             email: user.email || '',
             role: user.role || 'buyer',
+            coins: user.coins ?? 5000000,
             loggedInAt: user.loggedInAt || new Date().toISOString()
         }
     }
