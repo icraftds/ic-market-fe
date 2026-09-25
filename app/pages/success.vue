@@ -48,6 +48,23 @@ const canDownload = (item) =>
 
 const downloadItem = (item) => {
   if (!canDownload(item)) return
+  
+  const files = item.product?.digital_files || item.digital_files || []
+  
+  if (files.length === 0) {
+    alert('File download belum tersedia. Hubungi seller untuk mendapatkan link download.')
+    return
+  }
+  
+  // Buka semua file download
+  files.forEach((file, i) => {
+    if (file.downloadUrl) {
+      setTimeout(() => {
+        window.open(file.downloadUrl, '_blank')
+      }, i * 300)
+    }
+  })
+  
   item.downloaded = true
 }
 
@@ -57,24 +74,51 @@ const copyOrderId = () => {
 
 const confettiPieces = ref([])
 
-onMounted(() => {
-  const order = getCurrentOrder()
-
-  if (!order) {
+onMounted(async () => {
+  const tId = localStorage.getItem('icmarket_order_id')
+  
+  if (!tId) {
     navigateTo('/orders')
     return
   }
+  
+  orderId.value = tId
+  
+  try {
+    const config = useRuntimeConfig()
+    const token = useCookie('icmarket_auth_token').value
+    const response = await $fetch(`${config.public.apiBase}/orders`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+    })
+    
+    if (response.success) {
+      const order = response.data.find(o => o.transaction_id === tId)
+      if (order) {
+        method.value = order.payment_method || 'bank_transfer'
+        // Normalkan semua status "sudah bayar" menjadi 'paid'
+        const rawStatus = String(order.status || '').toLowerCase()
+        paymentStatus.value = (['paid', 'selesai', 'completed', 'success'].includes(rawStatus)) ? 'paid' : rawStatus
+        buyerEmail.value = order.buyer?.email || 'pembeli@email.com'
+        cart.value = (Array.isArray(order.items) ? order.items : []).map((item) => ({
+          ...item,
+          name: item.product?.name || 'Produk',
+          category: item.product?.category || 'Digital',
+          img: item.product?.img || item.product?.images?.[0] || '',
+          type: item.product?.type || 'Digital',
+          digital_files: item.product?.digital_files || [],
+          // Produk digital langsung siap download setelah bayar
+          downloaded: false
+        }))
+      } else {
+        navigateTo('/orders')
+        return
+      }
+    }
+  } catch (err) {
+    console.error('Gagal fetch order details', err)
+  }
 
-  orderId.value = order.orderId
-  method.value = order.payment?.method || 'bank_transfer'
-  paymentStatus.value = order.paymentStatus || 'paid'
-  buyerEmail.value = order.buyer?.email || 'pembeli@email.com'
-  cart.value = (Array.isArray(order.items) ? order.items : []).map((item) => ({
-    ...item,
-    downloaded: false
-  }))
-
-  const savedRating = Number(localStorage.getItem(`icmarket_rating_${order.orderId}`) || 0)
+  const savedRating = Number(localStorage.getItem(`icmarket_rating_${tId}`) || 0)
   if (savedRating >= 1 && savedRating <= 5) {
     rated.value = true
     litStars.value = savedRating

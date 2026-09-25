@@ -88,18 +88,59 @@ const getProductsForActiveStore = () => {
   return Array.isArray(products) ? products.map(normalizeProduct) : []
 }
 
-const loadProduct = () => {
-  if (!import.meta.client || !route.query.id || !activeStoreId.value) return
+const loadProduct = async () => {
+  if (!import.meta.client || !route.query.id) return
 
-  const products = getProductsForActiveStore()
-  const product = products.find((item) => item.id === route.query.id)
-
-  if (product) {
-    form.value = normalizeProduct(product)
-    return
+  try {
+    const config = useRuntimeConfig()
+    const response = await $fetch(`${config.public.apiBase}/products/${route.query.id}`)
+    
+    if (response.success && response.data) {
+      const data = response.data
+      // Normalize images: pastikan setiap gambar punya `id` agar tombol Hapus berfungsi
+      const rawImages = Array.isArray(data.images) ? data.images : []
+      const normalizedImages = rawImages.map((img, index) => {
+        // Kalau gambar cuma string URL (dari DB)
+        if (typeof img === 'string') {
+          return {
+            id: `existing-${index}-${Date.now()}`,
+            fileName: `Gambar ${index + 1}`,
+            imageUrl: img,
+            altText: data.name || '',
+            displayOrder: index
+          }
+        }
+        // Kalau sudah object tapi tidak punya id
+        return {
+          ...img,
+          id: img.id || `existing-${index}-${Date.now()}`
+        }
+      })
+      form.value = {
+          ...createEmptyForm(),
+          ...data,
+          images: normalizedImages,
+          // features: pastikan selalu array, minimal ['']
+          features: Array.isArray(data.features) && data.features.length
+              ? data.features
+              : [''],
+          // specifications: merge dengan default
+          specifications: {
+              lastUpdated: data.specifications?.lastUpdated || '',
+              support: data.specifications?.support || '30 Hari',
+              fileFormat: data.specifications?.fileFormat || '',
+              license: data.specifications?.license || 'Personal'
+          },
+          // digital_files dari backend → digitalFiles di form
+          digitalFiles: Array.isArray(data.digital_files) ? data.digital_files : []
+      }
+      return
+    }
+  } catch (e) {
+    console.error(e)
   }
 
-  errorMessage.value = 'Produk tidak ditemukan pada toko yang sedang aktif.'
+  errorMessage.value = 'Produk tidak ditemukan.'
 }
 
 const addFeature = () => {
@@ -168,16 +209,22 @@ const handleImages = async (event) => {
 
   if (!files.length) return
 
-  if (form.value.images.length + files.length > MAX_IMAGES) {
-    errorMessage.value = `Maksimal ${MAX_IMAGES} gambar per produk.`
+  const slotsRemaining = MAX_IMAGES - form.value.images.length
+  if (slotsRemaining <= 0) {
+    errorMessage.value = `Gambar sudah mencapai maksimal ${MAX_IMAGES} buah. Hapus dulu gambar yang ada.`
     input.value = ''
     return
+  }
+
+  const filesToProcess = files.slice(0, slotsRemaining)
+  if (files.length > slotsRemaining) {
+    assetMessage.value = `Hanya ${slotsRemaining} gambar pertama yang diproses (maks. ${MAX_IMAGES}).`
   }
 
   isProcessingImages.value = true
 
   try {
-    for (const file of files) {
+    for (const file of filesToProcess) {
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
         throw new Error('Gambar harus berformat JPG, PNG, atau WebP.')
       }
@@ -206,6 +253,7 @@ const handleImages = async (event) => {
 }
 
 const removeImage = (imageId) => {
+  if (!imageId) return
   form.value.images = form.value.images
     .filter((image) => image.id !== imageId)
     .map((image, index) => ({ ...image, displayOrder: index }))
@@ -216,7 +264,7 @@ const makeStorageKey = (fileName) => {
   return `pending-upload/${Date.now()}-${cleanName}`
 }
 
-const handleDigitalFiles = (event) => {
+const handleDigitalFiles = async (event) => {
   errorMessage.value = ''
   assetMessage.value = ''
 
@@ -249,21 +297,51 @@ const handleDigitalFiles = (event) => {
     const duplicate = form.value.digitalFiles.some(
       (item) => item.fileName === file.name && Number(item.fileSizeBytes) === file.size
     )
-
     if (duplicate) continue
 
+    // Tambah file dengan status uploading
+    const tempId = `file-${Date.now()}-${Math.random().toString(16).slice(2)}`
     form.value.digitalFiles.push({
-      id: `file-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      id: tempId,
       fileName: file.name,
       fileSizeBytes: file.size,
       mimeType: file.type || 'application/octet-stream',
-      storageProvider: 'cloudflare_r2',
-      storageKey: makeStorageKey(file.name),
-      version: '1.0.0'
+      version: '1.0.0',
+      downloadUrl: '',
+      uploading: true
     })
+
+    // Upload ke backend
+    try {
+      const config = useRuntimeConfig()
+      const authToken = useCookie('icmarket_auth_token')
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await $fetch(`${config.public.apiBase}/seller/files/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken.value}` },
+        body: formData
+      })
+
+      if (response.success) {
+        const idx = form.value.digitalFiles.findIndex(f => f.id === tempId)
+        if (idx !== -1) {
+          form.value.digitalFiles[idx] = {
+            ...form.value.digitalFiles[idx],
+            downloadUrl: response.data.url,
+            uploading: false
+          }
+        }
+        assetMessage.value = `${file.name} berhasil diupload.`
+      }
+    } catch (err) {
+      const idx = form.value.digitalFiles.findIndex(f => f.id === tempId)
+      if (idx !== -1) form.value.digitalFiles[idx].uploading = false
+      errorMessage.value = `Gagal mengupload ${file.name}. Coba lagi.`
+    }
   }
 
-  assetMessage.value = 'Metadata file digital berhasil ditambahkan. File asli belum di-upload karena backend belum tersedia.'
   input.value = ''
 }
 
@@ -271,22 +349,21 @@ const removeDigitalFile = (fileId) => {
   form.value.digitalFiles = form.value.digitalFiles.filter((file) => file.id !== fileId)
 }
 
-const saveProduct = () => {
+const addManualFile = () => {
+  if (form.value.digitalFiles.length >= MAX_DIGITAL_FILES) return
+  form.value.digitalFiles.push({
+    id: `file-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    fileName: 'File Digital',
+    fileSizeBytes: 0,
+    mimeType: 'application/octet-stream',
+    version: '1.0.0',
+    downloadUrl: ''
+  })
+}
+
+const saveProduct = async () => {
   errorMessage.value = ''
   savedMessage.value = ''
-
-  if (
-    !activeStore.value ||
-    !activeStoreId.value
-  ) {
-    errorMessage.value = 'Pilih toko aktif yang sudah disetujui sebelum menyimpan produk.'
-    return
-  }
-
-  if (!canManageActiveStore.value) {
-    errorMessage.value = 'Toko sedang ditangguhkan admin. Produk tidak dapat disimpan.'
-    return
-  }
 
   if (!form.value.name.trim() || !form.value.category.trim()) {
     errorMessage.value = 'Nama dan kategori produk wajib diisi.'
@@ -299,54 +376,65 @@ const saveProduct = () => {
   }
 
   try {
-    const products = getProductsForActiveStore()
-    const now = new Date().toISOString()
+    const config = useRuntimeConfig()
+    const authToken = useCookie('icmarket_auth_token')
+
+    // Gambar di-encode sebagai array URL/Base64 untuk backend
+    const imageUrls = form.value.images.map((img) => img.imageUrl).filter(Boolean)
+
+    // Fitur: hapus yang kosong
+    const cleanedFeatures = (form.value.features || [])
+      .map(f => String(f || '').trim())
+      .filter(Boolean)
+
+    // Spesifikasi
+    const cleanedSpecs = {
+      lastUpdated: String(form.value.specifications?.lastUpdated || '').trim(),
+      support: String(form.value.specifications?.support || '').trim(),
+      fileFormat: String(form.value.specifications?.fileFormat || '').trim(),
+      license: String(form.value.specifications?.license || '').trim()
+    }
+
+    // File digital (simpan metadata saja, tanpa isi binary)
+    const cleanedDigitalFiles = (form.value.digitalFiles || []).map(f => ({
+      id: f.id,
+      fileName: f.fileName,
+      fileSizeBytes: f.fileSizeBytes,
+      mimeType: f.mimeType,
+      version: f.version || '1.0.0',
+      downloadUrl: f.downloadUrl || ''
+    }))
 
     const payload = {
-      ...normalizeProduct(form.value),
       name: form.value.name.trim(),
+      category: form.value.category,
+      type: form.value.type,
       price: Number(form.value.price),
       stock: Number(form.value.stock),
-      features: cleanFeatures(),
-      specifications: cleanSpecifications(),
-      digitalFiles: form.value.type === 'Digital' ? form.value.digitalFiles : [],
-      thumbnailUrl: form.value.images[0]?.imageUrl || '',
-      storeApplicationId: activeStore.value.applicationId,
-      storeSlug: activeStore.value.storeSlug,
-      storeName: activeStore.value.storeName,
-      updatedAt: now
+      description: form.value.description,
+      images: imageUrls,
+      features: cleanedFeatures,
+      specifications: cleanedSpecs,
+      digital_files: cleanedDigitalFiles
     }
 
     if (isEditing.value) {
-      const index = products.findIndex((item) => item.id === route.query.id)
-      if (index === -1) {
-        errorMessage.value = 'Produk yang ingin diedit tidak ditemukan pada toko aktif.'
-        return
-      }
-
-      products[index] = {
-        ...products[index],
-        ...payload,
-        id: route.query.id,
-        createdAt: products[index].createdAt || now
-      }
+      await $fetch(`${config.public.apiBase}/seller/products/${route.query.id}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${authToken.value}` },
+          body: payload
+      })
     } else {
-      products.push({
-        ...payload,
-        id: `prod-${Date.now()}`,
-        createdAt: now
+      await $fetch(`${config.public.apiBase}/seller/products`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${authToken.value}` },
+          body: payload
       })
     }
 
-    writeStoreData('products', products, activeStoreId.value)
-    savedMessage.value = `Produk berhasil disimpan ke ${activeStore.value.storeName}.`
+    savedMessage.value = `Produk berhasil disimpan.`
     setTimeout(() => router.push('/seller/products'), 500)
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      errorMessage.value = 'Penyimpanan browser penuh. Kurangi jumlah/ukuran gambar lalu coba lagi.'
-      return
-    }
-
     errorMessage.value = 'Produk gagal disimpan. Silakan coba lagi.'
   }
 }
@@ -624,17 +712,35 @@ onMounted(initializePage)
 
         <div v-if="form.digitalFiles.length" class="digital-file-list">
           <article v-for="file in form.digitalFiles" :key="file.id" class="digital-file-card">
-            <div class="file-icon">FILE</div>
+            <div class="file-icon">
+              <span v-if="file.uploading" class="upload-spinner">⏳</span>
+              <span v-else-if="file.downloadUrl">✅</span>
+              <span v-else>📄</span>
+            </div>
             <div class="file-info">
               <strong>{{ file.fileName }}</strong>
               <span>{{ formatBytes(file.fileSizeBytes) }} · {{ file.mimeType }}</span>
+              <span v-if="file.uploading" class="upload-status">Mengupload...</span>
+              <span v-else-if="file.downloadUrl" class="upload-status success">File siap didownload ✓</span>
+              <span v-else class="upload-status warn">Belum ada URL download</span>
               <label>
                 Versi
                 <input v-model="file.version" maxlength="20" placeholder="1.0.0" />
               </label>
+              <label>
+                URL Download (Opsional — isi jika ingin pakai link eksternal seperti Google Drive)
+                <input v-model="file.downloadUrl" type="url" placeholder="https://drive.google.com/..." />
+              </label>
             </div>
             <button type="button" class="remove-button" @click="removeDigitalFile(file.id)">Hapus</button>
           </article>
+        </div>
+        
+        <div class="manual-add-file">
+          <button type="button" class="add-file-btn" @click="addManualFile" :disabled="form.digitalFiles.length >= MAX_DIGITAL_FILES">
+            + Tambah File via Link Eksternal
+          </button>
+          <p class="hint-text">Atau unggah langsung melalui tombol pilih file di atas.</p>
         </div>
       </section>
 
@@ -1020,13 +1126,20 @@ onMounted(initializePage)
 }
 
 .file-info label {
-  max-width: 150px;
+  max-width: 300px;
   font-size: 11px;
 }
 
 .file-info input {
   padding: 8px 10px;
 }
+
+.upload-status {
+  font-size: 11px;
+  color: var(--muted);
+}
+.upload-status.success { color: #16803d; font-weight: 700; }
+.upload-status.warn { color: #c2410c; }
 
 .remove-button {
   border: 0;

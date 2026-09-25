@@ -1,107 +1,38 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 
-const LEGACY_STORAGE_KEY = 'icmarket_seller_products'
 const products = ref([])
 const search = ref('')
 const statusFilter = ref('all')
 const deleteTarget = ref(null)
-const storeMessage = ref('')
+const config = useRuntimeConfig()
+const authToken = useCookie('icmarket_auth_token')
+const sellerStore = ref(null)
 
-const {
-  activeStore,
-  approvedStores,
-  activeStoreId,
-  isActiveStoreSuspended,
-  canManageActiveStore,
-  refreshStores,
-  selectStore,
-  getTenantStatus,
-  readStoreData,
-  writeStoreData,
-  migrateLegacyStoreData
-} = useActiveStore()
-
-const normalizeProduct = (product) => ({
-  ...product,
-  status: product?.status === 'active' ? 'published' : (product?.status || 'draft'),
-  images: Array.isArray(product?.images) ? product.images : [],
-  digitalFiles: Array.isArray(product?.digitalFiles) ? product.digitalFiles : []
-})
-
-const loadProductsForStore = (storeId = activeStoreId.value) => {
-  if (
-    !import.meta.client ||
-    !storeId ||
-    !canManageActiveStore.value
-  ) {
-    products.value = []
-    return
-  }
-
-  const saved = readStoreData('products', [], storeId)
-  products.value = Array.isArray(saved)
-    ? saved.map(normalizeProduct)
-    : []
+const loadStoreInfo = async () => {
+    try {
+        const response = await $fetch(`${config.public.apiBase}/seller/store`, {
+            headers: { Authorization: `Bearer ${authToken.value}` }
+        })
+        if (response.success) {
+            sellerStore.value = response.data
+        }
+    } catch (e) {
+        console.error(e)
+    }
 }
 
-const loadProducts = () => {
-  if (!import.meta.client) return
-
-  const store = refreshStores()
-
-  if (!store) {
-    products.value = []
-    storeMessage.value = 'Belum ada toko aktif yang sudah disetujui.'
-    return
-  }
-
-  if (isActiveStoreSuspended.value) {
-    products.value = []
-    storeMessage.value = 'Toko sedang ditangguhkan admin dan produk tidak dapat dikelola.'
-    return
-  }
-
-  // Data global lama dipindahkan satu kali ke toko aktif agar produk lama tidak hilang.
-  migrateLegacyStoreData(
-    'products',
-    LEGACY_STORAGE_KEY,
-    store.applicationId
-  )
-
-  loadProductsForStore(store.applicationId)
-  storeMessage.value = ''
-}
-
-const saveProducts = () => {
-  if (
-    !import.meta.client ||
-    !activeStoreId.value ||
-    !canManageActiveStore.value
-  ) return
-  writeStoreData('products', products.value, activeStoreId.value)
-}
-
-const handleStoreChange = (event) => {
-  const selected = selectStore(event.target.value)
-
-  if (!selected) {
-    storeMessage.value = 'Toko yang dipilih tidak valid.'
-    return
-  }
-
-  search.value = ''
-  statusFilter.value = 'all'
-  deleteTarget.value = null
-
-  if (isActiveStoreSuspended.value) {
-    products.value = []
-    storeMessage.value = 'Toko sedang ditangguhkan admin dan produk tidak dapat dikelola.'
-    return
-  }
-
-  storeMessage.value = ''
-  loadProductsForStore(selected.applicationId)
+const loadProducts = async () => {
+    try {
+        const response = await $fetch(`${config.public.apiBase}/seller/products`, {
+            headers: { Authorization: `Bearer ${authToken.value}` }
+        })
+        if (response.success) {
+            products.value = response.data
+        }
+    } catch (error) {
+        console.error('Failed to load products', error)
+    }
 }
 
 const filteredProducts = computed(() => products.value.filter((product) => {
@@ -119,25 +50,43 @@ const formatPrice = (value) => new Intl.NumberFormat('id-ID', {
   maximumFractionDigits: 0
 }).format(Number(value) || 0)
 
-const productThumbnail = (product) => product.thumbnailUrl || product.images?.[0]?.imageUrl || ''
+const productThumbnail = (product) => product.images?.[0] || ''
 const productInitial = (product) => product.name?.trim()?.charAt(0)?.toUpperCase() || 'P'
 
 const requestDelete = (product) => { deleteTarget.value = product }
 const cancelDelete = () => { deleteTarget.value = null }
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (!deleteTarget.value) return
-  products.value = products.value.filter((product) => product.id !== deleteTarget.value.id)
-  saveProducts()
+  try {
+      await $fetch(`${config.public.apiBase}/seller/products/${deleteTarget.value.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authToken.value}` }
+      })
+      products.value = products.value.filter((product) => product.id !== deleteTarget.value.id)
+  } catch (error) {
+      console.error(error)
+  }
   deleteTarget.value = null
 }
 
-const toggleStatus = (product) => {
-  product.status = product.status === 'published' ? 'inactive' : 'published'
-  product.updatedAt = new Date().toISOString()
-  saveProducts()
+const toggleStatus = async (product) => {
+  const newStatus = product.status === 'published' ? 'inactive' : 'published'
+  try {
+      await $fetch(`${config.public.apiBase}/seller/products/${product.id}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${authToken.value}` },
+          body: { status: newStatus }
+      })
+      product.status = newStatus
+  } catch (error) {
+      console.error(error)
+  }
 }
 
-onMounted(loadProducts)
+onMounted(() => {
+    loadStoreInfo()
+    loadProducts()
+})
 </script>
 
 <template>
@@ -146,54 +95,23 @@ onMounted(loadProducts)
       <div>
         <p class="eyebrow">SELLER CENTER</p>
         <h1>Produk Saya</h1>
-        <p class="page-description">Kelola katalog, gambar, dan aset digital khusus toko yang sedang aktif.</p>
-        <p v-if="activeStore" class="active-store-text">Toko aktif: <strong>{{ activeStore.storeName }}</strong></p>
+        <p class="page-description">Kelola katalog, gambar, dan aset digital toko Anda.</p>
+        <p v-if="sellerStore" class="active-store-text">Toko aktif: <strong>{{ sellerStore.name }}</strong></p>
       </div>
 
       <div class="hero-actions">
-        <label v-if="approvedStores.length > 1" class="store-switcher">
-          <span>Pilih toko</span>
-          <select :value="activeStoreId" @change="handleStoreChange">
-            <option
-              v-for="store in approvedStores"
-              :key="store.applicationId"
-              :value="store.applicationId"
-            >
-              {{ store.storeName }}{{ getTenantStatus(store) === 'suspended' ? ' (Suspended)' : '' }}
-            </option>
-          </select>
-        </label>
-
-        <NuxtLink v-if="activeStore && canManageActiveStore" to="/seller/products/create" class="primary-button">
+        <NuxtLink to="/seller/products/create" class="primary-button">
           + Tambah Produk
         </NuxtLink>
       </div>
     </section>
 
-    <section v-if="!activeStore" class="no-store-state">
-      <h2>Belum ada toko aktif</h2>
-      <p>{{ storeMessage || 'Produk hanya dapat dikelola setelah toko disetujui.' }}</p>
-      <NuxtLink to="/seller/register" class="primary-button">Lihat Toko Saya</NuxtLink>
-    </section>
-
-    <section v-else-if="isActiveStoreSuspended" class="no-store-state suspended-state">
-      <h2>Toko sedang ditangguhkan</h2>
-      <p>
-        Produk {{ activeStore.storeName }} tidak dapat ditambah, diedit,
-        diaktifkan, atau dihapus sampai admin mengaktifkan toko kembali.
-      </p>
-      <NuxtLink to="/seller/register" class="primary-button">
-        Lihat Toko Saya
-      </NuxtLink>
-    </section>
-
-    <template v-else>
+    <template v-if="sellerStore">
     <section class="product-toolbar">
       <input v-model="search" class="search-input" type="search" placeholder="Cari nama atau kategori produk..." />
       <select v-model="statusFilter" class="filter-select">
         <option value="all">Semua Status</option>
         <option value="published">Dipublikasikan</option>
-        <option value="draft">Draft</option>
         <option value="inactive">Nonaktif</option>
       </select>
     </section>
@@ -201,8 +119,6 @@ onMounted(loadProducts)
     <section class="product-summary">
       <div><strong>{{ products.length }}</strong><span>Total Produk</span></div>
       <div><strong>{{ products.filter(p => p.status === 'published').length }}</strong><span>Dipublikasikan</span></div>
-      <div><strong>{{ products.filter(p => p.status === 'draft').length }}</strong><span>Draft</span></div>
-      <div><strong>{{ products.reduce((total, p) => total + (p.digitalFiles?.length || 0), 0) }}</strong><span>File Digital</span></div>
     </section>
 
     <section class="products-panel">
@@ -226,7 +142,7 @@ onMounted(loadProducts)
                   <div v-else class="product-thumb product-thumb-placeholder">{{ productInitial(product) }}</div>
                   <div>
                     <strong>{{ product.name }}</strong>
-                    <small>{{ product.type }} · {{ product.images?.length || 0 }} gambar · {{ product.digitalFiles?.length || 0 }} file</small>
+                    <small>{{ product.type }}</small>
                   </div>
                 </div>
               </td>
@@ -235,7 +151,7 @@ onMounted(loadProducts)
               <td>{{ product.stock }}</td>
               <td>
                 <span class="status-badge" :class="product.status">
-                  {{ product.status === 'published' ? 'Dipublikasikan' : (product.status === 'inactive' ? 'Nonaktif' : 'Draft') }}
+                  {{ product.status === 'published' ? 'Dipublikasikan' : 'Nonaktif' }}
                 </span>
               </td>
               <td class="actions-cell">
@@ -253,13 +169,17 @@ onMounted(loadProducts)
         <p>Coba ubah kata kunci atau tambahkan produk baru.</p>
       </div>
     </section>
-
     </template>
+    
+    <section v-else class="empty-state">
+        <h2>Anda belum mendaftarkan toko</h2>
+        <p>Silahkan daftar toko terlebih dahulu di menu dashboard.</p>
+    </section>
 
     <div v-if="deleteTarget" class="modal-backdrop">
       <div class="confirm-modal">
         <h2>Hapus produk?</h2>
-        <p>Produk <strong>{{ deleteTarget.name }}</strong> akan dihapus dari daftar lokal.</p>
+        <p>Produk <strong>{{ deleteTarget.name }}</strong> akan dihapus secara permanen.</p>
         <div class="modal-actions">
           <button class="secondary-button" @click="cancelDelete">Batal</button>
           <button class="danger-button" @click="confirmDelete">Ya, Hapus</button>
@@ -325,54 +245,6 @@ onMounted(loadProducts)
   margin-top: 10px;
   color: var(--muted);
   font-size: 13px;
-}
-
-.hero-actions {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.store-switcher {
-  display: grid;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.store-switcher select {
-  min-width: 190px;
-  padding: 11px 13px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-}
-
-.no-store-state {
-  display: grid;
-  justify-items: start;
-  gap: 10px;
-  padding: 28px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--surface);
-}
-
-.no-store-state p {
-  margin: 0 0 4px;
-  color: var(--muted);
-}
-
-.suspended-state {
-  border-color: #fecaca;
-}
-
-.suspended-state h2 {
-  color: #991b1b;
 }
 
 .product-toolbar {
@@ -597,11 +469,6 @@ onMounted(loadProducts)
     width: 100%;
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .store-switcher select,
-  .hero-actions .primary-button {
-    width: 100%;
   }
 
   .product-toolbar {

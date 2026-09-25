@@ -57,26 +57,10 @@ const normalizeCartItem = (item = {}) => {
 const itemIdentity = (item) =>
   item.catalogId || `${item.storeSlug}:${item.productId || item.id || item.name}`
 
-const loadCart = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem('icmarket_cart') || '[]')
-    const source = Array.isArray(parsed) ? parsed : []
-    const seen = new Set()
-
-    cart.value = source
-      .map(normalizeCartItem)
-      .filter((item) => {
-        const identity = itemIdentity(item)
-        if (seen.has(identity)) return false
-        seen.add(identity)
-        return true
-      })
-
-    // Simpan kembali format baru agar checkout selalu mendapat identitas tenant lengkap.
-    saveCart()
-  } catch {
-    cart.value = []
-  }
+const loadCart = async () => {
+  const { fetchCart } = useCart()
+  const fetchedCart = await fetchCart()
+  cart.value = fetchedCart.map(normalizeCartItem)
 }
 
 const groupedCart = computed(() => {
@@ -110,13 +94,17 @@ const groupedCart = computed(() => {
 })
 
 const saveCart = () => {
-  localStorage.setItem('icmarket_cart', JSON.stringify(cart.value))
-  window.dispatchEvent(new CustomEvent('icmarket-cart-updated'))
+  // Now managed by backend API
 }
 
-const removeItem = (idx) => {
+const removeItem = async (idx) => {
+  const item = cart.value[idx]
+  if (item && item.cart_id) {
+    const { removeFromCart } = useCart()
+    await removeFromCart(item.cart_id)
+  }
+  
   cart.value.splice(idx, 1)
-  saveCart()
   discountPct.value = 0
   promoCode.value = ''
   promoMsg.value = ''
@@ -170,14 +158,14 @@ const goCheckout = () => {
   router.push('/checkout')
 }
 
-onMounted(() => {
-  syncSession()
+onMounted(async () => {
+  await syncSession()
 
   if (!session.value) {
     router.push('/login')
     return
   }
-  loadCart()
+  await loadCart()
   updateTotals()
 })
 </script>

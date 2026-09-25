@@ -1,7 +1,7 @@
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
     const { session, syncSession } = useDemoAuth()
 
-    syncSession()
+    await syncSession()
 
     const path = to.path
     const role = session.value?.role || null

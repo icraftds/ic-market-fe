@@ -392,98 +392,40 @@ export const useProductCatalog = () => {
      *      ↓
      * Buyer Catalog
      */
-    const refreshCatalog = () => {
+    const refreshCatalog = async () => {
         if (!import.meta.client) {
             products.value = []
             stores.value = []
-
             return []
         }
 
-        const result = []
-
-        const allStores =
-            buildStoreRegistry()
-
-        for (
-            const store
-            of allStores
-        ) {
-            /*
-             * Suspended store
-             * tidak boleh muncul ke buyer.
-             */
-            if (
-                store.status !== 'active'
-            ) {
-                continue
+        try {
+            const config = useRuntimeConfig()
+            const response = await $fetch(`${config.public.apiBase}/products`)
+            if (response.success) {
+                products.value = response.data.map(p => {
+                    const rawImages = Array.isArray(p.images) ? p.images : []
+                    // images bisa berupa array string URL atau array object
+                    const thumbnailUrl = p.thumbnailUrl ||
+                        (typeof rawImages[0] === 'string' ? rawImages[0] : rawImages[0]?.imageUrl) ||
+                        ''
+                    return {
+                        ...p,
+                        images: rawImages,
+                        thumbnailUrl,
+                        storeName: p.seller?.name || 'Seller IC Market',
+                        storeSlug: p.seller?.name ? p.seller.name.toLowerCase().replace(/\s+/g, '-') : 'seller-ic-market',
+                        storeId: p.seller_id
+                    }
+                })
+                lastUpdatedAt.value = new Date().toISOString()
+                return products.value
             }
-
-            const storeProducts =
-                readStoreProducts(
-                    store
-                )
-
-            for (
-                const rawProduct
-                of storeProducts
-            ) {
-                const product =
-                    normalizeProduct(
-                        rawProduct,
-                        store
-                    )
-
-                /*
-                 * Draft / inactive
-                 * tidak masuk marketplace.
-                 */
-                if (
-                    product.status !==
-                    'published'
-                ) {
-                    continue
-                }
-
-                result.push(
-                    product
-                )
-            }
+        } catch (error) {
+            console.error('Failed to fetch products from backend:', error)
         }
 
-        /*
-         * Produk terbaru muncul lebih atas.
-         */
-        result.sort(
-            (a, b) => {
-                const aTime =
-                    new Date(
-                        a.updatedAt ||
-                        a.createdAt ||
-                        0
-                    ).getTime()
-
-                const bTime =
-                    new Date(
-                        b.updatedAt ||
-                        b.createdAt ||
-                        0
-                    ).getTime()
-
-                return (
-                    bTime -
-                    aTime
-                )
-            }
-        )
-
-        products.value =
-            result
-
-        lastUpdatedAt.value =
-            new Date().toISOString()
-
-        return result
+        return []
     }
 
     /*

@@ -12,12 +12,20 @@ const total = ref(0)
 
 const formatRp = (n) => 'Rp ' + n.toLocaleString('id-ID')
 
-// We will expose a method to refresh the totals so parents can update it
-const refresh = () => {
-  try { cart.value = JSON.parse(localStorage.getItem('icmarket_cart')) || [] } catch (e) { cart.value = [] }
-  subtotal.value = Number(localStorage.getItem('icmarket_subtotal')) || 0
+const { fetchCart } = useCart()
+
+const refresh = async () => {
+  const fetchedCart = await fetchCart()
+  cart.value = fetchedCart
+  
+  let newSubtotal = 0
+  cart.value.forEach(item => {
+    newSubtotal += item.price * (item.quantity || 1)
+  })
+  subtotal.value = newSubtotal
+  
   discount.value = Number(localStorage.getItem('icmarket_discount')) || 0
-  total.value = Number(localStorage.getItem('icmarket_total')) || subtotal.value
+  total.value = subtotal.value - (subtotal.value * (discount.value / 100))
 }
 
 onMounted(() => {

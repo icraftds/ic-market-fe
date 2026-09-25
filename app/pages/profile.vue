@@ -29,35 +29,41 @@ onMounted(() => {
   }
 })
 
-const saveProfile = () => {
+const isSubmitting = ref(false)
+
+const saveProfile = async () => {
   if (!session.value) return
   
-  // Update local session data
-  const updatedSession = {
-    ...session.value,
-    name: form.value.name
-  }
+  isSubmitting.value = true
+  const config = useRuntimeConfig()
+  const token = useCookie('icmarket_auth_token')
   
-  localStorage.setItem('icmarket_auth_session', JSON.stringify(updatedSession))
-  
-  // Update registered user database if it's the same email
   try {
-    const demoUser = JSON.parse(localStorage.getItem('icmarket_demo_user') || 'null')
-    if (demoUser && demoUser.email === updatedSession.email) {
-      localStorage.setItem('icmarket_demo_user', JSON.stringify({
-        ...demoUser,
-        name: updatedSession.name
-      }))
+    const response = await $fetch(`${config.public.apiBase}/user`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token.value}`
+      },
+      body: {
+        name: form.value.name
+      }
+    })
+    
+    if (response.success) {
+      await syncSession()
+      
+      if (import.meta.client) {
+        window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
+      }
+      
+      successMsg.value = 'Profil berhasil diperbarui!'
+      setTimeout(() => { successMsg.value = '' }, 3000)
     }
-  } catch (e) {}
-
-  syncSession()
-  
-  // Update the global window event for profile update
-  window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
-  
-  successMsg.value = 'Profil berhasil diperbarui!'
-  setTimeout(() => { successMsg.value = '' }, 3000)
+  } catch (error) {
+    console.error('Failed to update profile:', error)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -101,7 +107,9 @@ const saveProfile = () => {
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="primary-button">Simpan Perubahan</button>
+            <button type="submit" class="primary-button" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan' }}
+            </button>
             <span v-if="successMsg" class="success-text"><i class="fa-solid fa-check"></i> {{ successMsg }}</span>
           </div>
         </form>

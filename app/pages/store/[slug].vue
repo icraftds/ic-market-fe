@@ -180,46 +180,18 @@ const formatRp = (value) =>
     ? 'Gratis'
     : 'Rp ' + Number(value).toLocaleString('id-ID')
 
-const addToCart = (product) => {
+const { addToCart: apiAddToCart } = useCart()
+
+const addToCart = async (product) => {
   if (!session.value) {
     router.push('/login')
     return
   }
   if (!store.value) return
 
-  const current = JSON.parse(
-    localStorage.getItem('icmarket_cart') || '[]'
-  )
-
-  const item = {
-    id: product.catalogId || product.id || `${product.name}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    catalogId: product.catalogId || '',
-    productId: product.productId || product.id || '',
-    name: product.name,
-    category: product.category,
-    price: Number(product.price || 0),
-    tags: Array.isArray(product.tags) ? product.tags : [],
-    store: store.value.name,
-    storeSlug: slug.value,
-    storeId: product.storeId || store.value.storeId || '',
-    storeApplicationId: product.storeApplicationId || store.value.applicationId || '',
-    tenantSchema: product.tenantSchema || store.value.schemaName || '',
-    type: product.type || 'Digital',
-    digitalFiles: Array.isArray(product.digitalFiles) ? product.digitalFiles : [],
-    isFree: Number(product.price || 0) === 0,
-    img: product.image
-  }
-
-  const exists = current.some(
-    (saved) =>
-      (item.catalogId && saved.catalogId === item.catalogId) ||
-      (saved.name === item.name && saved.store === item.store)
-  )
-
-  if (!exists) {
-    current.push(item)
-    localStorage.setItem('icmarket_cart', JSON.stringify(current))
-    window.dispatchEvent(new CustomEvent('icmarket-cart-updated'))
+  const productId = product.productId || product.id
+  if (productId) {
+    await apiAddToCart(productId, 1)
   }
 
   router.push('/cart')

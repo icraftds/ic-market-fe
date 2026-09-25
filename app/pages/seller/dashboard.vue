@@ -1,304 +1,103 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
 
-const LEGACY_PRODUCTS_KEY = 'icmarket_seller_products'
-const SETTINGS_KEY = 'icmarket_system_settings'
-const STORES_KEY = 'icmarket_admin_stores'
+const config = useRuntimeConfig()
+const authToken = useCookie('icmarket_auth_token')
 
-const { session, syncSession } = useDemoAuth()
-const { getUserApplications } = useSellerApplications()
-
-const {
-  activeStore,
-  approvedStores,
-  activeStoreId,
-  activeStoreName,
-  isActiveStoreSuspended,
-  canManageActiveStore,
-  refreshStores,
-  selectStore,
-  getTenantStatus,
-  readStoreData,
-  migrateLegacyStoreData
-} = useActiveStore()
-
-const sellerApplications = ref([])
+const store = ref(null)
 const products = ref([])
 const recentOrders = ref([])
 const commissionRate = ref(10)
 
-const latestApplication = computed(() => {
-  if (!sellerApplications.value.length) return null
+const application = computed(() => store.value)
+const isApproved = computed(() => store.value?.status === 'active')
+const isSuspended = computed(() => store.value?.status === 'suspended')
+const isRejected = computed(() => store.value?.status === 'rejected')
+const isCancelled = computed(() => false)
+const hasApplication = computed(() => Boolean(store.value))
 
-  return [...sellerApplications.value].sort(
-    (a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)
-  )[0]
-})
+const storeName = computed(() => store.value?.name || 'Toko Seller')
 
-const application = computed(() => activeStore.value || latestApplication.value)
-const isApproved = computed(() => Boolean(activeStore.value))
-const isSuspended = computed(() => isActiveStoreSuspended.value)
-const isRejected = computed(() => application.value?.status === 'Rejected')
-const isCancelled = computed(() => application.value?.status === 'Cancelled')
-const hasApplication = computed(() => Boolean(application.value))
-
-const storeName = computed(() =>
-  activeStoreName.value || application.value?.storeName || 'Toko Seller'
-)
-
-const activeProducts = computed(() =>
-  products.value.filter((product) => ['active', 'published'].includes(product.status)).length
-)
-
+const activeProducts = computed(() => products.value.filter((product) => ['active', 'published'].includes(product.status)).length)
 const totalProducts = computed(() => products.value.length)
 const totalOrders = computed(() => recentOrders.value.length)
 
 const totalSales = computed(() =>
-  recentOrders.value.reduce(
-    (sum, order) => sum + Number(order.amount || 0),
-    0
-  )
+  recentOrders.value.reduce((sum, order) => sum + Number(order.amount || 0), 0)
 )
 
 const estimatedNetRevenue = computed(() => {
-  const rate = Math.min(Math.max(Number(commissionRate.value) || 0, 0), 100)
-  return Math.round(totalSales.value * (1 - rate / 100))
+  return Math.round(totalSales.value * (1 - commissionRate.value / 100))
 })
 
 const approvalLabel = computed(() => {
-  if (activeStore.value && isSuspended.value) return 'Toko Ditangguhkan'
-  if (activeStore.value) return 'Toko Disetujui'
-
-  const status = application.value?.status
-
-  if (status === 'Rejected') return 'Pengajuan Ditolak'
-  if (status === 'Cancelled') return 'Pengajuan Dibatalkan'
-  if (status === 'Submitted' || status === 'Menunggu Review') return 'Menunggu Review'
-
+  if (isSuspended.value) return 'Toko Ditangguhkan'
+  if (isApproved.value) return 'Toko Disetujui'
+  if (isRejected.value) return 'Pengajuan Ditolak'
+  if (hasApplication.value) return 'Menunggu Review'
   return 'Belum Mengajukan Toko'
 })
 
 const formatCurrency = (value) => new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
-  maximumFractionDigits: 0
+  style: 'currency', currency: 'IDR', maximumFractionDigits: 0
 }).format(Number(value || 0))
 
 const formatOrderDate = (value) => {
   if (!value) return '-'
-
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
-
-  return date.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 const normalizeOrder = (order = {}) => {
-  const items = Array.isArray(order.items) ? order.items : []
-  const itemLabel = items.length
-    ? items.map((item) => item.productName || item.name).filter(Boolean).join(', ')
-    : ''
-
   return {
     ...order,
-    id: order.id || order.orderId || order.orderNumber || `ORD-${Date.now()}`,
-    customer:
-      order.customer ||
-      order.customerName ||
-      order.buyerName ||
-      order.buyer?.name ||
-      '-',
-    product:
-      order.product ||
-      order.productName ||
-      itemLabel ||
-      '-',
-    amount: Number(
-      order.amount ??
-      order.total ??
-      order.totalAmount ??
-      order.grandTotal ??
-      0
-    ),
+    id: order.id || order.transaction_id,
+    customer: order.buyer?.name || '-',
+    product: order.items?.map(i => i.product?.name).join(', ') || '-',
+    amount: Number(order.total_amount ?? 0),
     status: order.status || 'Diproses',
-    date: order.date || order.createdAt || order.created_at || null
+    date: order.created_at || null
   }
 }
 
 const orderStatusClass = (status) => {
   const normalized = String(status || '').toLowerCase()
-
-  if (
-    normalized.includes('selesai') ||
-    normalized.includes('completed') ||
-    normalized.includes('paid')
-  ) {
+  if (normalized.includes('selesai') || normalized.includes('completed') || normalized.includes('paid')) {
     return 'completed'
   }
-
   return 'processing'
 }
 
-const loadCommissionForStore = (store) => {
-  if (!import.meta.client || !store) {
-    commissionRate.value = 10
-    return
-  }
-
-  let defaultRate = 10
-
-  try {
-    const settings = JSON.parse(
-      localStorage.getItem(SETTINGS_KEY) || 'null'
-    )
-
-    const parsed = Number(settings?.defaultCommissionRate)
-    if (Number.isFinite(parsed)) defaultRate = parsed
-  } catch {
-    defaultRate = 10
-  }
-
-  try {
-    const stores = JSON.parse(
-      localStorage.getItem(STORES_KEY) || '[]'
-    )
-
-    const adminStore = Array.isArray(stores)
-      ? stores.find((item) =>
-          item.applicationId === store.applicationId ||
-          item.slug === store.storeSlug
-        )
-      : null
-
-    const customRate = Number(adminStore?.customCommissionRate)
-
-    commissionRate.value =
-      adminStore?.customCommissionRate !== null &&
-      adminStore?.customCommissionRate !== undefined &&
-      adminStore?.customCommissionRate !== '' &&
-      Number.isFinite(customRate)
-        ? customRate
-        : defaultRate
-  } catch {
-    commissionRate.value = defaultRate
-  }
-}
-
-const loadDashboardDataForStore = (storeId = activeStoreId.value) => {
-  if (
-    !import.meta.client ||
-    !storeId ||
-    !canManageActiveStore.value
-  ) {
-    products.value = []
-    recentOrders.value = []
-    commissionRate.value = 10
-    return
-  }
-
-  // Pastikan data produk lama hanya dipindahkan sekali ke toko aktif.
-  migrateLegacyStoreData(
-    'products',
-    LEGACY_PRODUCTS_KEY,
-    storeId
-  )
-
-  const storedProducts = readStoreData(
-    'products',
-    [],
-    storeId
-  )
-
-  products.value = Array.isArray(storedProducts)
-    ? storedProducts
-    : []
-
-  const storedOrders = readStoreData(
-    'orders',
-    [],
-    storeId
-  )
-
-  recentOrders.value = Array.isArray(storedOrders)
-    ? storedOrders.map(normalizeOrder)
-    : []
-
-  loadCommissionForStore(activeStore.value)
-}
-
-const loadDashboard = () => {
+const loadDashboard = async () => {
   if (!import.meta.client) return
 
-  syncSession()
-  sellerApplications.value = getUserApplications(session.value)
-
-  const store = refreshStores()
-
-  if (store) {
-    loadDashboardDataForStore(store.applicationId)
-  } else {
-    products.value = []
-    recentOrders.value = []
-  }
-}
-
-const changeActiveStore = (event) => {
-  const selected = selectStore(event.target.value)
-  if (!selected) return
-
-  loadDashboardDataForStore(selected.applicationId)
-}
-
-const handleStoreContextChanged = () => {
-  loadDashboardDataForStore()
-}
-
-const handleStoreDataUpdated = (event) => {
-  const detail = event?.detail || {}
-
-  if (
-    detail.storeId === activeStoreId.value &&
-    ['products', 'orders'].includes(detail.resource)
-  ) {
-    loadDashboardDataForStore(activeStoreId.value)
+  try {
+    const storeRes = await $fetch(`${config.public.apiBase}/seller/store`, {
+        headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    if (storeRes.success) {
+        store.value = storeRes.data
+        if (store.value) {
+            const productsRes = await $fetch(`${config.public.apiBase}/seller/products`, {
+                headers: { Authorization: `Bearer ${authToken.value}` }
+            })
+            if (productsRes.success) {
+                products.value = productsRes.data
+            }
+        }
+    }
+  } catch (error) {
+    console.error(error)
   }
 }
 
 onMounted(() => {
   loadDashboard()
-
-  window.addEventListener(
-    'icmarket-store-context-changed',
-    handleStoreContextChanged
-  )
-
-  window.addEventListener(
-    'icmarket-store-data-updated',
-    handleStoreDataUpdated
-  )
-})
-
-onBeforeUnmount(() => {
-  if (!import.meta.client) return
-
-  window.removeEventListener(
-    'icmarket-store-context-changed',
-    handleStoreContextChanged
-  )
-
-  window.removeEventListener(
-    'icmarket-store-data-updated',
-    handleStoreDataUpdated
-  )
 })
 </script>
-
 <template>
   <main class="seller-dashboard-page">
     <section class="dashboard-hero">

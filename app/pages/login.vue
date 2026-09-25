@@ -170,6 +170,8 @@ const finishLogin = async (user) => {
   await navigateTo(redirectTarget.value)
 }
 
+const isSubmitting = ref(false)
+
 async function submitLogin() {
   error.value = ''
 
@@ -181,46 +183,19 @@ async function submitLogin() {
     return
   }
 
-  const dummyAccount = DUMMY_ACCOUNTS.find(
-    (account) =>
-      account.email.toLowerCase() === email &&
-      account.password === password
-  )
+  isSubmitting.value = true
 
-  if (dummyAccount) {
-    await finishLogin(dummyAccount)
+  const { login } = useDemoAuth()
+  const result = await login(email, password)
+
+  isSubmitting.value = false
+
+  if (!result.success) {
+    error.value = result.message
     return
   }
 
-  let registeredUser = null
-
-  try {
-    registeredUser = JSON.parse(
-      localStorage.getItem('icmarket_demo_user') || 'null'
-    )
-  } catch {
-    registeredUser = null
-  }
-
-  if (
-    registeredUser &&
-    String(registeredUser.email || '').toLowerCase() === email
-  ) {
-    const savedPassword = String(registeredUser.password || '')
-
-    if (savedPassword && savedPassword !== password) {
-      error.value = 'Email atau password salah.'
-      return
-    }
-
-    await finishLogin({
-      ...registeredUser,
-      role: registeredUser.role || 'buyer'
-    })
-    return
-  }
-
-  error.value = 'Email atau password salah.'
+  await navigateTo(redirectTarget.value)
 }
 </script>
 

@@ -84,14 +84,12 @@ const buildGroupsFromCart = (cart) => {
   return Object.values(bucket)
 }
 
-const loadCheckoutData = () => {
-  const cart = readJson('icmarket_cart', [])
+const loadCheckoutData = async () => {
+  const { fetchCart } = useCart()
+  const cart = await fetchCart()
   checkoutCart.value = Array.isArray(cart) ? cart : []
 
-  const savedGroups = readJson('icmarket_checkout_groups', [])
-  checkoutGroups.value = Array.isArray(savedGroups) && savedGroups.length
-    ? savedGroups
-    : buildGroupsFromCart(checkoutCart.value)
+  checkoutGroups.value = buildGroupsFromCart(checkoutCart.value)
 }
 
 const placeOrder = async () => {
@@ -118,7 +116,7 @@ const placeOrder = async () => {
     return
   }
 
-  loadCheckoutData()
+  await loadCheckoutData()
 
   if (!checkoutCart.value.length) {
     router.push('/cart')
@@ -128,59 +126,63 @@ const placeOrder = async () => {
   isSubmitting.value = true
 
   try {
-    const discount = Number(localStorage.getItem('icmarket_discount')) || 0
+    const token = useCookie('icmarket_auth_token').value
+    if (!token) throw new Error('Not authenticated')
 
-    const order = createOrder({
-      buyer: {
-        userId: session.value?.id || '',
-        name: buyerName.value.trim(),
-        email: buyerEmail.value.trim().toLowerCase(),
-        phone: buyerPhone.value.trim(),
-        notes: buyerNotes.value.trim()
-      },
-      payment: {
-        method: selectedMethod.value,
-        bank: selectedMethod.value === 'bank_transfer' ? selectedBank.value : null
-      },
-      groups: checkoutGroups.value,
-      cart: checkoutCart.value,
-      discount
+    const items = checkoutCart.value.map(c => ({
+      product_id: c.product_id || c.productId || c.id,
+      quantity: c.quantity || 1
+    }))
+
+    const paymentMethod = selectedMethod.value === 'coin' ? 'icmarket_coins' : 'bank_transfer'
+    
+    const config = useRuntimeConfig()
+    const response = await $fetch(`${config.public.apiBase}/orders/checkout`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: {
+        items,
+        payment_method: paymentMethod
+      }
     })
 
-    if (!order) {
-      checkoutError.value = lastError.value || 'Pesanan belum dapat dibuat. Silakan kembali ke keranjang.'
+    if (!response.success) {
+      checkoutError.value = response.message || 'Gagal checkout.'
       return
     }
 
-    localStorage.setItem('icmarket_buyer', JSON.stringify(order.buyer))
-    localStorage.setItem('icmarket_method', selectedMethod.value)
-    localStorage.setItem('icmarket_order_id', order.orderId)
-    localStorage.setItem('icmarket_order_status', 'pending')
-
-    if (Number(order.totals?.total || 0) === 0) {
-      markOrderPaid(order.orderId)
+    // Clear backend cart
+    const { clearCart } = useCart()
+    await clearCart()
+    
+    localStorage.removeItem('icmarket_cart')
+    localStorage.removeItem('icmarket_checkout_groups')
+    
+    localStorage.setItem('icmarket_order_id', response.data.transaction_id)
+    localStorage.setItem('icmarket_order_status', response.data.status)
+    
+    if (response.data.status === 'completed') {
       router.push('/success')
-      return
+    } else {
+      router.push('/payment')
     }
-
-    router.push('/payment')
   } catch (error) {
     console.error('Gagal menyiapkan pesanan:', error)
-    checkoutError.value = 'Pesanan belum dapat diproses. Silakan coba lagi.'
+    checkoutError.value = error.data?.message || 'Pesanan belum dapat diproses. Silakan coba lagi.'
   } finally {
     isSubmitting.value = false
   }
 }
 
-onMounted(() => {
-  syncSession()
+onMounted(async () => {
+  await syncSession()
 
   if (!session.value) {
     router.push('/login')
     return
   }
 
-  loadCheckoutData()
+  await loadCheckoutData()
 
   if (!checkoutCart.value.length) {
     router.push('/cart')

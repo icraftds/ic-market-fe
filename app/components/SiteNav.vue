@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-const cartCount = ref(0)
 const { session, syncSession, logout } = useDemoAuth()
 
 const role = computed(() => session.value?.role || null)
@@ -26,15 +25,13 @@ const roleLabel = computed(() => {
   return labels[role.value] || role.value
 })
 
-const readCartCount = () => {
-  if (!import.meta.client) return
+const { fetchCart, cart: apiCart } = useCart()
 
-  try {
-    const cart = JSON.parse(localStorage.getItem('icmarket_cart') || '[]')
-    cartCount.value = Array.isArray(cart) ? cart.length : 0
-  } catch {
-    cartCount.value = 0
-  }
+const cartCount = computed(() => apiCart.value.length)
+
+const readCartCount = async () => {
+  if (!import.meta.client) return
+  await fetchCart()
 }
 
 const refreshNavigation = () => {

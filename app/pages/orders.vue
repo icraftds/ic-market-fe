@@ -36,11 +36,20 @@ const formatDate = (value) => {
 
 const statusClass = (status) => {
   const value = String(status || '').toLowerCase()
-  if (value === 'completed') return 'completed'
+  if (['completed', 'selesai', 'success'].includes(value)) return 'completed'
   if (value === 'processing') return 'processing'
-  if (value === 'paid') return 'paid'
+  if (['paid', 'lunas'].includes(value)) return 'paid'
   if (value === 'cancelled') return 'cancelled'
   return 'pending'
+}
+
+const statusText = (status) => {
+  const value = String(status || '').toLowerCase()
+  if (['completed', 'selesai', 'success'].includes(value)) return 'Selesai'
+  if (value === 'processing') return 'Diproses'
+  if (['paid', 'lunas'].includes(value)) return 'Dibayar'
+  if (value === 'cancelled') return 'Dibatalkan'
+  return 'Menunggu'
 }
 
 const filteredOrders = computed(() => {
@@ -59,9 +68,58 @@ const filteredOrders = computed(() => {
   })
 })
 
-const loadOrders = () => {
-  syncSession()
-  orders.value = getBuyerOrders(session.value)
+const loadOrders = async () => {
+  await syncSession()
+  if (!session.value) {
+    navigateTo('/login')
+    return
+  }
+
+  try {
+    const config = useRuntimeConfig()
+    const token = useCookie('icmarket_auth_token').value
+    const response = await $fetch(`${config.public.apiBase}/orders`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+    })
+    if (response.success) {
+      // Normalize orders for the frontend view
+      orders.value = response.data.map(order => {
+        // Group items by store (dummy store grouping if backend doesn't provide store info yet)
+        const items = (order.items || []).map(item => ({
+          ...item,
+          name: item.product?.name || 'Produk',
+          category: item.product?.category || 'Digital',
+          price: item.price,
+          quantity: item.quantity,
+          img: item.product?.img || ''
+        }))
+        
+        // Buat mock storeOrders agar template v-for tidak kosong
+        const storeOrders = [{
+          id: order.transaction_id,
+          storeName: 'IC Market',
+          storeSlug: '',
+          status: order.status,
+          items: items
+        }]
+
+        return {
+          ...order,
+          orderId: order.transaction_id,
+          status: order.status,
+          buyer: order.buyer,
+          createdAt: order.created_at,
+          totals: {
+            total: order.total_amount
+          },
+          storeOrders: storeOrders,
+          items: items
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Failed to load orders', error)
+  }
 }
 
 const continuePayment = async (order) => {
@@ -83,6 +141,24 @@ onBeforeUnmount(() => {
   if (!import.meta.client) return
   window.removeEventListener('icmarket-orders-updated', loadOrders)
 })
+
+const downloadOrderFiles = (item) => {
+  const files = item.product?.digital_files || item.digital_files || []
+  if (files.length === 0) {
+    alert('File download belum tersedia. Hubungi seller.')
+    return
+  }
+  files.forEach((file, i) => {
+    if (file.downloadUrl) {
+      setTimeout(() => window.open(file.downloadUrl, '_blank'), i * 300)
+    }
+  })
+}
+
+const isDownloadable = (item) => {
+  const files = item.product?.digital_files || item.digital_files || []
+  return files.some(f => f.downloadUrl)
+}
 </script>
 
 <template>
@@ -116,7 +192,7 @@ onBeforeUnmount(() => {
             <strong>{{ formatDate(order.createdAt) }}</strong>
           </div>
           <span class="status-badge" :class="statusClass(order.status)">
-            {{ statusLabel(order.status) }}
+            {{ statusText(order.status) }}
           </span>
         </div>
 
@@ -130,17 +206,26 @@ onBeforeUnmount(() => {
                 <strong v-else>{{ storeOrder.storeName }}</strong>
                 <small>{{ storeOrder.id }}</small>
               </div>
-              <span>{{ statusLabel(storeOrder.status) }}</span>
+              <span>{{ statusText(storeOrder.status) }}</span>
             </div>
 
             <div class="item-list">
               <div v-for="item in storeOrder.items" :key="item.catalogId || item.id" class="order-item">
                 <img v-if="item.img" :src="item.img" :alt="item.name">
-                <div>
+                <div class="order-item-info">
                   <strong>{{ item.name }}</strong>
                   <small>{{ item.category }}</small>
                 </div>
                 <span>{{ item.isFree ? 'Gratis' : formatCurrency(item.price * (item.quantity || 1)) }}</span>
+                <button
+                  v-if="['selesai','completed','paid','success'].includes(String(order.status).toLowerCase()) && (item.type === 'Digital' || item.product?.type === 'Digital')"
+                  class="download-btn"
+                  @click="downloadOrderFiles(item)"
+                  :title="isDownloadable(item) ? 'Download file' : 'File belum tersedia'"
+                >
+                  <i class="fa-solid" :class="isDownloadable(item) ? 'fa-download' : 'fa-clock'"></i>
+                  {{ isDownloadable(item) ? 'Download' : 'Menunggu File' }}
+                </button>
               </div>
             </div>
           </div>
@@ -182,7 +267,8 @@ onBeforeUnmount(() => {
 .orders-list{display:grid;gap:16px}.order-card{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden}.order-head{padding:18px 20px;border-bottom:1px solid var(--border)}.order-head>div{display:grid;gap:4px}.order-id{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:11px}.order-head strong{font-size:13px}
 .status-badge{padding:7px 10px;border-radius:999px;font-size:10px;font-weight:800}.status-badge.pending{background:#fff7ed;color:#c2410c}.status-badge.paid{background:#dbeafe;color:#1d4ed8}.status-badge.processing{background:#e0e7ff;color:#4338ca}.status-badge.completed{background:#dcfce7;color:#166534}.status-badge.cancelled{background:#fee2e2;color:#991b1b}
 .store-orders{display:grid;gap:12px;padding:16px 20px}.store-order{border:1px solid var(--border);border-radius:12px;overflow:hidden}.store-order-head{padding:11px 13px;background:var(--subtle);align-items:center}.store-order-head>div{display:grid;gap:3px}.store-order-head small{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:10px}.store-order-head>span{font-size:11px;color:var(--muted);font-weight:700}
-.item-list{display:grid}.order-item{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:11px;padding:11px 13px;border-top:1px solid var(--border)}.order-item:first-child{border-top:0}.order-item img{width:48px;height:38px;object-fit:cover;border-radius:7px}.order-item>div{display:grid;gap:3px}.order-item strong{font-size:13px}.order-item small{color:var(--muted);font-size:11px}.order-item>span{font-size:12px;font-weight:700}
+.item-list{display:grid}.order-item{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:11px;padding:11px 13px;border-top:1px solid var(--border)}.order-item:first-child{border-top:0}.order-item img{width:48px;height:38px;object-fit:cover;border-radius:7px}.order-item-info{display:grid;gap:3px}.order-item strong{font-size:13px}.order-item small{color:var(--muted);font-size:11px}.order-item>span{font-size:12px;font-weight:700}
+.download-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}.download-btn:hover{opacity:.85}
 .order-foot{align-items:center;padding:16px 20px;border-top:1px solid var(--border)}.order-foot>div{display:grid;gap:3px}.order-foot span{color:var(--muted);font-size:11px}.order-foot strong{font-size:19px}.primary-button{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-size:12px;font-weight:800;text-decoration:none;cursor:pointer}
 .empty-state{display:grid;justify-items:center;gap:9px;padding:60px 20px;border:1px solid var(--border);border-radius:16px;background:var(--surface);text-align:center}.empty-state i{font-size:32px;color:var(--muted)}.empty-state h2,.empty-state p{margin:0}.empty-state p{color:var(--muted)}
 @media(max-width:700px){.orders-page{padding:32px 16px 70px}.page-heading,.toolbar{flex-direction:column}.toolbar input,.toolbar select{width:100%;box-sizing:border-box}.order-item{grid-template-columns:auto 1fr}.order-item>span{grid-column:2}.order-foot{align-items:stretch;flex-direction:column}}

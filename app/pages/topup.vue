@@ -40,41 +40,61 @@ const formatRp = (value) => new Intl.NumberFormat('id-ID', {
   maximumFractionDigits: 0
 }).format(Number(value || 0))
 
-const processTopup = () => {
+const processTopup = async () => {
   if (isProcessing.value || !session.value) return
   
   isProcessing.value = true
   successMsg.value = ''
   
-  // Simulate payment processing delay for demo
-  setTimeout(() => {
+  try {
     const currentCoins = Number(session.value.coins || 0)
-    const newCoins = currentCoins + selectedAmount.value.value
     
-    // Update local session
-    const updatedSession = { ...session.value, coins: newCoins }
-    localStorage.setItem('icmarket_auth_session', JSON.stringify(updatedSession))
-    
-    // Update registered user database if it's the same email
-    try {
-      const demoUser = JSON.parse(localStorage.getItem('icmarket_demo_user') || 'null')
-      if (demoUser && demoUser.email === updatedSession.email) {
-        localStorage.setItem('icmarket_demo_user', JSON.stringify({
-          ...demoUser,
-          coins: newCoins
-        }))
+    // Memanggil API Backend Laravel
+    const config = useRuntimeConfig()
+    const response = await $fetch(`${config.public.apiBase}/topup`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${useCookie('icmarket_auth_token').value}`
+      },
+      body: {
+        amount: selectedAmount.value.value,
+        method: selectedMethod.value,
+        currentCoins: currentCoins
       }
-    } catch (e) {}
+    })
+    
+    if (response.success) {
+      const newCoins = response.data.newCoins
+      
+      // Update local session
+      const updatedSession = { ...session.value, coins: newCoins }
+      localStorage.setItem('icmarket_auth_session', JSON.stringify(updatedSession))
+      
+      // Update registered user database if it's the same email
+      try {
+        const demoUser = JSON.parse(localStorage.getItem('icmarket_demo_user') || 'null')
+        if (demoUser && demoUser.email === updatedSession.email) {
+          localStorage.setItem('icmarket_demo_user', JSON.stringify({
+            ...demoUser,
+            coins: newCoins
+          }))
+        }
+      } catch (e) {}
 
-    syncSession()
-    window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
-    
+      syncSession()
+      window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
+      
+      successMsg.value = `${response.message} ${Number(response.data.amount).toLocaleString('id-ID')} iCoin-Z! (TxID: ${response.data.transactionId})`
+      
+      // Clear message after 4s
+      setTimeout(() => { successMsg.value = '' }, 4000)
+    }
+  } catch (error) {
+    console.error('Topup failed:', error)
+    alert('Terjadi kesalahan saat memproses top up. Pastikan server backend berjalan.')
+  } finally {
     isProcessing.value = false
-    successMsg.value = `Berhasil top up ${Number(selectedAmount.value.value).toLocaleString('id-ID')} iCoin-Z!`
-    
-    // Clear message after 4s
-    setTimeout(() => { successMsg.value = '' }, 4000)
-  }, 1500)
+  }
 }
 </script>
 

@@ -1,0 +1,100 @@
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+
+definePageMeta({ layout: 'default' })
+
+const config = useRuntimeConfig()
+const authToken = useCookie('icmarket_auth_token')
+
+const store = ref(null)
+const products = ref([])
+const recentOrders = ref([])
+const commissionRate = ref(10)
+
+const application = computed(() => store.value)
+const isApproved = computed(() => store.value?.status === 'active')
+const isSuspended = computed(() => store.value?.status === 'suspended')
+const isRejected = computed(() => store.value?.status === 'rejected')
+const isCancelled = computed(() => false)
+const hasApplication = computed(() => Boolean(store.value))
+
+const storeName = computed(() => store.value?.name || 'Toko Seller')
+
+const activeProducts = computed(() => products.value.filter((product) => ['active', 'published'].includes(product.status)).length)
+const totalProducts = computed(() => products.value.length)
+const totalOrders = computed(() => recentOrders.value.length)
+
+const totalSales = computed(() =>
+  recentOrders.value.reduce((sum, order) => sum + Number(order.amount || 0), 0)
+)
+
+const estimatedNetRevenue = computed(() => {
+  return Math.round(totalSales.value * (1 - commissionRate.value / 100))
+})
+
+const approvalLabel = computed(() => {
+  if (isSuspended.value) return 'Toko Ditangguhkan'
+  if (isApproved.value) return 'Toko Disetujui'
+  if (isRejected.value) return 'Pengajuan Ditolak'
+  if (hasApplication.value) return 'Menunggu Review'
+  return 'Belum Mengajukan Toko'
+})
+
+const formatCurrency = (value) => new Intl.NumberFormat('id-ID', {
+  style: 'currency', currency: 'IDR', maximumFractionDigits: 0
+}).format(Number(value || 0))
+
+const formatOrderDate = (value) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+const normalizeOrder = (order = {}) => {
+  return {
+    ...order,
+    id: order.id || order.transaction_id,
+    customer: order.buyer?.name || '-',
+    product: order.items?.map(i => i.product?.name).join(', ') || '-',
+    amount: Number(order.total_amount ?? 0),
+    status: order.status || 'Diproses',
+    date: order.created_at || null
+  }
+}
+
+const orderStatusClass = (status) => {
+  const normalized = String(status || '').toLowerCase()
+  if (normalized.includes('selesai') || normalized.includes('completed') || normalized.includes('paid')) {
+    return 'completed'
+  }
+  return 'processing'
+}
+
+const loadDashboard = async () => {
+  if (!import.meta.client) return
+
+  try {
+    const storeRes = await $fetch(`${config.public.apiBase}/seller/store`, {
+        headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    if (storeRes.success) {
+        store.value = storeRes.data
+        if (store.value) {
+            const productsRes = await $fetch(`${config.public.apiBase}/seller/products`, {
+                headers: { Authorization: `Bearer ${authToken.value}` }
+            })
+            if (productsRes.success) {
+                products.value = productsRes.data
+            }
+        }
+    }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+onMounted(() => {
+  loadDashboard()
+})
+</script>

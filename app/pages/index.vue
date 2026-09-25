@@ -9,6 +9,8 @@ const {
     refreshCatalog
 } = useProductCatalog();
 
+const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart();
+
 const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80';
 
 const catalogImage = (product) =>
@@ -48,8 +50,10 @@ const catalogReviews = (product) => Number(product?.reviews || 0);
 
 onMounted(async () => {
 
-    refreshCatalog();
+    await refreshCatalog();
     await nextTick();
+
+    const authToken = useCookie('icmarket_auth_token');
 
     (() => {
         'use strict';
@@ -112,42 +116,31 @@ onMounted(async () => {
         });
 
         /* ── Cart (localStorage) ── */
-        const CART_KEY = 'icmarket_cart';
-        function getCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } }
-        function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); window.dispatchEvent(new CustomEvent('icmarket-cart-updated')); }
+        function getCart() { return apiCart.value; }
+        
+        function getSession() { return authToken.value; }
 
-        function getSession() { try { return JSON.parse(localStorage.getItem('icmarket_auth_session')); } catch { return null; } }
-
-        function addToCart(card) {
+        async function addToCart(card) {
             if (!getSession()) {
                 window.location.href = '/login';
                 return;
             }
-            let cart = getCart();
-            if (!Array.isArray(cart)) cart = [];
-            const item = {
-                id:       card.dataset.catalogId || card.dataset.productId || ((card.dataset.title || 'Produk').replace(/\s+/g,'-').toLowerCase() + '-' + Date.now()),
-                catalogId: card.dataset.catalogId || '',
-                productId: card.dataset.productId || '',
-                name:     card.dataset.title || 'Produk',
-                category: card.dataset.category || '',
-                store:    card.dataset.store || 'iCraft Demo Store',
-                storeSlug: card.dataset.storeSlug || '',
-                storeId: card.dataset.storeId || '',
-                storeApplicationId: card.dataset.storeApplicationId || '',
-                tenantSchema: card.dataset.tenantSchema || '',
-                tags:     (card.dataset.tags || '').split(',').map(t => t.trim()).filter(Boolean),
-                price:    parseInt(card.dataset.price) || 0,
-                img:      card.dataset.img || '',
-                isFree:   card.dataset.free === 'true',
-                type:     card.dataset.type || 'Digital'
-            };
-            // Prevent duplicate titles
-            if (!cart.find(i => (item.catalogId && i.catalogId === item.catalogId) || (i.name === item.name && i.store === item.store))) {
-                cart.push(item);
+            
+            const productId = card.dataset.productId || card.dataset.id;
+            if (!productId) {
+                showToast("Produk ini belum siap ditambahkan.");
+                return;
             }
-            saveCart(cart);
-            updateCartBadge();
+            
+            const success = await apiAddToCart(productId, 1);
+            if (success) {
+                showToast(`"${card.dataset.title || 'Produk'}" ditambahkan ke keranjang!`);
+                updateCartBadge();
+                return true;
+            } else {
+                showToast(`Gagal menambahkan "${card.dataset.title || 'Produk'}". Silakan login ulang.`);
+                return false;
+            }
         }
 
         function updateCartBadge() {
@@ -172,7 +165,7 @@ onMounted(async () => {
             document.querySelector('.stack-card--1'),
             document.querySelector('.stack-card--2'),
             document.querySelector('.stack-card--3')
-        ];
+        ].filter(Boolean);
 
         stackCards.forEach(card => {
             card.addEventListener('click', (e) => {
@@ -338,7 +331,6 @@ onMounted(async () => {
             if (!cartBtn) {
                 setTimeout(() => {
                     addToCart(card);
-                    showToast(`"${card.dataset.title}" ditambahkan ke keranjang!`);
                 }, 600);
                 return;
             }
@@ -377,16 +369,15 @@ onMounted(async () => {
                 cartBtn.classList.add('cart-bump');
                 
                 addToCart(card);
-                showToast(`"${card.dataset.title}" ditambahkan ke keranjang!`);
             }, 800);
         }
 
-        document.getElementById('modal-buy-direct-btn').addEventListener('click', () => {
+        document.getElementById('modal-buy-direct-btn').addEventListener('click', async () => {
             const btn  = document.getElementById('modal-buy-direct-btn');
             const card = btn._card;
             if (!card || card.dataset.free === 'true') return;
-            addToCart(card);
-            window.location.href = '/checkout';
+            const success = await addToCart(card);
+            if (success) window.location.href = '/checkout';
         });
 
         document.getElementById('modal-add-cart-btn').addEventListener('click', (e) => {
@@ -434,14 +425,14 @@ onMounted(async () => {
         });
 
         // Use Event Delegation for buttons since dynamic cards are rendered asynchronously
-        document.addEventListener('click', e => {
+        document.addEventListener('click', async e => {
             const btnBuyDirect = e.target.closest('.card-buy-direct');
             if (btnBuyDirect) {
                 e.stopPropagation();
                 const card = btnBuyDirect.closest('.product-card');
                 if (card && card.dataset.free !== 'true') {
-                    addToCart(card);
-                    window.location.href = '/checkout';
+                    const success = await addToCart(card);
+                    if (success) window.location.href = '/checkout';
                 }
                 return;
             }
@@ -535,105 +526,44 @@ onMounted(async () => {
             <!-- Card Stack (bertumpuk & miring) -->
             <div class="hero-card-stack" id="hero-card-stack">
 
-                
-                <!-- Card 3 — paling belakang -->
-                <article class="stack-card stack-card--3 product-card"
-                    data-title="Admin Dashboard Pro"
-                    data-store="Creative Studio"
-                    data-store-slug="creative-studio"
-                    data-category="Web Template"
-                    data-price="199000"
-                    data-img="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
-                    data-tags="Dashboard,HTML">
+                <article v-for="(product, index) in catalogProducts.slice(0, 3)" :key="product.id"
+                    class="stack-card product-card"
+                    :class="[`stack-card--${3 - index}`, index === 0 ? 'stack-active' : '']"
+                    :data-title="product.name"
+                    :data-store="product.storeName"
+                    :data-store-slug="product.storeSlug"
+                    :data-category="product.category"
+                    :data-price="product.price"
+                    :data-img="catalogImage(product)"
+                    :data-tags="catalogTags(product).join(',')">
                     <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=70" alt="Admin Dashboard Pro">
-                        <span class="card-badge premium">Premium</span>
+                        <img :src="catalogImage(product)" :alt="product.name">
+                        <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
+                            {{ product.price === 0 ? 'Gratis' : 'Premium' }}
+                        </span>
                     </div>
                     <div class="card-body">
-                        <span class="card-category">Web Template</span>
-                        <a class="card-store" href="/store/creative-studio">Oleh: Creative Studio</a>
-                        <h3 class="card-title">Admin Dashboard Pro</h3>
+                        <span class="card-category">{{ product.category }}</span>
+                        <a class="card-store" :href="`/store/${product.storeSlug}`">Oleh: {{ product.storeName }}</a>
+                        <h3 class="card-title">{{ product.name }}</h3>
                         <div class="card-footer">
-                            <span class="card-price">Rp 199.000</span>
-                            <div class="card-rating"><i class="fa-solid fa-star"></i> 4.8</div>
+                            <span class="card-price" :class="{ 'free-price': product.price === 0 }">
+                                {{ product.price === 0 ? 'Gratis' : `Rp ${Number(product.price).toLocaleString('id-ID')}` }}
+                            </span>
+                            <div class="card-rating">
+                                <i class="fa-solid fa-star"></i>
+                                {{ catalogReviews(product) > 0 ? `${catalogRating(product).toFixed(1)} (${catalogReviews(product)})` : 'Baru' }}
+                            </div>
                         </div>
-                        <div class="card-actions hero-featured-btn" style="padding:0; margin-top:8px;" data-title="Admin Dashboard Pro"
-                                data-store="Creative Studio"
-                                data-store-slug="creative-studio"
-                                data-category="Web Template"
-                                data-price="199000"
-                                data-img="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
-                                data-tags="Dashboard,HTML">
-                            <button class="btn-primary" style="width:100%">
-                                <i class="fa-solid fa-cart-shopping"></i> Tambah
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Card 2 — tengah -->
-                <article class="stack-card stack-card--2 product-card"
-                    data-title="UI/UX Startup Kit"
-                    data-store="Pixel Art Lab"
-                    data-store-slug="pixel-art-lab"
-                    data-category="UI Kit"
-                    data-price="150000"
-                    data-img="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80"
-                    data-tags="Figma,Design">
-                    <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=400&q=70" alt="UI/UX Startup Kit">
-                        <span class="card-badge premium">Premium</span>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">UI Kit</span>
-                        <a class="card-store" href="/store/pixel-art-lab">Oleh: Pixel Art Lab</a>
-                        <h3 class="card-title">UI/UX Startup Kit</h3>
-                        <div class="card-footer">
-                            <span class="card-price">Rp 150.000</span>
-                            <div class="card-rating"><i class="fa-solid fa-star"></i> 5.0</div>
-                        </div>
-                        <div class="card-actions hero-featured-btn" style="padding:0; margin-top:8px;" data-title="UI/UX Startup Kit"
-                                data-store="Pixel Art Lab"
-                                data-store-slug="pixel-art-lab"
-                                data-category="UI Kit"
-                                data-price="150000"
-                                data-img="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80"
-                                data-tags="Figma,Design">
-                            <button class="btn-primary" style="width:100%">
-                                <i class="fa-solid fa-cart-shopping"></i> Tambah
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Card 1 — paling depan (aktif) -->
-                <article class="stack-card stack-card--1 stack-active product-card"
-                    data-title="Template E-Commerce Super"
-                    data-store="Creative Studio"
-                    data-store-slug="creative-studio"
-                    data-category="Web Template"
-                    data-price="350000"
-                    data-img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
-                    data-tags="HTML,E-Commerce">
-                    <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" alt="Template E-Commerce Super">
-                        <span class="card-badge premium">Premium</span>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">Web Template</span>
-                        <a class="card-store" href="/store/creative-studio">Oleh: Creative Studio</a>
-                        <h3 class="card-title">Template E-Commerce Super</h3>
-                        <div class="card-footer">
-                            <span class="card-price">Rp 350.000</span>
-                            <div class="card-rating"><i class="fa-solid fa-star"></i> 4.9</div>
-                        </div>
-                        <div class="card-actions hero-featured-btn" style="padding:0; margin-top:8px;" data-title="Template E-Commerce Super"
-                                data-store="Creative Studio"
-                                data-store-slug="creative-studio"
-                                data-category="Web Template"
-                                data-price="350000"
-                                data-img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
-                                data-tags="HTML,E-Commerce">
+                        <div class="card-actions hero-featured-btn" style="padding:0; margin-top:8px;"
+                            :data-title="product.name"
+                            :data-store="product.storeName"
+                            :data-store-slug="product.storeSlug"
+                            :data-category="product.category"
+                            :data-price="product.price"
+                            :data-product-id="product.id"
+                            :data-img="catalogImage(product)"
+                            :data-tags="catalogTags(product).join(',')">
                             <button class="btn-primary" style="width:100%">
                                 <i class="fa-solid fa-cart-shopping"></i> Tambah
                             </button>
@@ -732,251 +662,6 @@ onMounted(async () => {
 
             <!-- PRODUCT GRID -->
             <div class="product-grid" id="product-grid">
-
-                <!-- Card 1: E-Commerce Template -->
-                <article class="product-card"
-                    data-category="web template"
-                    data-price="350000"
-                    data-img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80"
-                    data-title="Template E-Commerce Super"
-                    data-store="Creative Studio"
-                    data-store-slug="creative-studio"
-                    data-desc="Template e-commerce lengkap dengan fitur checkout, keranjang belanja, manajemen produk, dan integrasi payment gateway. Dibangun dengan HTML/CSS/JS murni, performa tinggi, dan mudah dikustomisasi."
-                    data-features="Checkout Flow,Responsive Design,Payment Gateway Ready,Clean Code,SEO Optimized"
-                    data-tags="Web Template,HTML,E-Commerce"
-                    data-rating="4.9"
-                    data-reviews="128">
-                    <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80" alt="Template E-Commerce Super" loading="lazy">
-                        <span class="card-badge premium">Premium</span>
-                        <button class="card-quick-view" aria-label="Quick View">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">Web Template</span>
-                        <a class="card-store" href="/store/creative-studio">Oleh: Creative Studio</a>
-                        <h3 class="card-title">Template E-Commerce Super</h3>
-                        <div class="card-footer">
-                            <span class="card-price">Rp 350.000</span>
-                            <div class="card-rating">
-                                <i class="fa-solid fa-star"></i> 4.9 (128)
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-primary card-buy-direct" aria-label="Beli Langsung">
-                                <i class="fa-solid fa-bolt"></i> Beli
-                            </button>
-                            <button class="btn-icon card-add-cart" aria-label="Tambahkan Keranjang">
-                                <i class="fa-solid fa-cart-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Card 2: UI/UX Startup Kit -->
-                <article class="product-card"
-                    data-category="ui kit"
-                    data-price="150000"
-                    data-img="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80"
-                    data-title="UI/UX Startup Kit"
-                    data-store="Pixel Art Lab"
-                    data-store-slug="pixel-art-lab"
-                    data-desc="Ratusan komponen Figma dengan Auto Layout, design system lengkap, dan panduan penggunaan. Cocok untuk tim yang ingin mempercepat proses desain MVP dari nol."
-                    data-features="Auto Layout,Design System,Figma Components,Light & Dark Mode,Icon Set"
-                    data-tags="UI Kit,Figma,Design"
-                    data-rating="5.0"
-                    data-reviews="86">
-                    <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80" alt="UI/UX Startup Kit" loading="lazy">
-                        <span class="card-badge premium">Premium</span>
-                        <button class="card-quick-view" aria-label="Quick View">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">UI Kit</span>
-                        <a class="card-store" href="/store/pixel-art-lab">Oleh: Pixel Art Lab</a>
-                        <h3 class="card-title">UI/UX Startup Kit</h3>
-                        <div class="card-footer">
-                            <span class="card-price">Rp 150.000</span>
-                            <div class="card-rating">
-                                <i class="fa-solid fa-star"></i> 5.0 (86)
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-primary card-buy-direct" aria-label="Beli Langsung">
-                                <i class="fa-solid fa-bolt"></i> Beli
-                            </button>
-                            <button class="btn-icon card-add-cart" aria-label="Tambahkan Keranjang">
-                                <i class="fa-solid fa-cart-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Card 3: Laravel POS -->
-                <article class="product-card"
-                    data-category="source code"
-                    data-price="250000"
-                    data-img="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=800&q=80"
-                    data-title="Laravel Point of Sales"
-                    data-store="CodeCraft Store"
-                    data-store-slug="codecraft-store"
-                    data-desc="Aplikasi POS berbasis web lengkap dengan manajemen stok, laporan penjualan, dan dukungan cetak struk thermal. Dibangun dengan Laravel 10 dan Livewire."
-                    data-features="Inventory Management,Thermal Printing,Sales Reports,Laravel 10,Livewire"
-                    data-tags="Source Code,Laravel,PHP"
-                    data-rating="4.5"
-                    data-reviews="54">
-                    <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=600&q=80" alt="Laravel Point of Sales" loading="lazy">
-                        <span class="card-badge">Source Code</span>
-                        <button class="card-quick-view" aria-label="Quick View">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">Source Code</span>
-                        <a class="card-store" href="/store/codecraft-store">Oleh: CodeCraft Store</a>
-                        <h3 class="card-title">Laravel Point of Sales</h3>
-                        <div class="card-footer">
-                            <span class="card-price">Rp 250.000</span>
-                            <div class="card-rating">
-                                <i class="fa-solid fa-star"></i> 4.5 (54)
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-primary card-buy-direct" aria-label="Beli Langsung">
-                                <i class="fa-solid fa-bolt"></i> Beli
-                            </button>
-                            <button class="btn-icon card-add-cart" aria-label="Tambahkan Keranjang">
-                                <i class="fa-solid fa-cart-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Card 4: Admin Dashboard -->
-                <article class="product-card"
-                    data-category="web template"
-                    data-price="199000"
-                    data-img="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
-                    data-title="Admin Dashboard Pro"
-                    data-store="Creative Studio"
-                    data-store-slug="creative-studio"
-                    data-desc="Template admin dashboard modern dengan chart animasi, manajemen user, dark mode, dan lebih dari 40 komponen UI siap pakai. Integrasi API sangat mudah dilakukan."
-                    data-features="40+ Components,Animated Charts,Dark Mode,API Ready,Responsive"
-                    data-tags="Web Template,Dashboard,HTML"
-                    data-rating="4.8"
-                    data-reviews="97">
-                    <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80" alt="Admin Dashboard Pro" loading="lazy">
-                        <span class="card-badge premium">Premium</span>
-                        <button class="card-quick-view" aria-label="Quick View">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">Web Template</span>
-                        <a class="card-store" href="/store/creative-studio">Oleh: Creative Studio</a>
-                        <h3 class="card-title">Admin Dashboard Pro</h3>
-                        <div class="card-footer">
-                            <span class="card-price">Rp 199.000</span>
-                            <div class="card-rating">
-                                <i class="fa-solid fa-star"></i> 4.8 (97)
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-primary card-buy-direct" aria-label="Beli Langsung">
-                                <i class="fa-solid fa-bolt"></i> Beli
-                            </button>
-                            <button class="btn-icon card-add-cart" aria-label="Tambahkan Keranjang">
-                                <i class="fa-solid fa-cart-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Card 5: Mobile App UI -->
-                <article class="product-card"
-                    data-category="ui kit"
-                    data-price="120000"
-                    data-img="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80"
-                    data-title="Mobile App UI Kit"
-                    data-store="Pixel Art Lab"
-                    data-store-slug="pixel-art-lab"
-                    data-desc="Koleksi 200+ screen desain aplikasi mobile dalam format Figma. Mencakup onboarding, autentikasi, home, profile, dan banyak lagi. Siap untuk handoff ke developer."
-                    data-features="200+ Screens,iOS & Android,Auto Layout,Dev-Ready,Prototype Included"
-                    data-tags="UI Kit,Mobile,Figma"
-                    data-rating="4.7"
-                    data-reviews="63">
-                    <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=600&q=80" alt="Mobile App UI Kit" loading="lazy">
-                        <span class="card-badge premium">Premium</span>
-                        <button class="card-quick-view" aria-label="Quick View">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">UI Kit</span>
-                        <a class="card-store" href="/store/pixel-art-lab">Oleh: Pixel Art Lab</a>
-                        <h3 class="card-title">Mobile App UI Kit</h3>
-                        <div class="card-footer">
-                            <span class="card-price">Rp 120.000</span>
-                            <div class="card-rating">
-                                <i class="fa-solid fa-star"></i> 4.7 (63)
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-primary card-buy-direct" aria-label="Beli Langsung">
-                                <i class="fa-solid fa-bolt"></i> Beli
-                            </button>
-                            <button class="btn-icon card-add-cart" aria-label="Tambahkan Keranjang">
-                                <i class="fa-solid fa-cart-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Card 6: Wireframe Pack (FREE) -->
-                <article class="product-card"
-                    data-category="source code"
-                    data-price="0"
-                    data-img="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80"
-                    data-title="Wireframe Pack — Gratis"
-                    data-store="Design Hub"
-                    data-store-slug="design-hub"
-                    data-desc="Paket wireframe gratis untuk referensi awal desain UI Anda. Tersedia dalam format Figma dan PDF, mencakup lebih dari 80 layout berbeda untuk berbagai jenis aplikasi."
-                    data-features="80+ Layouts,Figma & PDF,Free Forever,Regular Updates,Community Support"
-                    data-tags="Free,Figma,Wireframe"
-                    data-rating="4.9"
-                    data-reviews="211"
-                    data-free="true">
-                    <div class="card-thumb">
-                        <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80" alt="Wireframe Pack Gratis" loading="lazy">
-                        <span class="card-badge free">Gratis</span>
-                        <button class="card-quick-view" aria-label="Quick View">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">Source Code</span>
-                        <a class="card-store" href="/store/design-hub">Oleh: Design Hub</a>
-                        <h3 class="card-title">Wireframe Pack — Gratis</h3>
-                        <div class="card-footer">
-                            <span class="card-price free-price">Gratis</span>
-                            <div class="card-rating">
-                                <i class="fa-solid fa-star"></i> 4.9 (211)
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-primary download card-add-cart" aria-label="Download gratis" style="width: 100%;">
-                                <i class="fa-solid fa-download"></i> Download
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
 
                 <!-- Produk seller dinamis: memakai UI card yang sama dengan file ZIP -->
                 <article

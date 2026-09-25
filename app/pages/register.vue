@@ -13,8 +13,12 @@ const form = reactive({
 const error = ref('')
 const success = ref(false)
 
-function submitRegister() {
+const { register } = useDemoAuth()
+const isSubmitting = ref(false)
+
+async function submitRegister() {
   error.value = ''
+  success.value = false
 
   if (!form.name || !form.email || !form.password || !form.confirmPassword) {
     error.value = 'Semua field wajib diisi.'
@@ -31,16 +35,15 @@ function submitRegister() {
     return
   }
 
-  const user = {
-    id: `user-${Date.now()}`,
-    name: form.name.trim(),
-    email: form.email.trim().toLowerCase(),
-    password: form.password,
-    role: 'buyer'
-  }
+  isSubmitting.value = true
+  const res = await register(form.name.trim(), form.email.trim().toLowerCase(), form.password)
+  isSubmitting.value = false
 
-  localStorage.setItem('icmarket_demo_user', JSON.stringify(user))
-  success.value = true
+  if (res.success) {
+    success.value = true
+  } else {
+    error.value = res.message || 'Registrasi gagal.'
+  }
 }
 </script>
 
@@ -61,8 +64,8 @@ function submitRegister() {
         <p>
           Akun Buyer berhasil dibuat. Silakan login untuk mulai menggunakan IC Market.
         </p>
-        <NuxtLink class="primary-btn" to="/login">
-          Lanjut ke Login
+        <NuxtLink class="primary-btn" to="/">
+          Lanjut ke Beranda
         </NuxtLink>
       </div>
 
@@ -111,8 +114,8 @@ function submitRegister() {
           {{ error }}
         </p>
 
-        <button class="primary-btn" type="submit">
-          Daftar
+        <button class="primary-btn" type="submit" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Mendaftar...' : 'Daftar' }}
         </button>
       </form>
 
