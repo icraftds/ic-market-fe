@@ -357,7 +357,8 @@ const addManualFile = () => {
     fileSizeBytes: 0,
     mimeType: 'application/octet-stream',
     version: '1.0.0',
-    downloadUrl: ''
+    downloadUrl: '',
+    isManual: true
   })
 }
 
@@ -727,8 +728,8 @@ onMounted(initializePage)
                 Versi
                 <input v-model="file.version" maxlength="20" placeholder="1.0.0" />
               </label>
-              <label>
-                URL Download (Opsional — isi jika ingin pakai link eksternal seperti Google Drive)
+              <label v-if="file.isManual">
+                URL Download Eksternal
                 <input v-model="file.downloadUrl" type="url" placeholder="https://drive.google.com/..." />
               </label>
             </div>
