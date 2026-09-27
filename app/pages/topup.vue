@@ -199,8 +199,9 @@ const processTopup = async () => {
           </button>
         </div>
       </div>
+    </div>
 
-      <!-- Complex T&C Modal -->
+    <!-- Complex T&C Modal -->
       <Teleport to="body">
         <Transition name="tnc-modal">
           <div v-if="showTnC" class="tnc-overlay" @click.self="showTnC = false">
