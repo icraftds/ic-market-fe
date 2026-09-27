@@ -57,7 +57,7 @@ export const useProductCatalog = () => {
         key,
         fallback
     ) => {
-        if (!import.meta.client) {
+        if (false) {
             return fallback
         }
 
@@ -83,7 +83,7 @@ export const useProductCatalog = () => {
      * menjadi daftar toko marketplace.
      */
     const buildStoreRegistry = () => {
-        if (!import.meta.client) {
+        if (false) {
             stores.value = []
             return []
         }
@@ -404,18 +404,35 @@ export const useProductCatalog = () => {
             const response = await $fetch(`${config.public.apiBase}/products`)
             if (response.success) {
                 products.value = response.data.map(p => {
-                    const rawImages = Array.isArray(p.images) ? p.images : []
-                    // images bisa berupa array string URL atau array object
-                    const thumbnailUrl = p.thumbnailUrl ||
-                        (typeof rawImages[0] === 'string' ? rawImages[0] : rawImages[0]?.imageUrl) ||
-                        ''
+                    // images dari BE bisa berupa JSON string "[\"url\"]" atau sudah array
+                    let rawImages = []
+                    if (Array.isArray(p.images)) {
+                        rawImages = p.images
+                    } else if (typeof p.images === 'string' && p.images) {
+                        try { rawImages = JSON.parse(p.images) } catch { rawImages = [] }
+                    }
+
+                    // pastikan array of string (bukan object)
+                    const imageUrls = rawImages.map(img =>
+                        typeof img === 'string' ? img : (img?.imageUrl || img?.url || '')
+                    ).filter(Boolean)
+
+                    const thumbnailUrl = p.thumbnailUrl || imageUrls[0] || ''
+
+                    const sellerName = p.seller?.name || 'Seller IC Market'
+                    const storeSlug = sellerName.toLowerCase().replace(/\s+/g, '-')
+
                     return {
                         ...p,
-                        images: rawImages,
+                        images: imageUrls.map(url => ({ imageUrl: url })),
                         thumbnailUrl,
-                        storeName: p.seller?.name || 'Seller IC Market',
-                        storeSlug: p.seller?.name ? p.seller.name.toLowerCase().replace(/\s+/g, '-') : 'seller-ic-market',
-                        storeId: p.seller_id
+                        storeName: sellerName,
+                        storeSlug,
+                        storeId: p.seller_id,
+                        // Normalize catalogId agar card bisa diidentifikasi
+                        catalogId: `api:${p.id}`,
+                        // Normalize price ke number
+                        price: Number(p.price || 0),
                     }
                 })
                 lastUpdatedAt.value = new Date().toISOString()
