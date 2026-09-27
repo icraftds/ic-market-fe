@@ -3,10 +3,36 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
 
-const { orders, loadOrders, statusLabel } = useOrderStore()
+const config = useRuntimeConfig()
+const authToken = useCookie('icmarket_auth_token')
 
+const orders = ref([])
 const search = ref('')
 const statusFilter = ref('all')
+
+const statusLabel = (status) => {
+  const labels = {
+    pending_payment: 'Menunggu Pembayaran',
+    paid: 'Sudah Dibayar',
+    processing: 'Diproses',
+    completed: 'Selesai',
+    cancelled: 'Dibatalkan'
+  }
+  return labels[status] || status
+}
+
+const loadOrders = async () => {
+  try {
+    const res = await $fetch(`${config.public.apiBase}/admin/orders`, {
+      headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    if (res.success && res.data) {
+      orders.value = res.data
+    }
+  } catch (e) {
+    console.error('Failed to load orders', e)
+  }
+}
 
 const formatCurrency = (value) => new Intl.NumberFormat('id-ID', {
   style: 'currency',
