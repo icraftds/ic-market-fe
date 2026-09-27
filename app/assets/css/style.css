@@ -956,7 +956,7 @@ a { text-decoration: none; color: inherit; }
     gap: 6px;
 }
 .btn-primary:hover { opacity: 0.82; }
-.btn-primary.download { background: var(--green); }
+.btn-primary.download { background: var(--green); color: white !important; }
 
 .btn-icon {
     width: 36px;
