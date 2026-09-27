@@ -30,11 +30,7 @@ const selectedBank = ref('BCA')
 const bankAccounts = { BCA: '1234 5678 9012', BNI: '0987 6543 2100', Mandiri: '1357 2468 9990' }
 const copyText = ref('Salin')
 
-const formatRp = (value) => new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
-  maximumFractionDigits: 0
-}).format(Number(value || 0))
+const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
 
 const groupSubtotal = (group) => (group.items || []).reduce(
   (sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || item.qty || 1)),
@@ -264,7 +260,7 @@ onMounted(async () => {
               <div class="checkout-store-items">
                 <div v-for="item in group.items" :key="item.catalogId || item.id" class="checkout-store-item">
                   <span>{{ item.name }}</span>
-                  <span>{{ item.isFree ? 'Gratis' : formatRp(Number(item.price || 0) * Number(item.quantity || item.qty || 1)) }}</span>
+                  <span v-if="item.isFree">Gratis</span><span v-else><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(Number(item.price || 0) * Number(item.quantity || item.qty || 1)) }}</span>
                 </div>
               </div>
             </div>

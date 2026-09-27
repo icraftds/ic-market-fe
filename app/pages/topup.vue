@@ -34,11 +34,7 @@ onMounted(() => {
   }
 })
 
-const formatRp = (value) => new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
-  maximumFractionDigits: 0
-}).format(Number(value || 0))
+const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
 
 const processTopup = async () => {
   if (isProcessing.value || !session.value) return

@@ -175,10 +175,7 @@ const store = computed(() => {
   return stores[slug.value] || null
 })
 
-const formatRp = (value) =>
-  Number(value) === 0
-    ? 'Gratis'
-    : 'Rp ' + Number(value).toLocaleString('id-ID')
+const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
 
 const { addToCart: apiAddToCart } = useCart()
 
