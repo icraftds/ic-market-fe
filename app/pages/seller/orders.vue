@@ -70,14 +70,25 @@ const processingCount = computed(() => orders.value.filter((order) => order.stat
 const completedCount = computed(() => orders.value.filter((order) => order.status === 'completed').length)
 const revenue = computed(() => orders.value.reduce((sum, order) => sum + Number(order.total || 0), 0))
 
-const loadOrders = () => {
+const loadOrders = async () => {
   if (!activeStoreId.value || !canManageActiveStore.value) {
     orders.value = []
     return
   }
 
-  orders.value = getStoreOrders(activeStoreId.value)
-    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+  try {
+    const config = useRuntimeConfig()
+    const authToken = useCookie('icmarket_auth_token')
+    const response = await $fetch(`${config.public.apiBase}/seller/orders`, {
+      headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    
+    if (response.success && response.data) {
+      orders.value = response.data
+    }
+  } catch (error) {
+    console.error('Failed to load orders', error)
+  }
 }
 
 const initialize = async () => {
@@ -92,25 +103,31 @@ const handleStoreChange = (event) => {
   loadOrders()
 }
 
-const changeStatus = (order, nextStatus) => {
+const changeStatus = async (order, nextStatus) => {
   if (!canManageActiveStore.value) return
 
-  const updated = updateStoreOrderStatus(
-    activeStoreId.value,
-    order.id,
-    nextStatus
-  )
+  try {
+    const config = useRuntimeConfig()
+    const authToken = useCookie('icmarket_auth_token')
+    const response = await $fetch(`${config.public.apiBase}/seller/orders/${order.id}/status`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${authToken.value}` },
+      body: { status: nextStatus }
+    })
 
-  if (!updated) {
-    notice.value = 'Status pesanan belum dapat diperbarui.'
-    return
+    if (response.success) {
+      notice.value = nextStatus === 'completed'
+        ? `Pesanan ${order.id} selesai. Dana escrow sudah dirilis ke saldo available.`
+        : `Pesanan ${order.id} sekarang sedang diproses.`
+      
+      loadOrders()
+    } else {
+      notice.value = 'Status pesanan gagal diperbarui: ' + (response.message || 'Unknown error')
+    }
+  } catch (error) {
+    console.error(error)
+    notice.value = 'Terjadi kesalahan saat memperbarui pesanan.'
   }
-
-  notice.value = nextStatus === 'completed'
-    ? `Pesanan ${order.id} selesai. Dana escrow sudah dirilis ke saldo available.`
-    : `Pesanan ${order.id} sekarang sedang diproses.`
-
-  loadOrders()
 }
 
 const handleDataUpdate = (event) => {
