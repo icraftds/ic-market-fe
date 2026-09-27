@@ -259,7 +259,7 @@ onMounted(async () => {
                   <strong>{{ group.name }}</strong>
                   <span>{{ group.items?.length || 0 }} produk</span>
                 </div>
-                <strong>{{ formatRp(groupSubtotal(group)) }}</strong>
+                <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(groupSubtotal(group)) }}</strong>
               </div>
               <div class="checkout-store-items">
                 <div v-for="item in group.items" :key="item.catalogId || item.id" class="checkout-store-item">
@@ -270,7 +270,7 @@ onMounted(async () => {
             </div>
             <div class="checkout-store-total">
               <span>Subtotal seluruh toko</span>
-              <strong>{{ formatRp(checkoutSubtotal) }}</strong>
+              <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(checkoutSubtotal) }}</strong>
             </div>
           </div>
         </div>
@@ -369,7 +369,7 @@ onMounted(async () => {
             <div v-if="selectedMethod === 'coin'" class="payment-detail-pane visible">
               <div class="flow-alert info">
                 <i class="fa-solid fa-coins"></i>
-                Saldo iCoin-Z Anda: <strong>{{ formatRp(session?.coins || 0).replace('Rp', '') }} iCoin-Z</strong>. Total pesanan akan langsung dipotong dari saldo iCoin-Z.
+                Saldo iCoin-Z Anda: <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(session?.coins || 0).replace('Rp', '') }} iCoin-Z</strong>. Total pesanan akan langsung dipotong dari saldo iCoin-Z.
               </div>
               <div v-if="(session?.coins || 0) < checkoutSubtotal" class="flow-alert warn" style="margin-top: 10px;">
                 <i class="fa-solid fa-triangle-exclamation"></i>

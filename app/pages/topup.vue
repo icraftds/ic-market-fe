@@ -109,12 +109,48 @@ const processTopup = async () => {
     </section>
 
     <div class="topup-container">
-      <div class="current-balance">
-        <span>Saldo iCoin-Z Anda Saat Ini:</span>
-        <h2><span class="icoin-icon">C</span> Rp {{ Number(session?.coins || 0).toLocaleString('id-ID') }} iCoin-Z</h2>
+      <div class="current-balance" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <span>Saldo iCoin-Z Anda Saat Ini:</span>
+          <h2><span class="icoin-icon">C</span> {{ Number(session?.coins || 0).toLocaleString('id-ID') }}</h2>
+        </div>
+        <button class="primary-button" style="min-width: 150px; font-size: 14px; padding: 10px 24px;" @click="() => { document.getElementById('topup-form').scrollIntoView({ behavior: 'smooth' }) }">
+          <i class="fa-solid fa-plus" style="margin-right: 6px;"></i> Top Up Sekarang
+        </button>
       </div>
       
-      <h3>Pilih Nominal Top Up</h3>
+      <div v-if="session?.histories && session.histories.length > 0" class="history-section" style="margin-top: 32px; margin-bottom: 48px;">
+        <h3>Riwayat Top Up & Transaksi</h3>
+        <div class="tnc-table-wrapper" style="margin-top: 16px;">
+          <table class="tnc-table">
+            <thead>
+              <tr>
+                <th>Referensi</th>
+                <th>Deskripsi</th>
+                <th>Jumlah</th>
+                <th>Waktu</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="h in session.histories" :key="h.id">
+                <td style="font-family: monospace;">{{ h.reference_id }}</td>
+                <td>{{ h.description }}</td>
+                <td :style="{ color: h.type === 'credit' ? 'var(--green)' : 'var(--red)', fontWeight: 'bold' }">
+                  {{ h.type === 'credit' ? '+' : '-' }} <span class="icoin-icon" style="font-size: 11px;">C</span> {{ Number(h.amount).toLocaleString('id-ID') }}
+                </td>
+                <td>{{ new Date(h.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' }) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div v-else class="history-section" style="margin-top: 32px; margin-bottom: 48px; text-align: center; padding: 32px; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border);">
+        <i class="fa-solid fa-clock-rotate-left" style="font-size: 32px; color: var(--muted); margin-bottom: 12px;"></i>
+        <p style="color: var(--muted); margin: 0;">Belum ada riwayat top up atau transaksi.</p>
+      </div>
+
+      <div id="topup-form" style="border-top: 1px solid var(--border); padding-top: 48px;">
+        <h3>Pilih Nominal Top Up</h3>
       <div class="amount-grid">
         <div 
           v-for="amt in amounts" 
@@ -124,8 +160,8 @@ const processTopup = async () => {
           @click="selectedAmount = amt"
         >
           <div v-if="amt.discount" class="discount-badge">{{ amt.discount }}</div>
-          <div class="coin-val"><span class="icoin-icon">C</span> Rp {{ Number(amt.value).toLocaleString('id-ID') }}</div>
-          <div class="price-val">Harga: <strong style="color:var(--text);">{{ formatRp(amt.price) }}</strong></div>
+          <div class="coin-val"><span class="icoin-icon">C</span> {{ Number(amt.value).toLocaleString('id-ID') }}</div>
+          <div class="price-val">Harga: <strong style="color:var(--text);"><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(amt.price) }}</strong></div>
         </div>
       </div>
 
@@ -147,7 +183,7 @@ const processTopup = async () => {
       <div class="checkout-section">
         <div class="summary">
           <span>Total Pembayaran:</span>
-          <strong>{{ formatRp(selectedAmount.price) }}</strong>
+          <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(selectedAmount.price) }}</strong>
         </div>
         
         <div class="checkout-actions">

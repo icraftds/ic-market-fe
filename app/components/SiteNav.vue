@@ -109,7 +109,7 @@ onBeforeUnmount(() => {
           <!-- LOGGED IN -->
           <template v-else>
             <!-- Coin -->
-            <div class="nav-coin-chip" title="Saldo iCoinZ">
+            <NuxtLink to="/topup" class="nav-coin-chip" title="Riwayat Top Up iCoinZ" style="text-decoration: none;">
               <div class="nav-coin-icon">
                 <i class="fa-solid fa-coins"></i>
               </div>
@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
                 <span class="nav-coin-lbl">iCoinZ</span>
                 <span class="nav-coin-val">{{ Number(session.coins || 0).toLocaleString('id-ID') }}</span>
               </div>
-            </div>
+            </NuxtLink>
 
             <!-- User -->
             <div class="nav-user-wrap" ref="dropdownRef">

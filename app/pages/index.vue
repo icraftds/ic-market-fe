@@ -234,7 +234,7 @@ onMounted(async () => {
 
             const isFree = card.dataset.free === 'true';
             const priceEl = document.getElementById('modal-price');
-            priceEl.textContent = isFree ? 'Gratis' : `Rp ${parseInt(card.dataset.price).toLocaleString('id-ID')}`;
+            priceEl.textContent = isFree ? 'Gratis' : `<i class='fa-solid fa-coins' style='color: #f59e0b'></i> ` + parseInt(card.dataset.price).toLocaleString('id-ID');
             priceEl.className   = 'modal-price' + (isFree ? ' free' : '');
 
             document.getElementById('modal-rating-text').textContent =
@@ -548,7 +548,7 @@ onMounted(async () => {
                         <h3 class="card-title">{{ product.name }}</h3>
                         <div class="card-footer">
                             <span class="card-price" :class="{ 'free-price': product.price === 0 }">
-                                {{ product.price === 0 ? 'Gratis' : `Rp ${Number(product.price).toLocaleString('id-ID')}` }}
+                                <span v-if="product.price === 0">Gratis</span><span v-else><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ Number(product.price).toLocaleString('id-ID') }}</span>
                             </span>
                             <div class="card-rating">
                                 <i class="fa-solid fa-star"></i>
@@ -700,7 +700,7 @@ onMounted(async () => {
                         <h3 class="card-title">{{ product.name }}</h3>
                         <div class="card-footer">
                             <span class="card-price" :class="{ 'free-price': product.price === 0 }">
-                                {{ product.price === 0 ? 'Gratis' : `Rp ${Number(product.price).toLocaleString('id-ID')}` }}
+                                <span v-if="product.price === 0">Gratis</span><span v-else><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ Number(product.price).toLocaleString('id-ID') }}</span>
                             </span>
                             <div class="card-rating">
                                 <i class="fa-solid fa-star"></i>
