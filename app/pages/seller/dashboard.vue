@@ -110,18 +110,7 @@ onMounted(() => {
       </div>
 
       <div class="hero-actions">
-        <label v-if="approvedStores.length > 1" class="store-switcher">
-          <span>Toko aktif</span>
-          <select :value="activeStoreId" @change="changeActiveStore">
-            <option
-              v-for="item in approvedStores"
-              :key="item.applicationId"
-              :value="item.applicationId"
-            >
-              {{ item.storeName }}{{ getTenantStatus(item) === 'suspended' ? ' (Suspended)' : '' }}
-            </option>
-          </select>
-        </label>
+
 
         <span
           class="approval-badge"
@@ -196,7 +185,7 @@ onMounted(() => {
           untuk toko ini tidak dapat dikelola sampai status toko diaktifkan kembali.
         </p>
 
-        <p v-if="approvedStores.length > 1" class="suspended-hint">
+        <p class="suspended-hint">
           Kamu masih bisa memilih toko lain yang berstatus aktif dari pilihan toko di atas.
         </p>
 

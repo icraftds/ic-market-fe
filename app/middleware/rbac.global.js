@@ -60,6 +60,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
         return
     }
 
+    // Sellers ONLY allowed in /seller/*, /logout, /profile
+    if (role === 'seller') {
+        const allowedSellerPaths = ['/seller/dashboard', '/seller/products', '/seller/orders', '/seller/finance', '/logout', '/profile']
+        if (!allowedSellerPaths.includes(path) && !path.startsWith('/seller/')) {
+            return navigateTo('/seller/dashboard')
+        }
+    }
+
     // Admin payout boleh diakses admin dan finance.
     if (path === '/admin/payouts') {
         const loginRedirect = requireLogin()

@@ -203,7 +203,12 @@ async function submitLogin() {
     return
   }
 
-  await navigateTo(redirectTarget.value)
+  const { session } = useDemoAuth()
+  if (session.value?.role === 'seller') {
+    await navigateTo('/seller/dashboard')
+  } else {
+    await navigateTo(redirectTarget.value)
+  }
 }
 
 async function submitOtp() {
@@ -217,7 +222,12 @@ async function submitOtp() {
 
   if (res.success) {
     showOtpForm.value = false
-    await navigateTo(redirectTarget.value)
+    const { session } = useDemoAuth()
+    if (session.value?.role === 'seller') {
+      await navigateTo('/seller/dashboard')
+    } else {
+      await navigateTo(redirectTarget.value)
+    }
   } else {
     error.value = res.message || 'Verifikasi gagal.'
   }
