@@ -3,14 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
 
-const {
-  readApplications,
-  writeApplications,
-  normalizeStatus
-} = useSellerApplications()
-
-const STORES_KEY = 'icmarket_admin_stores'
-const { getStoreStorageKey } = useActiveStore()
+const config = useRuntimeConfig()
+const authToken = useCookie('icmarket_auth_token')
 
 const applications = ref([])
 const selectedFilter = ref('all')
@@ -26,150 +20,64 @@ const statusLabel = (status) => ({
 }[status] || status)
 
 const filteredApplications = computed(() => {
-  if (selectedFilter.value === 'Archived') {
-    return applications.value.filter((item) => item.archived)
-  }
-
-  const active = applications.value.filter((item) => !item.archived)
-
+  if (selectedFilter.value === 'Archived') return []
+  const active = applications.value
   if (selectedFilter.value === 'all') return active
   return active.filter((item) => item.status === selectedFilter.value)
 })
 
-const appendHistory = (current, status, note = '') => [
-  ...(Array.isArray(current?.history) ? current.history : []),
-  { status, note, at: new Date().toISOString() }
-]
-
-const persistOne = (updated) => {
-  const all = readApplications()
-  const index = all.findIndex((item) => item.applicationId === updated.applicationId)
-
-  if (index >= 0) all[index] = updated
-  else all.push(updated)
-
-  writeApplications(all)
-  loadApplications()
-}
-
-const loadApplications = () => {
-  applications.value = readApplications()
-    .map((item) => ({
-      ...item,
-      status: normalizeStatus(item.status),
-      archived: Boolean(item.archived)
-    }))
-    .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
-}
-
-const promoteApplicantToSeller = (application) => {
+const loadApplications = async () => {
   try {
-    const savedUser = JSON.parse(localStorage.getItem('icmarket_demo_user') || 'null')
-    if (!savedUser) return
-
-    const applicantEmail = String(application.userEmail || '').toLowerCase()
-    const savedEmail = String(savedUser.email || '').toLowerCase()
-
-    if (applicantEmail && applicantEmail !== savedEmail) return
-
-    localStorage.setItem(
-      'icmarket_demo_user',
-      JSON.stringify({ ...savedUser, role: 'seller' })
-    )
-  } catch {
-    // Approval tetap tersimpan.
+    const res = await $fetch(`${config.public.apiBase}/admin/stores`, {
+      headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    if (res.success) {
+      applications.value = res.data.map(store => {
+        let mappedStatus = 'Submitted'
+        if (store.status === 'active') mappedStatus = 'Approved'
+        if (store.status === 'rejected') mappedStatus = 'Rejected'
+        
+        return {
+          applicationId: store.id,
+          storeName: store.name,
+          storeSlug: String(store.name).toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''),
+          category: store.description || '-',
+          bankName: '-',
+          accountNumber: '-',
+          accountHolder: '-',
+          userName: store.user?.name || '-',
+          userEmail: store.user?.email || '-',
+          status: mappedStatus,
+          submittedAt: store.created_at,
+          archived: false,
+          history: []
+        }
+      }).sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+    }
+  } catch (e) {
+    console.error(e)
   }
 }
 
-
-const normalizeSlug = (value = '') => String(value)
-  .toLowerCase()
-  .trim()
-  .replace(/[^a-z0-9-]/g, '-')
-  .replace(/-+/g, '-')
-  .replace(/^-|-$/g, '')
-
-const provisionApprovedTenant = (application) => {
-  if (!import.meta.client) return
-
-  try {
-    const stored = JSON.parse(localStorage.getItem(STORES_KEY) || '[]')
-    const stores = Array.isArray(stored) ? stored : []
-    const slug = normalizeSlug(application.storeSlug || application.storeName)
-    const applicationId = application.applicationId
-    const index = stores.findIndex((store) =>
-      String(store.applicationId || '') === String(applicationId) ||
-      String(store.slug || '') === slug
-    )
-
-    const tenant = {
-      id: index >= 0 ? stores[index].id : `TENANT-${applicationId}`,
-      applicationId,
-      ownerUserId: application.userId || '',
-      ownerEmail: application.userEmail || '',
-      name: application.storeName,
-      slug,
-      schemaName: `tenant_${slug.replace(/-/g, '_')}`,
-      ownerName: application.ownerName || application.userName || '-',
-      category: application.category || '-',
-      bankName: application.bankName || '-',
-      accountNumber: application.accountNumber || '',
-      accountHolder: application.accountHolder || '-',
-      status: index >= 0 ? (stores[index].status || 'active') : 'active',
-      customCommissionRate: index >= 0 ? (stores[index].customCommissionRate ?? null) : null,
-      approvedAt: application.reviewedAt || new Date().toISOString(),
-      createdAt: index >= 0 ? (stores[index].createdAt || new Date().toISOString()) : new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-
-    if (index >= 0) stores[index] = { ...stores[index], ...tenant }
-    else stores.push(tenant)
-
-    localStorage.setItem(STORES_KEY, JSON.stringify(stores))
-
-    const financeKey = getStoreStorageKey('finance', applicationId)
-    if (financeKey && localStorage.getItem(financeKey) === null) {
-      localStorage.setItem(financeKey, JSON.stringify({
-        wallet: { balanceHolding: 0, balanceAvailable: 0, balanceWithdrawn: 0 },
-        ledger: [],
-        payouts: []
-      }))
-    }
-  } catch {
-    // Approval onboarding tetap menjadi sumber utama jika provisioning lokal gagal.
-  }
-}
-
-const updateStatus = (application, status, options = {}) => {
-  const now = new Date().toISOString()
-
-  const updated = {
-    ...application,
-    ...options,
-    status,
-    archived: false,
-    reviewedAt: now,
-    rejectionReason:
-      status === 'Rejected'
-        ? options.rejectionReason || application.rejectionReason || ''
-        : '',
-    history: appendHistory(
-      application,
-      status,
-      options.historyNote || `Status pengajuan diubah menjadi ${status}.`
-    )
-  }
-
-  persistOne(updated)
-
+const updateStatus = async (application, status, options = {}) => {
   if (status === 'Approved') {
-    promoteApplicantToSeller(updated)
-    provisionApprovedTenant(updated)
+    try {
+      const res = await $fetch(`${config.public.apiBase}/admin/stores/${application.applicationId}/approve`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken.value}` }
+      })
+      if (res.success) {
+        notice.value = `"${application.storeName}" disetujui dan menjadi toko aktif.`
+        await loadApplications()
+      }
+    } catch (e) {
+      notice.value = 'Gagal menyetujui toko'
+    }
+  } else {
+    application.status = status
+    application.rejectionReason = options.rejectionReason || ''
+    notice.value = `Status "${application.storeName}" diubah menjadi ${statusLabel(status)}.`
   }
-
-  notice.value = status === 'Approved'
-    ? `"${application.storeName}" disetujui dan menjadi toko aktif.`
-    : `Status "${application.storeName}" diubah menjadi ${statusLabel(status)}.`
 
   rejectingApplicationId.value = ''
   rejectionReason.value = ''
@@ -182,39 +90,18 @@ const startReject = (application) => {
 
 const confirmReject = (application) => {
   const reason = rejectionReason.value.trim()
-
   if (reason.length < 5) {
     notice.value = 'Alasan penolakan minimal 5 karakter.'
     return
   }
-
-  updateStatus(application, 'Rejected', {
-    rejectionReason: reason,
-    historyNote: `Pengajuan ditolak admin. Alasan: ${reason}`
-  })
+  updateStatus(application, 'Rejected', { rejectionReason: reason })
 }
 
 const archiveApplication = (application) => {
-  persistOne({
-    ...application,
-    archived: true,
-    archivedAt: new Date().toISOString(),
-    history: appendHistory(application, application.status, 'Pengajuan diarsipkan admin.')
-  })
-
-  notice.value = `"${application.storeName}" dipindahkan ke arsip.`
+  notice.value = 'Fitur arsip belum didukung.'
 }
 
-const restoreApplication = (application) => {
-  persistOne({
-    ...application,
-    archived: false,
-    archivedAt: null,
-    history: appendHistory(application, application.status, 'Pengajuan dikeluarkan dari arsip.')
-  })
-
-  notice.value = `"${application.storeName}" dikembalikan dari arsip.`
-}
+const restoreApplication = (application) => {}
 
 onMounted(loadApplications)
 </script>
