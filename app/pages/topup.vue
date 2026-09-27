@@ -15,6 +15,7 @@ const paymentMethods = [
   { id: 'credit_card', name: 'Kartu Kredit/Debit', sub: 'Visa, Mastercard', icon: 'fa-brands fa-cc-visa' }
 ]
 const selectedMethod = ref('qris')
+const activeTab = ref('topup')
 
 const amounts = [
   { value: 20000, price: 20000, discount: '' },
@@ -105,19 +106,22 @@ const processTopup = async () => {
     </section>
 
     <div class="topup-container">
-      <div class="current-balance" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div class="current-balance">
         <div>
           <span>Saldo iCoin-Z Anda Saat Ini:</span>
           <h2><span class="icoin-icon">C</span> {{ Number(session?.coins || 0).toLocaleString('id-ID') }}</h2>
         </div>
-        <button class="primary-button" style="min-width: 150px; font-size: 14px; padding: 10px 24px;" @click="() => { document.getElementById('topup-form').scrollIntoView({ behavior: 'smooth' }) }">
-          <i class="fa-solid fa-plus" style="margin-right: 6px;"></i> Top Up Sekarang
-        </button>
       </div>
       
-      <div v-if="session?.histories && session.histories.length > 0" class="history-section" style="margin-top: 32px; margin-bottom: 48px;">
-        <h3>Riwayat Top Up & Transaksi</h3>
-        <div class="tnc-table-wrapper" style="margin-top: 16px;">
+      <div class="topup-tabs">
+        <button class="tab-btn" :class="{ active: activeTab === 'topup' }" @click="activeTab = 'topup'">Top Up iCoin-Z</button>
+        <button class="tab-btn" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'">Riwayat Transaksi</button>
+      </div>
+
+      <div v-if="activeTab === 'history'" class="tab-content" style="margin-top: 32px;">
+        <div v-if="session?.histories && session.histories.length > 0" class="history-section" style="margin-bottom: 48px;">
+          <h3>Riwayat Transaksi</h3>
+          <div class="tnc-table-wrapper" style="margin-top: 16px;">
           <table class="tnc-table">
             <thead>
               <tr>
@@ -140,12 +144,13 @@ const processTopup = async () => {
           </table>
         </div>
       </div>
-      <div v-else class="history-section" style="margin-top: 32px; margin-bottom: 48px; text-align: center; padding: 32px; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border);">
-        <i class="fa-solid fa-clock-rotate-left" style="font-size: 32px; color: var(--muted); margin-bottom: 12px;"></i>
-        <p style="color: var(--muted); margin: 0;">Belum ada riwayat top up atau transaksi.</p>
+        <div v-else class="history-section" style="margin-bottom: 48px; text-align: center; padding: 32px; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border);">
+          <i class="fa-solid fa-clock-rotate-left" style="font-size: 32px; color: var(--muted); margin-bottom: 12px;"></i>
+          <p style="color: var(--muted); margin: 0;">Belum ada riwayat top up atau transaksi.</p>
+        </div>
       </div>
 
-      <div id="topup-form" style="border-top: 1px solid var(--border); padding-top: 48px;">
+      <div v-if="activeTab === 'topup'" id="topup-form" style="padding-top: 32px;">
         <h3>Pilih Nominal Top Up</h3>
       <div class="amount-grid">
         <div 
@@ -857,5 +862,32 @@ html.dark .tnc-alert.warning {
   .tnc-modal {
     max-height: 95vh;
   }
+}
+
+/* Tabs */
+.topup-tabs {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -1px;
+}
+.tab-btn:hover {
+  color: var(--text);
+}
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom: 3px solid var(--accent);
 }
 </style>
