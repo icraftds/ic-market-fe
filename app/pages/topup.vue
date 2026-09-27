@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -16,6 +16,29 @@ const paymentMethods = [
 ]
 const selectedMethod = ref('qris')
 const activeTab = ref('topup')
+
+const filterType = ref('all')
+const filterDate = ref('all')
+
+const filteredHistories = computed(() => {
+  if (!session.value?.histories) return []
+  
+  return session.value.histories.filter(h => {
+    if (filterType.value !== 'all' && h.type !== filterType.value) return false
+    
+    if (filterDate.value !== 'all') {
+      const date = new Date(h.created_at)
+      const now = new Date()
+      const diffTime = Math.abs(now - date)
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (filterDate.value === '7days' && diffDays > 7) return false
+      if (filterDate.value === '30days' && diffDays > 30) return false
+    }
+    
+    return true
+  })
+})
 
 const amounts = [
   { value: 20000, price: 20000, discount: '' },
@@ -119,7 +142,20 @@ const processTopup = async () => {
       </div>
 
       <div v-if="activeTab === 'history'" class="tab-content" style="margin-top: 32px;">
-        <div v-if="session?.histories && session.histories.length > 0" class="history-section" style="margin-bottom: 48px;">
+        <div class="history-filters" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+          <select v-model="filterType" class="filter-select">
+            <option value="all">Semua Tipe</option>
+            <option value="credit">Pemasukan (Top Up)</option>
+            <option value="debit">Pengeluaran (Belanja)</option>
+          </select>
+          <select v-model="filterDate" class="filter-select">
+            <option value="all">Semua Waktu</option>
+            <option value="7days">7 Hari Terakhir</option>
+            <option value="30days">30 Hari Terakhir</option>
+          </select>
+        </div>
+
+        <div v-if="filteredHistories.length > 0" class="history-section" style="margin-bottom: 48px;">
           <h3>Riwayat Transaksi</h3>
           <div class="tnc-table-wrapper" style="margin-top: 16px;">
           <table class="tnc-table">
@@ -132,7 +168,7 @@ const processTopup = async () => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="h in session.histories" :key="h.id">
+              <tr v-for="h in filteredHistories" :key="h.id">
                 <td style="font-family: monospace;">{{ h.reference_id }}</td>
                 <td>{{ h.description }}</td>
                 <td :style="{ color: h.type === 'credit' ? 'var(--green)' : 'var(--red)', fontWeight: 'bold' }">
@@ -146,7 +182,7 @@ const processTopup = async () => {
       </div>
         <div v-else class="history-section" style="margin-bottom: 48px; text-align: center; padding: 32px; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border);">
           <i class="fa-solid fa-clock-rotate-left" style="font-size: 32px; color: var(--muted); margin-bottom: 12px;"></i>
-          <p style="color: var(--muted); margin: 0;">Belum ada riwayat top up atau transaksi.</p>
+          <p style="color: var(--muted); margin: 0;">Tidak ada riwayat transaksi yang sesuai.</p>
         </div>
       </div>
 
@@ -889,5 +925,21 @@ html.dark .tnc-alert.warning {
 .tab-btn.active {
   color: var(--accent);
   border-bottom: 3px solid var(--accent);
+}
+
+/* History Filters */
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  min-width: 150px;
+}
+.filter-select:focus {
+  border-color: var(--accent);
 }
 </style>
