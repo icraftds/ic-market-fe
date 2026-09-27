@@ -12,13 +12,18 @@ const form = reactive({
 
 const error = ref('')
 const success = ref(false)
+const showOtpForm = ref(false)
+const otpCode = ref('')
+const isVerifyingOtp = ref(false)
+const resendMessage = ref('')
 
-const { register } = useDemoAuth()
+const { register, verifyOtp, resendOtp } = useDemoAuth()
 const isSubmitting = ref(false)
 
 async function submitRegister() {
   error.value = ''
   success.value = false
+  resendMessage.value = ''
 
   if (!form.name || !form.email || !form.password || !form.confirmPassword) {
     error.value = 'Semua field wajib diisi.'
@@ -36,14 +41,41 @@ async function submitRegister() {
   }
 
   isSubmitting.value = true
-  const res = await register(form.name.trim(), form.email.trim().toLowerCase(), form.password)
+  const res = await register(
+    form.name.trim(), 
+    form.email.trim().toLowerCase(), 
+    form.password, 
+    form.confirmPassword
+  )
   isSubmitting.value = false
 
   if (res.success) {
-    success.value = true
+    showOtpForm.value = true
   } else {
     error.value = res.message || 'Registrasi gagal.'
   }
+}
+
+async function submitOtp() {
+  error.value = ''
+  resendMessage.value = ''
+  isVerifyingOtp.value = true
+  
+  const res = await verifyOtp(form.email.trim().toLowerCase(), otpCode.value)
+  isVerifyingOtp.value = false
+
+  if (res.success) {
+    showOtpForm.value = false
+    success.value = true
+  } else {
+    error.value = res.message || 'Verifikasi gagal.'
+  }
+}
+
+async function handleResendOtp() {
+  resendMessage.value = 'Mengirim ulang OTP...'
+  const res = await resendOtp(form.email.trim().toLowerCase())
+  resendMessage.value = res.message || 'OTP berhasil dikirim ulang.'
 }
 </script>
 
@@ -60,13 +92,45 @@ async function submitRegister() {
 
       <div v-if="success" class="success-box">
         <div class="success-icon">✓</div>
-        <h2>Pendaftaran Berhasil</h2>
+        <h2>Verifikasi Berhasil</h2>
         <p>
-          Akun Buyer berhasil dibuat. Silakan login untuk mulai menggunakan IC Market.
+          Akun Anda telah berhasil diverifikasi dan Anda sudah login.
         </p>
         <NuxtLink class="primary-btn" to="/">
           Lanjut ke Beranda
         </NuxtLink>
+      </div>
+
+      <div v-else-if="showOtpForm" class="otp-box">
+        <h2>Verifikasi Email</h2>
+        <p>Kami telah mengirimkan kode OTP ke email <strong>{{ form.email }}</strong></p>
+        
+        <form @submit.prevent="submitOtp">
+          <label>
+            Kode OTP
+            <input
+              v-model="otpCode"
+              type="text"
+              autocomplete="one-time-code"
+              placeholder="Masukkan 6 digit OTP"
+              maxlength="6"
+            />
+          </label>
+
+          <p v-if="error" class="error-text">
+            {{ error }}
+          </p>
+
+          <button class="primary-btn" type="submit" :disabled="isVerifyingOtp">
+            {{ isVerifyingOtp ? 'Memverifikasi...' : 'Verifikasi OTP' }}
+          </button>
+        </form>
+
+        <p class="switch-text">
+          Belum menerima email?
+          <button type="button" class="text-btn" @click="handleResendOtp">Kirim Ulang</button>
+        </p>
+        <p v-if="resendMessage" class="resend-msg">{{ resendMessage }}</p>
       </div>
 
       <form v-else @submit.prevent="submitRegister">
@@ -119,7 +183,7 @@ async function submitRegister() {
         </button>
       </form>
 
-      <p class="switch-text">
+      <p v-if="!success && !showOtpForm" class="switch-text">
         Sudah punya akun?
         <NuxtLink to="/login">Login di sini</NuxtLink>
       </p>
@@ -266,5 +330,33 @@ input:focus {
 .switch-text a {
   color: var(--accent-2, #1472ff);
   font-weight: 800;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--accent-2, #1472ff);
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+.text-btn:hover {
+  text-decoration: underline;
+}
+
+.resend-msg {
+  text-align: center;
+  font-size: 13px;
+  color: #059669;
+  margin-top: 8px;
+}
+.otp-box h2 {
+  text-align: center;
+  margin-bottom: 8px;
+}
+.otp-box p {
+  text-align: center;
+  margin-bottom: 20px;
 }
 </style>

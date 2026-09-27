@@ -650,14 +650,6 @@ onMounted(async () => {
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="text" id="main-search" placeholder="Cari template, UI kit, source code…" autocomplete="off">
                 </div>
-                <div class="view-toggle">
-                    <button class="view-btn active" id="grid-view-btn" title="Grid View">
-                        <i class="fa-solid fa-grid-2"></i>
-                    </button>
-                    <button class="view-btn" id="list-view-btn" title="List View">
-                        <i class="fa-solid fa-list"></i>
-                    </button>
-                </div>
             </div>
 
             <!-- PRODUCT GRID -->

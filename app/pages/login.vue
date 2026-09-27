@@ -18,6 +18,10 @@ const form = reactive({
 })
 
 const error = ref('')
+const showOtpForm = ref(false)
+const otpCode = ref('')
+const isVerifyingOtp = ref(false)
+const resendMessage = ref('')
 
 const DUMMY_ACCOUNTS = [
   {
@@ -185,17 +189,45 @@ async function submitLogin() {
 
   isSubmitting.value = true
 
-  const { login } = useDemoAuth()
+  const { login, verifyOtp, resendOtp } = useDemoAuth()
   const result = await login(email, password)
 
   isSubmitting.value = false
 
   if (!result.success) {
-    error.value = result.message
+    if (result.is_unverified) {
+      showOtpForm.value = true
+    } else {
+      error.value = result.message
+    }
     return
   }
 
   await navigateTo(redirectTarget.value)
+}
+
+async function submitOtp() {
+  error.value = ''
+  resendMessage.value = ''
+  isVerifyingOtp.value = true
+  
+  const { verifyOtp } = useDemoAuth()
+  const res = await verifyOtp(form.email.trim().toLowerCase(), otpCode.value)
+  isVerifyingOtp.value = false
+
+  if (res.success) {
+    showOtpForm.value = false
+    await navigateTo(redirectTarget.value)
+  } else {
+    error.value = res.message || 'Verifikasi gagal.'
+  }
+}
+
+async function handleResendOtp() {
+  resendMessage.value = 'Mengirim ulang OTP...'
+  const { resendOtp } = useDemoAuth()
+  const res = await resendOtp(form.email.trim().toLowerCase())
+  resendMessage.value = res.message || 'OTP berhasil dikirim ulang.'
 }
 </script>
 
@@ -214,7 +246,39 @@ async function submitLogin() {
         Login diperlukan untuk membuka halaman tersebut.
       </div>
 
-      <form @submit.prevent="submitLogin">
+      <div v-if="showOtpForm" class="otp-box">
+        <h2>Verifikasi Email</h2>
+        <p>Kami telah mengirimkan kode OTP baru ke email <strong>{{ form.email }}</strong></p>
+        
+        <form @submit.prevent="submitOtp">
+          <label>
+            Kode OTP
+            <input
+              v-model="otpCode"
+              type="text"
+              autocomplete="one-time-code"
+              placeholder="Masukkan 6 digit OTP"
+              maxlength="6"
+            />
+          </label>
+
+          <p v-if="error" class="error-text">
+            {{ error }}
+          </p>
+
+          <button class="primary-btn" type="submit" :disabled="isVerifyingOtp">
+            {{ isVerifyingOtp ? 'Memverifikasi...' : 'Verifikasi OTP' }}
+          </button>
+        </form>
+
+        <p class="switch-text">
+          Belum menerima email?
+          <button type="button" class="text-btn" @click="handleResendOtp">Kirim Ulang</button>
+        </p>
+        <p v-if="resendMessage" class="resend-msg">{{ resendMessage }}</p>
+      </div>
+
+      <form v-else @submit.prevent="submitLogin">
         <label>
           Email
           <input
@@ -239,12 +303,12 @@ async function submitLogin() {
           {{ error }}
         </p>
 
-        <button class="primary-btn" type="submit">
-          Masuk
+        <button class="primary-btn" type="submit" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Memproses...' : 'Masuk' }}
         </button>
       </form>
 
-      <p class="switch-text">
+      <p v-if="!showOtpForm" class="switch-text">
         Belum punya akun?
         <NuxtLink to="/register">Daftar di sini</NuxtLink>
       </p>
@@ -373,5 +437,33 @@ input:focus {
 .switch-text a {
   color: var(--accent-2, #1472ff);
   font-weight: 800;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--accent-2, #1472ff);
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+.text-btn:hover {
+  text-decoration: underline;
+}
+
+.resend-msg {
+  text-align: center;
+  font-size: 13px;
+  color: #059669;
+  margin-top: 8px;
+}
+.otp-box h2 {
+  text-align: center;
+  margin-bottom: 8px;
+}
+.otp-box p {
+  text-align: center;
+  margin-bottom: 20px;
 }
 </style>
