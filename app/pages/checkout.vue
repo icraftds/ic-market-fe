@@ -158,6 +158,9 @@ const placeOrder = async () => {
     localStorage.removeItem('icmarket_cart')
     localStorage.removeItem('icmarket_checkout_groups')
     
+    // Sync session to update coin balance
+    await syncSession()
+
     localStorage.setItem('icmarket_order_id', response.data.transaction_id)
     localStorage.setItem('icmarket_order_status', response.data.status)
     

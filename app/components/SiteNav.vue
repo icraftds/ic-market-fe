@@ -115,7 +115,7 @@ onBeforeUnmount(() => {
               </div>
               <div class="nav-coin-detail">
                 <span class="nav-coin-lbl">iCoinZ</span>
-                <span class="nav-coin-val">Rp {{ Number(session.coins || 0).toLocaleString('id-ID') }}</span>
+                <span class="nav-coin-val">{{ Number(session.coins || 0).toLocaleString('id-ID') }}</span>
               </div>
               <span class="nav-coin-plus">+ Top Up</span>
             </NuxtLink>
