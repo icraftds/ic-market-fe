@@ -156,11 +156,10 @@ const processTopup = async () => {
           </p>
           <button 
             class="primary-button" 
-            :disabled="isProcessing"
-            @click="processTopup"
+            disabled
+            @click.prevent
           >
-            <span v-if="isProcessing"><i class="fa-solid fa-circle-notch fa-spin"></i> Memproses...</span>
-            <span v-else>Bayar Sekarang</span>
+            <span>Top Up Sedang Dinonaktifkan</span>
           </button>
         </div>
       </div>
