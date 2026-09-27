@@ -139,66 +139,42 @@ export const useActiveStore = () => {
         !isActiveStoreSuspended.value
     )
 
-    const refreshStores = () => {
+    const refreshStores = async () => {
         syncSession()
-        refreshTenantRegistry()
 
-        const user = session.value
+        if (!import.meta.client) return null
+        
+        try {
+            const config = useRuntimeConfig()
+            const authToken = useCookie('icmarket_auth_token')
+            
+            const res = await $fetch(`${config.public.apiBase}/seller/store`, {
+                headers: { Authorization: `Bearer ${authToken.value}` }
+            })
 
-        if (!user) {
-            approvedStores.value = []
-            activeStore.value = null
-
-            return null
+            if (res.success && res.data) {
+                // Map the DB store format to what frontend expects
+                const store = {
+                    applicationId: res.data.id,
+                    storeName: res.data.name,
+                    storeSlug: res.data.slug,
+                    status: res.data.status === 'active' ? 'Approved' : (res.data.status === 'pending' ? 'Menunggu Review' : res.data.status),
+                    description: res.data.description,
+                    ownerUserId: res.data.user_id,
+                    schemaName: `tenant_${res.data.slug.replace(/-/g, '_')}`
+                }
+                
+                activeStore.value = store
+                approvedStores.value = [store]
+                return store
+            }
+        } catch (e) {
+            console.error('Failed to fetch seller store', e)
         }
 
-        const stores = getUserApplications(user)
-            .filter(
-                (application) =>
-                    application.status === 'Approved' &&
-                    !application.archived
-            )
-
-        approvedStores.value = stores
-
-        if (!stores.length) {
-            activeStore.value = null
-            return null
-        }
-
-        const storedActive =
-            getActiveApplication(user)
-
-        const validActive = stores.find(
-            (store) =>
-                store.applicationId ===
-                storedActive?.applicationId
-        )
-
-        /*
-         * Kalau toko aktif sebelumnya tidak valid,
-         * prioritaskan toko yang tidak suspended.
-         */
-        const firstManageableStore =
-            stores.find(
-                (store) =>
-                    getTenantStatus(store) !== 'suspended'
-            )
-
-        const selected =
-            validActive ||
-            firstManageableStore ||
-            stores[0]
-
-        const result =
-            setActiveApplication(
-                selected,
-                user
-            )
-
-        activeStore.value = result
-
-        return result
+        activeStore.value = null
+        approvedStores.value = []
+        return null
     }
 
     const selectStore = (

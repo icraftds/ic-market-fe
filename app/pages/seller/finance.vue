@@ -285,14 +285,14 @@ const loadFinanceForActiveStore = () => {
   finance.value = initialFinance
 }
 
-const loadFinancePage = () => {
+const loadFinancePage = async () => {
   if (!import.meta.client) return
 
   syncSession()
   sellerApplications.value = getUserApplications(session.value)
 
   loadPlatformSettings()
-  refreshStores()
+  await refreshStores()
   loadFinanceForActiveStore()
 }
 

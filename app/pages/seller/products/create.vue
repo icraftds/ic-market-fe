@@ -440,10 +440,10 @@ const saveProduct = async () => {
   }
 }
 
-const initializePage = () => {
+const initializePage = async () => {
   if (!import.meta.client) return
 
-  const store = refreshStores()
+  const store = await refreshStores()
 
   if (!store) {
     errorMessage.value = 'Belum ada toko aktif yang sudah disetujui.'
