@@ -132,7 +132,7 @@ const processTopup = async () => {
       <div class="current-balance">
         <div>
           <span>Saldo iCoin-Z Anda Saat Ini:</span>
-          <h2><span class="icoin-icon">C</span> {{ Number(session?.coins || 0).toLocaleString('id-ID') }}</h2>
+          <h2><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="width: 1.4em; height: 1.4em; vertical-align: -0.2em; margin-right: 8px;" /> {{ Number(session?.coins || 0).toLocaleString('id-ID') }}</h2>
         </div>
       </div>
       
@@ -172,7 +172,7 @@ const processTopup = async () => {
                 <td style="font-family: monospace;">{{ h.reference_id }}</td>
                 <td>{{ h.description }}</td>
                 <td :style="{ color: h.type === 'credit' ? 'var(--green)' : 'var(--red)', fontWeight: 'bold' }">
-                  {{ h.type === 'credit' ? '+' : '-' }} <span class="icoin-icon" style="font-size: 11px;">C</span> {{ Number(h.amount).toLocaleString('id-ID') }}
+                  {{ h.type === 'credit' ? '+' : '-' }} <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; margin-right: 2px;" /> {{ Number(h.amount).toLocaleString('id-ID') }}
                 </td>
                 <td>{{ new Date(h.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' }) }}</td>
               </tr>
