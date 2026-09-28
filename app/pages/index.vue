@@ -3,7 +3,6 @@ import { nextTick, onMounted, ref } from 'vue';
 
 definePageMeta({ layout: 'default' })
 
-const showWelcomePopup = ref(false);
 const welcomeUserId = ref('1');
 const welcomeCoins = ref('1.000');
 
@@ -65,6 +64,82 @@ const catalogSpecifications = (product) => ({
 const catalogRating = (product) => Number(product?.rating || 0);
 const catalogReviews = (product) => Number(product?.reviews || 0);
 
+const selectedProduct = ref(null);
+
+
+const animateToCart = (btn) => {
+    if (!import.meta.client || !btn) return;
+    
+    // Success state on button temporarily
+    const originalHTML = btn.innerHTML;
+    const originalBg = btn.style.background;
+    const originalColor = btn.style.color;
+    const originalBorder = btn.style.borderColor;
+    
+    btn.style.background = '#10b981';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#10b981';
+    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.style.background = originalBg;
+        btn.style.color = originalColor;
+        btn.style.borderColor = originalBorder;
+    }, 1500);
+
+    // Flying dot
+    const rect = btn.getBoundingClientRect();
+    const cartBtn = document.querySelector('.cart-btn');
+    if (!cartBtn) return;
+    
+    const cartBtnRect = cartBtn.getBoundingClientRect();
+    const dot = document.createElement('div');
+    dot.style.position = 'fixed';
+    dot.style.left = (rect.left + rect.width / 2) + 'px';
+    dot.style.top = (rect.top + rect.height / 2) + 'px';
+    dot.style.width = '20px';
+    dot.style.height = '20px';
+    dot.style.borderRadius = '50%';
+    dot.style.background = 'var(--primary, #1472ff)';
+    dot.style.boxShadow = '0 0 10px var(--primary, #1472ff)';
+    dot.style.zIndex = '999999';
+    dot.style.transition = 'all 0.7s cubic-bezier(0.2, -0.2, 0.2, 1.2)';
+    dot.style.pointerEvents = 'none';
+    document.body.appendChild(dot);
+
+    requestAnimationFrame(() => {
+        dot.style.left = (cartBtnRect.left + cartBtnRect.width/2 - 10) + 'px';
+        dot.style.top = (cartBtnRect.top + cartBtnRect.height/2 - 10) + 'px';
+        dot.style.transform = 'scale(0.3)';
+        dot.style.opacity = '0.5';
+    });
+    
+    setTimeout(() => {
+        dot.remove();
+        // optionally animate cart icon slightly
+        cartBtn.style.transform = 'scale(1.2)';
+        setTimeout(() => cartBtn.style.transform = '', 200);
+    }, 700);
+};
+
+const openPreview = (product) => {
+    selectedProduct.value = product;
+    if (import.meta.client) {
+        document.getElementById('preview-modal')?.showModal();
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+const closePreview = () => {
+    if (import.meta.client) {
+        document.getElementById('preview-modal')?.close();
+        document.body.style.overflow = '';
+    }
+    setTimeout(() => { selectedProduct.value = null; }, 300);
+};
+
+
 
 
 const loadProducts = async (append = false) => {
@@ -91,9 +166,12 @@ const loadProducts = async (append = false) => {
 };
 
 const setCategory = (cat) => {
-    activeCategory.value = cat;
-    currentPage.value = 1;
-    loadProducts();
+    const router = useRouter();
+    if (cat === 'semua') {
+        router.push({ path: '/' });
+    } else {
+        router.push({ path: '/', query: { category: cat } });
+    }
 };
 
 const reloadCatalog = () => {
@@ -135,13 +213,11 @@ onMounted(async () => {
     if (import.meta.client && sessionStorage.getItem('icmarket_show_welcome')) {
         const type = sessionStorage.getItem('icmarket_show_welcome');
         const { session } = useDemoAuth();
-        welcomeUser.value = session.value?.name || 'Pengguna';
+        welcomeUser.value = (session.value?.name || 'Pengguna').split(' ').slice(0, 2).join(' ');
         welcomeType.value = type;
         showWelcome.value = true;
         sessionStorage.removeItem('icmarket_show_welcome');
-        if (type === 'login') {
-            setTimeout(() => { showWelcome.value = false; }, 4000);
-        }
+        
     }
     await applyRouteQuery();
     await refreshHotProducts();
@@ -169,6 +245,7 @@ onMounted(async () => {
             return;
         }
 
+        
         const btnAddCart = e.target.closest('.card-add-cart');
         if (btnAddCart) {
             e.stopPropagation();
@@ -180,9 +257,11 @@ onMounted(async () => {
                 return;
             }
             
+            animateToCart(btnAddCart);
             await apiAddToCart(card.dataset.productId || card.dataset.id, 1);
             return;
         }
+
     });
 });
 </script>
@@ -190,22 +269,7 @@ onMounted(async () => {
 <template>
   <div>
 
-    <!-- ======= WELCOME POPUP ======= -->
-        <div v-if="showWelcomePopup" class="welcome-overlay" @click="showWelcomePopup = false">
-      <div class="welcome-glow"></div>
-      <div class="welcome-content" @click.stop>
-        <div class="welcome-icon-wrapper">
-            <div class="welcome-icon-glow"></div>
-            <img src="/icoinz.svg" alt="iCoinz" class="welcome-icon" />
-        </div>
-        <div class="welcome-text">Selamat, kamu pendaftar ke-{{ welcomeUserId }}</div>
-        <div class="welcome-text highlight-text">dan mendapatkan {{ welcomeCoins }} iCoinz!</div>
-        <button class="welcome-btn" @click="showWelcomePopup = false">
-            <span>Belanja Sekarang</span>
-            <i class="fa-solid fa-arrow-right"></i>
-        </button>
-      </div>
-    </div>
+    
 
     <!-- ======= HEADER ======= -->
     
@@ -787,7 +851,7 @@ onMounted(async () => {
                             <i class="fa-solid fa-bolt"></i>
                             <span>Beli Langsung</span>
                         </button>
-                        <button class="cta-buy" id="modal-add-cart-btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);" @click="useCart().addItem({ id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, images: typeof selectedProduct.images === 'string' ? JSON.parse(selectedProduct.images) : selectedProduct.images, category: selectedProduct.category, storeName: selectedProduct.storeName }); closePreview()">
+                        <button class="cta-buy" id="modal-add-cart-btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);" @click="animateToCart($event.currentTarget); useCart().addItem({ id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, images: typeof selectedProduct.images === 'string' ? JSON.parse(selectedProduct.images) : selectedProduct.images, category: selectedProduct.category, storeName: selectedProduct.storeName }); closePreview()">
                             <i class="fa-solid fa-cart-plus"></i>
                             <span>Tambahkan Keranjang</span>
                         </button>
@@ -844,16 +908,52 @@ onMounted(async () => {
     <!-- Welcome Popup -->
     <Transition name="welcome-fade">
         <div v-if="showWelcome" class="welcome-overlay">
-            <div class="welcome-glow"></div>
-            <div class="welcome-content">
-                <button v-if="welcomeType === 'register'" class="welcome-close" @click="showWelcome = false">×</button>
-                <img src="/icoinz.svg" class="welcome-logo" alt="iCoinz" />
-                <h2 class="welcome-title">Selamat Datang, {{ welcomeUser }}!</h2>
-                <p class="welcome-subtitle" v-if="welcomeType === 'login'">Berhasil masuk ke IC Market</p>
-                <p class="welcome-subtitle bonus-text" v-if="welcomeType === 'register'">
-                    Anda mendapatkan <strong>10.000 iCoin-Z</strong> sebagai pengguna baru.
-                </p>
+            
+            <div v-if="welcomeType === 'register'" class="welcome-card welcome-card-register">
+                <div class="welcome-glow-bg"></div>
+                
+                <div class="welcome-content">
+                    <div class="welcome-header">
+                        <h2>🎉 Selamat Datang!</h2>
+                    </div>
+                    
+                    <div class="welcome-body">
+                        <p class="greeting-name">Halo, <strong>{{ welcomeUser }}</strong></p>
+                        <p class="greeting-desc">Terima kasih telah bergabung. Sebagai pengguna baru, Anda mendapatkan hadiah spesial:</p>
+                        
+                        <div class="bonus-box">
+                            <img src="/icoinz.svg" alt="iCoinz" class="bonus-icon" />
+                            <div class="bonus-amount-wrap">
+                                <span class="bonus-amount">10.000</span>
+                                <span class="bonus-currency">iCoin-Z</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="welcome-close-btn" @click="showWelcome = false">
+                        Mulai Belanja <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <!-- Confetti/Sparkles -->
+                <div class="sparkle s1">✨</div>
+                <div class="sparkle s2">✨</div>
+                <div class="sparkle s3">⭐</div>
+                <div class="sparkle s4">⭐</div>
             </div>
+
+            <div v-else class="welcome-card welcome-card-login">
+                <div class="welcome-glow-bg login-glow"></div>
+                <div class="welcome-content">
+                    <img src="/icoinz.svg" class="welcome-logo-login" alt="iCoinz" />
+                    <h2 class="welcome-title">Selamat Datang, {{ welcomeUser }}!</h2>
+                    <p class="welcome-subtitle">Berhasil masuk ke IC Market</p>
+                    <button class="welcome-close-btn" @click="showWelcome = false">
+                        Tutup <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
         </div>
     </Transition>
 
@@ -862,165 +962,189 @@ onMounted(async () => {
 <style scoped>
 /* Welcome Popup */
 .welcome-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.5s ease-out;
-  overflow: hidden;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    background: rgba(10, 15, 30, 0.7);
+    backdrop-filter: blur(8px);
 }
-
-.welcome-glow {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(0, 163, 255, 0.25) 0%, rgba(0, 163, 255, 0) 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  animation: pulseGlow 4s infinite alternate;
+.welcome-card {
+    position: relative;
+    width: 90%;
+    max-width: 400px;
+    background: rgba(20, 25, 45, 0.85);
+    border-radius: 24px;
+    padding: 32px 24px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    animation: floatUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
-
-@keyframes pulseGlow {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.2); opacity: 1; }
+.welcome-glow-bg {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(20, 114, 255, 0.2) 0%, transparent 60%);
+    animation: spinSlow 10s linear infinite;
+    z-index: 0;
+    pointer-events: none;
 }
-
+.login-glow {
+    background: radial-gradient(circle, rgba(100, 100, 255, 0.15) 0%, transparent 60%);
+}
 .welcome-content {
-  text-align: center;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  z-index: 1;
-  position: relative;
-  animation: floatUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  opacity: 0;
-  transform: translateY(30px);
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
+.welcome-header h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    text-shadow: 0 0 20px rgba(20,114,255,0.8);
+}
+.greeting-name {
+    font-size: 1.25rem;
+    color: #e2e8f0;
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+.greeting-name strong {
+    color: #fff;
+}
+.greeting-desc {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+.bonus-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(20, 114, 255, 0.2), rgba(0, 80, 200, 0.1));
+    border: 1px solid rgba(20, 114, 255, 0.4);
+    border-radius: 16px;
+    padding: 16px 24px;
+    width: 100%;
+    box-shadow: inset 0 0 20px rgba(20, 114, 255, 0.1), 0 8px 32px rgba(20, 114, 255, 0.2);
+    margin-bottom: 32px;
+    animation: pulseBox 2s infinite alternate;
+}
+.bonus-icon {
+    width: 56px;
+    height: 56px;
+    filter: drop-shadow(0 0 12px rgba(255,255,255,0.4));
+    animation: bounceSlow 3s infinite;
+}
+.bonus-amount-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+.bonus-amount {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #4db8ff;
+    line-height: 1;
+    text-shadow: 0 0 10px rgba(77, 184, 255, 0.5);
+}
+.bonus-currency {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 1px;
+}
+.welcome-close-btn {
+    background: linear-gradient(135deg, #1472ff, #0a4ebd);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(20, 114, 255, 0.4);
+}
+.welcome-close-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(20, 114, 255, 0.6);
+}
+.welcome-logo-login {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 24px;
+    filter: drop-shadow(0 0 16px rgba(255,255,255,0.3));
+}
+.welcome-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+}
+.welcome-subtitle {
+    color: #94a3b8;
+    margin-bottom: 32px;
+}
+.sparkle {
+    position: absolute;
+    font-size: 1.5rem;
+    pointer-events: none;
+    animation: floatSparkle 3s ease-in-out infinite alternate;
+}
+.s1 { top: 15%; left: 10%; animation-delay: 0s; font-size: 1.2rem; }
+.s2 { top: 25%; right: 10%; animation-delay: 0.5s; font-size: 1.8rem; }
+.s3 { bottom: 35%; left: 15%; animation-delay: 1s; font-size: 1.5rem; }
+.s4 { bottom: 20%; right: 15%; animation-delay: 1.5s; font-size: 1rem; }
 
+.welcome-fade-enter-active,
+.welcome-fade-leave-active {
+    transition: opacity 0.4s ease;
+}
+.welcome-fade-enter-from,
+.welcome-fade-leave-to {
+    opacity: 0;
+}
+@keyframes pulseBox {
+    0% { box-shadow: inset 0 0 10px rgba(20,114,255,0.1), 0 8px 24px rgba(20,114,255,0.1); }
+    100% { box-shadow: inset 0 0 20px rgba(20,114,255,0.3), 0 12px 40px rgba(20,114,255,0.3); }
+}
+@keyframes bounceSlow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
 @keyframes floatUp {
-  to { opacity: 1; transform: translateY(0); }
+    0% { transform: translateY(40px) scale(0.95); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
 }
-
-.welcome-icon-wrapper {
-  position: relative;
-  margin-bottom: 12px;
+@keyframes floatSparkle {
+    0% { transform: translateY(0) scale(1); opacity: 0.5; }
+    100% { transform: translateY(-10px) scale(1.2); opacity: 1; }
 }
-
-.welcome-icon-glow {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100px; height: 100px;
-  background: rgba(0, 163, 255, 0.4);
-  border-radius: 50%;
-  filter: blur(20px);
-  animation: pulseGlow 3s linear infinite alternate;
-}
-
-.welcome-icon {
-  font-size: 64px;
-  color: #00d2ff;
-  position: relative;
-  z-index: 2;
-  text-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
-  animation: floatIcon 3s ease-in-out infinite;
-}
-
-@keyframes floatIcon {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.welcome-text {
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  line-height: 1.2;
-}
-
-.welcome-text.highlight-text {
-  background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: none;
-  filter: drop-shadow(0 4px 8px rgba(0, 163, 255, 0.3));
-}
-
-.welcome-btn {
-  margin-top: 32px;
-  padding: 16px 40px;
-  background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
-  border: none;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  border-radius: 99px;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 8px 24px rgba(0, 163, 255, 0.4);
-  position: relative;
-  overflow: hidden;
-}
-
-.welcome-btn::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%;
-  width: 50%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  transform: skewX(-20deg);
-  animation: shine 3s infinite;
-}
-
-@keyframes shine {
-  0% { left: -100%; }
-  20% { left: 200%; }
-  100% { left: 200%; }
-}
-
-.welcome-btn:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 12px 32px rgba(0, 163, 255, 0.6);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Skeleton Loaders */
-.skeleton-card {
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid #eaeaea;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-}
-.skeleton-box {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loadingSkeleton 1.5s infinite;
-}
-.skeleton-text {
-  height: 14px;
-  border-radius: 4px;
-}
-@keyframes loadingSkeleton {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+@keyframes spinSlow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 </style>
+
 
 
 <style scoped>
