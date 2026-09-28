@@ -77,6 +77,10 @@ const loadProducts = async (append = false) => {
     if (response?.meta) {
         totalProducts.value = response.meta.total;
         hasMore.value = response.meta.current_page < response.meta.last_page;
+    } else if (response?.data) {
+        // Fallback if backend doesn't return meta (not updated yet)
+        totalProducts.value = Array.isArray(response.data) ? response.data.length : 0;
+        hasMore.value = false;
     }
     
     if (!append) isLoading.value = false;
