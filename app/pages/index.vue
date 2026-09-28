@@ -60,6 +60,9 @@ onMounted(async () => {
     isLoading.value = false;
     await nextTick();
 
+    const route = useRoute();
+    let doSearch = (q) => {};
+
     const welcomeId = sessionStorage.getItem('icmarket_show_welcome');
     if (welcomeId) {
         welcomeUserId.value = welcomeId;
@@ -129,6 +132,8 @@ onMounted(async () => {
                 if (searchInput) searchInput.value = catalogSearchInput.value;
             });
         }
+        
+        doSearch = applySearchFilter;
 
         /* ── Wishlist Toggle ── */
         document.querySelectorAll('.wishlist-btn').forEach(btn => {
@@ -514,6 +519,33 @@ onMounted(async () => {
 
     })();
     
+    // Handle initial route queries and changes
+    const applyQueryFilters = () => {
+        const q = route.query.q;
+        const cat = route.query.category;
+        
+        if (q) {
+            doSearch(q.toString().toLowerCase());
+            setTimeout(() => document.querySelector('.catalog-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
+        } else if (cat) {
+            const catStr = String(cat).toLowerCase();
+            let searchKeyword = catStr;
+            if (catStr === 'ui-templates') searchKeyword = 'ui kit';
+            else if (catStr === 'plugins') searchKeyword = 'plugin';
+            else if (catStr === 'source-code') searchKeyword = 'source code';
+            
+            doSearch(searchKeyword);
+            setTimeout(() => document.querySelector('.catalog-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
+        } else {
+            doSearch('');
+        }
+    };
+
+    applyQueryFilters();
+    watch(() => route.query, () => {
+        applyQueryFilters();
+    });
+
 });
 </script>
 

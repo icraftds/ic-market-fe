@@ -50,6 +50,14 @@ onMounted(() => {
   window.addEventListener('click', handleClickOutside)
 })
 
+const searchQuery = ref('')
+const handleSearchSubmit = () => {
+  if (searchQuery.value.trim()) {
+    isSearchOpen.value = false
+    navigateTo({ path: '/', query: { q: searchQuery.value.trim() } })
+  }
+}
+
 onBeforeUnmount(() => {
   window.removeEventListener('icmarket-cart-updated', readCartCount)
   window.removeEventListener('icmarket-auth-updated', refreshNavigation)
@@ -77,13 +85,15 @@ onBeforeUnmount(() => {
             <input
               type="text"
               id="main-search"
+              v-model="searchQuery"
               class="nav-search-input"
               placeholder="Cari template, UI kit, source code, dan lainnya…"
               autocomplete="off"
               aria-label="Cari produk"
               @focus="isSearchOpen = true"
+              @keyup.enter="handleSearchSubmit"
             />
-            <button class="nav-search-btn" aria-label="Cari">
+            <button class="nav-search-btn" aria-label="Cari" @click="handleSearchSubmit">
               <i class="fa-solid fa-magnifying-glass"></i>
               <span>Cari</span>
             </button>
@@ -94,19 +104,19 @@ onBeforeUnmount(() => {
             <div class="search-section">
               <div class="search-title">Pencarian Populer</div>
               <div class="search-tags">
-                <NuxtLink to="/search?q=UI+Kit" class="search-tag" @click="isSearchOpen = false">UI Kit</NuxtLink>
-                <NuxtLink to="/search?q=Dashboard" class="search-tag" @click="isSearchOpen = false">Dashboard</NuxtLink>
-                <NuxtLink to="/search?q=Landing+Page" class="search-tag" @click="isSearchOpen = false">Landing Page</NuxtLink>
-                <NuxtLink to="/search?q=E-Commerce" class="search-tag" @click="isSearchOpen = false">E-Commerce</NuxtLink>
-                <NuxtLink to="/search?q=Laravel" class="search-tag" @click="isSearchOpen = false">Laravel</NuxtLink>
+                <NuxtLink to="/?q=UI+Kit" class="search-tag" @click="isSearchOpen = false">UI Kit</NuxtLink>
+                <NuxtLink to="/?q=Dashboard" class="search-tag" @click="isSearchOpen = false">Dashboard</NuxtLink>
+                <NuxtLink to="/?q=Landing+Page" class="search-tag" @click="isSearchOpen = false">Landing Page</NuxtLink>
+                <NuxtLink to="/?q=E-Commerce" class="search-tag" @click="isSearchOpen = false">E-Commerce</NuxtLink>
+                <NuxtLink to="/?q=Laravel" class="search-tag" @click="isSearchOpen = false">Laravel</NuxtLink>
               </div>
             </div>
             <div class="search-section">
               <div class="search-title">Kategori</div>
               <ul class="search-categories">
-                <li><NuxtLink to="/category/ui-templates" @click="isSearchOpen = false"><i class="fa-solid fa-layer-group"></i> UI Templates</NuxtLink></li>
-                <li><NuxtLink to="/category/plugins" @click="isSearchOpen = false"><i class="fa-solid fa-plug"></i> Plugins & Extensions</NuxtLink></li>
-                <li><NuxtLink to="/category/source-code" @click="isSearchOpen = false"><i class="fa-solid fa-code"></i> Source Code</NuxtLink></li>
+                <li><NuxtLink to="/?category=ui-templates" @click="isSearchOpen = false"><i class="fa-solid fa-layer-group"></i> UI Templates</NuxtLink></li>
+                <li><NuxtLink to="/?category=plugins" @click="isSearchOpen = false"><i class="fa-solid fa-plug"></i> Plugins & Extensions</NuxtLink></li>
+                <li><NuxtLink to="/?category=source-code" @click="isSearchOpen = false"><i class="fa-solid fa-code"></i> Source Code</NuxtLink></li>
               </ul>
             </div>
           </div>
