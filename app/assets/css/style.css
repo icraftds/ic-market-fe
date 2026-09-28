@@ -1622,6 +1622,6 @@ a { text-decoration: none; color: inherit; }
 .icoinz-icon {
   width: 1.2em;
   height: 1.2em;
-  vertical-align: middle;
+  vertical-align: -0.15em;
   display: inline-block;
 }
