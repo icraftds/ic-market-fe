@@ -8,12 +8,20 @@ const welcomeUserId = ref('1');
 const welcomeCoins = ref('1.000');
 
 
-const {
-    products: catalogProducts,
-    refreshCatalog
-} = useProductCatalog();
+const { products: catalogProducts, hotProducts, refreshCatalog, refreshHotProducts } = useProductCatalog();
+
 
 const isLoading = ref(true);
+const route = useRoute();
+const activeCategory = ref('semua');
+const sortBy = ref('newest');
+const catalogSearch = ref('');
+const currentPage = ref(1);
+const totalProducts = ref(0);
+const hasMore = ref(false);
+const isLoadingMore = ref(false);
+const loadMoreTrigger = ref(null);
+
 
 const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart();
 
@@ -54,498 +62,106 @@ const catalogSpecifications = (product) => ({
 const catalogRating = (product) => Number(product?.rating || 0);
 const catalogReviews = (product) => Number(product?.reviews || 0);
 
-onMounted(async () => {
 
-    await refreshCatalog();
-    isLoading.value = false;
-    await nextTick();
 
-    const route = useRoute();
-    let doSearch = (q) => {};
+const loadProducts = async (append = false) => {
+    if (!append) isLoading.value = true;
+    else isLoadingMore.value = true;
 
-    const welcomeId = sessionStorage.getItem('icmarket_show_welcome');
-    if (welcomeId) {
-        welcomeUserId.value = welcomeId;
-        showWelcomePopup.value = true;
-        sessionStorage.removeItem('icmarket_show_welcome');
+    const params = { page: currentPage.value, limit: 12 };
+    if (activeCategory.value !== 'semua') params.category = activeCategory.value;
+    if (catalogSearch.value) params.search = catalogSearch.value;
+    if (sortBy.value) params.sort = sortBy.value;
+
+    const response = await refreshCatalog(params, append);
+    if (response?.meta) {
+        totalProducts.value = response.meta.total;
+        hasMore.value = response.meta.current_page < response.meta.last_page;
     }
-
-    const authToken = useCookie('icmarket_auth_token');
-
-    (() => {
-        'use strict';
-
-        /* ── Category Filter ── */
-        const catItems = document.querySelectorAll('.cat-item');
-        const gridCards = document.querySelectorAll('#product-grid .product-card');
-        const allCards = document.querySelectorAll('.product-card');
-        const countEl  = document.getElementById('product-count');
-        if (countEl) countEl.textContent = gridCards.length;
-
-        function filterCards(cat) {
-            let visible = 0;
-            gridCards.forEach(card => {
-                const cardCat = card.dataset.category;
-                const show    = cat === 'semua' || cardCat === cat;
-                card.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
-            if (countEl) countEl.textContent = visible;
-        }
-
-        catItems.forEach(item => {
-            item.addEventListener('click', () => {
-                catItems.forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                filterCards(item.dataset.cat);
-            });
-        });
-
-        /* ── Search Filter ── */
-        const searchInput = document.getElementById('main-search');
-        const catalogSearchInput = document.getElementById('catalog-search-input');
-        
-        function applySearchFilter(q) {
-            let visible = 0;
-            gridCards.forEach(card => {
-                const title = (card.dataset.title || '').toLowerCase();
-                const cat   = (card.dataset.category || '').toLowerCase();
-                const tags  = (card.dataset.tags || '').toLowerCase();
-                const show  = !q || title.includes(q) || cat.includes(q) || tags.includes(q);
-                card.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
-            if (countEl) countEl.textContent = visible;
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener('input', () => {
-                const q = searchInput.value.toLowerCase().trim();
-                applySearchFilter(q);
-                if (catalogSearchInput) catalogSearchInput.value = searchInput.value;
-            });
-        }
-        if (catalogSearchInput) {
-            catalogSearchInput.addEventListener('input', () => {
-                const q = catalogSearchInput.value.toLowerCase().trim();
-                applySearchFilter(q);
-                if (searchInput) searchInput.value = catalogSearchInput.value;
-            });
-        }
-        
-        doSearch = applySearchFilter;
-
-        /* ── Wishlist Toggle ── */
-        document.querySelectorAll('.wishlist-btn').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                btn.classList.toggle('wishlisted');
-                const icon = btn.querySelector('i');
-                if (btn.classList.contains('wishlisted')) {
-                    icon.className = 'fa-solid fa-heart';
-                } else {
-                    icon.className = 'fa-regular fa-heart';
-                }
-            });
-        });
-
-        /* ── Cart (localStorage) ── */
-        function getCart() { return apiCart.value; }
-        
-        function getSession() { return authToken.value; }
-
-        async function addToCart(card) {
-            if (!getSession()) {
-                window.location.href = '/login';
-                return;
-            }
-            
-            const productId = card.dataset.productId || card.dataset.id;
-            if (!productId) {
-                showToast("Produk ini belum siap ditambahkan.");
-                return;
-            }
-            
-            const success = await apiAddToCart(productId, 1);
-            if (success) {
-                showToast(`"${card.dataset.title || 'Produk'}" ditambahkan ke keranjang!`);
-                updateCartBadge();
-                return true;
-            } else {
-                showToast(`Gagal menambahkan "${card.dataset.title || 'Produk'}". Silakan login ulang.`);
-                return false;
-            }
-        }
-
-        function updateCartBadge() {
-            const n = getCart().length;
-            const el = document.getElementById('cart-count');
-            if (el) el.textContent = n;
-        }
-        updateCartBadge();
-
-        /* ── Header cart button → /cart ── */
-        document.getElementById('cart-btn')?.addEventListener('click', () => {
-            window.location.href = '/cart';
-        });
-
-        /* ── Hero Card Stack Logic ── */
-        const stackCards = Array.from(document.querySelectorAll('.stack-card'));
-        const stackBtns  = document.querySelectorAll('.hero-featured-btn');
-        
-        // Let's store the current order in an array [front, middle, back]
-        // Initially, card--1 is front, card--2 is middle, card--3 is back.
-        let order = [
-            document.querySelector('.stack-card--1'),
-            document.querySelector('.stack-card--2'),
-            document.querySelector('.stack-card--3')
-        ].filter(Boolean);
-
-        stackCards.forEach(card => {
-            card.addEventListener('click', (e) => {
-                // If clicked on the buy button, don't rotate
-                if (e.target.closest('.hero-featured-btn') || e.target.closest('.card-store')) return;
-
-                const clickedIndex = order.indexOf(card);
-                if (clickedIndex === 0) return; // already front
-
-                // Remove old classes
-                order.forEach((c, i) => {
-                    c.classList.remove(`stack-card--${i+1}`);
-                    c.classList.remove('stack-active');
-                });
-
-                if (clickedIndex === 1) {
-                    // Clicked middle: middle goes front, front goes back, back goes middle
-                    order = [order[1], order[2], order[0]];
-                } else if (clickedIndex === 2) {
-                    // Clicked back: back goes front, front goes middle, middle goes back
-                    order = [order[2], order[0], order[1]];
-                }
-
-                // Apply new classes
-                order.forEach((c, i) => {
-                    c.classList.add(`stack-card--${i+1}`);
-                    if (i === 0) c.classList.add('stack-active');
-                });
-            });
-        });
-
-        /* ── Featured Card Buy Button ── */
-        stackBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const fakeCard = { dataset: {
-                    title:    btn.dataset.title,
-                    category: btn.dataset.category,
-                    price:    btn.dataset.price,
-                    img:      btn.dataset.img,
-                    tags:     btn.dataset.tags,
-                    store:    btn.dataset.store || '',
-                    storeSlug: btn.dataset.storeSlug || '',
-                    free:     'false'
-                }};
-                addToCart(fakeCard);
-                showToast(`"${btn.dataset.title}" ditambahkan ke keranjang!`);
-            });
-        });
-
-        /* ── Preview Modal ── */
-        const previewModal = document.getElementById('preview-modal');
-        const closePreview = document.getElementById('close-preview');
-
-        function openPreview(card) {
-            document.getElementById('modal-img').src = card.dataset.img || '';
-            document.getElementById('modal-title').textContent = card.dataset.title || '—';
-
-            const sellerLink = document.getElementById('modal-seller-link');
-            const sellerName = card.dataset.store || 'iCraft Demo Store';
-            const sellerSlug = card.dataset.storeSlug || '';
-            if (sellerLink) {
-                sellerLink.textContent = `Oleh: ${sellerName}`;
-                sellerLink.href = sellerSlug ? `/store/${sellerSlug}` : '#';
-                sellerLink.style.pointerEvents = sellerSlug ? 'auto' : 'none';
-            }
-
-            const isFree = card.dataset.free === 'true';
-            const priceEl = document.getElementById('modal-price');
-            priceEl.textContent = isFree ? 'Gratis' : `<i class='fa-solid fa-coins' style='color: #f59e0b'></i> ` + parseInt(card.dataset.price).toLocaleString('id-ID');
-            priceEl.className   = 'modal-price' + (isFree ? ' free' : '');
-
-            document.getElementById('modal-rating-text').textContent =
-                `${card.dataset.rating} (${card.dataset.reviews} ulasan)`;
-            document.getElementById('modal-desc').textContent = card.dataset.desc || '—';
-
-            const tagsEl = document.getElementById('modal-tags');
-            tagsEl.innerHTML = '';
-            (card.dataset.tags || '').split(',').forEach(t => {
-                const span = document.createElement('span');
-                span.className = 'modal-tag';
-                span.textContent = t.trim();
-                tagsEl.appendChild(span);
-            });
-
-            const featEl = document.getElementById('modal-features');
-            featEl.innerHTML = '';
-            (card.dataset.features || '').split(',').forEach(f => {
-                const li = document.createElement('li');
-                li.textContent = f.trim();
-                featEl.appendChild(li);
-            });
-
-
-            const specUpdated = document.getElementById('modal-spec-updated');
-            const specSupport = document.getElementById('modal-spec-support');
-            const specFormat = document.getElementById('modal-spec-format');
-            const specLicense = document.getElementById('modal-spec-license');
-
-            if (specUpdated) specUpdated.textContent = card.dataset.specUpdated || 'Agustus 2026';
-            if (specSupport) specSupport.textContent = card.dataset.specSupport || '30 Hari';
-            if (specFormat) specFormat.textContent = card.dataset.specFormat || '.ZIP + Docs';
-            if (specLicense) specLicense.textContent = card.dataset.specLicense || 'Extended';
-
-            const buyDirectBtn = document.getElementById('modal-buy-direct-btn');
-            const addCartBtn   = document.getElementById('modal-add-cart-btn');
-            
-            if (isFree) {
-                buyDirectBtn.style.display = 'none';
-                addCartBtn.querySelector('span').textContent = 'Download Gratis';
-                addCartBtn.querySelector('i').className = 'fa-solid fa-download';
-            } else {
-                buyDirectBtn.style.display = '';
-                addCartBtn.querySelector('span').textContent = 'Tambahkan Keranjang';
-                addCartBtn.querySelector('i').className = 'fa-solid fa-cart-plus';
-            }
-            buyDirectBtn._card = card;
-            addCartBtn._card = card;
-
-            previewModal.showModal();
-        }
-
-        function closePreviewModal() {
-            previewModal.classList.add('closing');
-            setTimeout(() => { previewModal.close(); previewModal.classList.remove('closing'); }, 500);
-        }
-
-        closePreview.addEventListener('click', closePreviewModal);
-        previewModal.addEventListener('cancel', e => { e.preventDefault(); closePreviewModal(); });
-        previewModal.addEventListener('click', e => {
-            if (e.target === previewModal) closePreviewModal();
-        });
-        document.querySelector('.modal-drag-bar').addEventListener('click', closePreviewModal);
-
-        function animateAddToCart(btn, card, isModal) {
-            // 1. Success state on button
-            const originalHTML = btn.innerHTML;
-            const originalBg = btn.style.background;
-            const originalColor = btn.style.color;
-            const originalBorder = btn.style.borderColor;
-            
-            btn.style.background = '#10b981';
-            btn.style.color = '#fff';
-            btn.style.borderColor = '#10b981';
-            
-            if (isModal) {
-                btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Berhasil!</span>`;
-            } else {
-                btn.innerHTML = `<i class="fa-solid fa-check"></i>`;
-            }
-            
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.style.background = originalBg;
-                btn.style.color = originalColor;
-                btn.style.borderColor = originalBorder;
-            }, 1500);
-
-            // 2. Flying flyer (image)
-            const rect = btn.getBoundingClientRect();
-            const cartBtn = document.getElementById('cart-btn');
-            
-            // If cartBtn is missing, fallback immediately without animation
-            if (!cartBtn) {
-                setTimeout(() => {
-                    addToCart(card);
-                }, 600);
-                return;
-            }
-
-            const cartBtnRect = cartBtn.getBoundingClientRect();
-            
-            const flyer = document.createElement('div');
-            flyer.className = 'flying-flyer';
-            
-            if (card.dataset.img) {
-                flyer.style.backgroundImage = `url(${card.dataset.img})`;
-            }
-            
-            const startSize = 60; 
-            flyer.style.width = startSize + 'px';
-            flyer.style.height = startSize + 'px';
-            flyer.style.left = (rect.left + rect.width/2 - startSize/2) + 'px';
-            flyer.style.top = (rect.top + rect.height/2 - startSize/2) + 'px';
-            
-            document.body.appendChild(flyer);
-            
-            flyer.offsetHeight; // reflow
-            
-            requestAnimationFrame(() => {
-                flyer.style.left = (cartBtnRect.left + cartBtnRect.width/2 - 10) + 'px';
-                flyer.style.top = (cartBtnRect.top + cartBtnRect.height/2 - 10) + 'px';
-                flyer.style.transform = 'scale(0.2) rotate(15deg)';
-                flyer.style.opacity = '0.5';
-            });
-            
-            setTimeout(() => {
-                flyer.remove();
-                
-                cartBtn.classList.remove('cart-bump');
-                void cartBtn.offsetWidth; // reflow
-                cartBtn.classList.add('cart-bump');
-                
-                addToCart(card);
-            }, 800);
-        }
-
-        document.getElementById('modal-buy-direct-btn').addEventListener('click', async () => {
-            const btn  = document.getElementById('modal-buy-direct-btn');
-            const card = btn._card;
-            if (!card || card.dataset.free === 'true') return;
-            const success = await addToCart(card);
-            if (success) window.location.href = '/checkout';
-        });
-
-        document.getElementById('modal-add-cart-btn').addEventListener('click', (e) => {
-            const btn  = document.getElementById('modal-add-cart-btn');
-            const card = btn._card;
-            if (!card) return;
-            if (card.dataset.free === 'true') return; // download logic
-
-            animateAddToCart(btn, card, true);
-
-            closePreviewModal();
-        });
-
-        // Grid/List View Toggle
-        const gridBtn = document.getElementById('grid-view-btn');
-        const listBtn = document.getElementById('list-view-btn');
-        const productGrid = document.getElementById('product-grid');
-        
-        gridBtn?.addEventListener('click', () => {
-            gridBtn.classList.add('active');
-            listBtn?.classList.remove('active');
-            productGrid?.classList.remove('list-view');
-        });
-        listBtn?.addEventListener('click', () => {
-            listBtn.classList.add('active');
-            gridBtn?.classList.remove('active');
-            productGrid?.classList.add('list-view');
-        });
-
-        // Quick view buttons
-        document.querySelectorAll('.card-quick-view').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                openPreview(btn.closest('.product-card'));
-            });
-        });
-
-        // Whole card click opens preview
-        allCards.forEach(card => {
-            card.addEventListener('click', e => {
-                if (!e.target.closest('.btn-primary') && !e.target.closest('.btn-icon') && !e.target.closest('.card-store')) {
-                    openPreview(card);
-                }
-            });
-        });
-
-        // Use Event Delegation for buttons since dynamic cards are rendered asynchronously
-        document.addEventListener('click', async e => {
-            const btnBuyDirect = e.target.closest('.card-buy-direct');
-            if (btnBuyDirect) {
-                e.stopPropagation();
-                const card = btnBuyDirect.closest('.product-card');
-                if (card && card.dataset.free !== 'true') {
-                    const success = await addToCart(card);
-                    if (success) window.location.href = '/checkout';
-                }
-                return;
-            }
-
-            const btnAddCart = e.target.closest('.card-add-cart');
-            if (btnAddCart) {
-                e.stopPropagation();
-                const card = btnAddCart.closest('.product-card');
-                if (!card) return;
-                
-                if (card.dataset.free === 'true') {
-                    showToast(`Mulai mengunduh "${card.dataset.title}"...`);
-                    return;
-                }
-
-                animateAddToCart(btnAddCart, card, false);
-                return;
-            }
-        });
-
-        /* ── Toast Notification ── */
-        function showToast(msg) {
-            let toast = document.getElementById('cart-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'cart-toast';
-                toast.style.cssText = `
-                    position:fixed;bottom:28px;right:28px;z-index:9999;
-                    background:#111110;color:white;
-                    padding:13px 20px;border-radius:10px;
-                    font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:600;
-                    display:flex;align-items:center;gap:10px;
-                    box-shadow:0 8px 32px rgba(0,0,0,0.25);
-                    transform:translateY(20px);opacity:0;
-                    transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
-                `;
-                document.body.appendChild(toast);
-            }
-            toast.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> ${msg} <a href="/cart" style="color:#60a5fa;margin-left:8px;text-decoration:none;font-weight:700;">Lihat Keranjang →</a>`;
-            requestAnimationFrame(() => {
-                toast.style.transform = 'translateY(0)';
-                toast.style.opacity   = '1';
-            });
-            clearTimeout(toast._t);
-            toast._t = setTimeout(() => {
-                toast.style.transform = 'translateY(20px)';
-                toast.style.opacity   = '0';
-            }, 3500);
-        }
-
-    })();
     
-    // Handle initial route queries and changes
-    const applyQueryFilters = () => {
-        const q = route.query.q;
-        const cat = route.query.category;
-        
-        if (q) {
-            doSearch(q.toString().toLowerCase());
-            setTimeout(() => document.querySelector('.catalog-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
-        } else if (cat) {
-            const catStr = String(cat).toLowerCase();
-            let searchKeyword = catStr;
-            if (catStr === 'ui-templates') searchKeyword = 'ui kit';
-            else if (catStr === 'plugins') searchKeyword = 'plugin';
-            else if (catStr === 'source-code') searchKeyword = 'source code';
-            
-            doSearch(searchKeyword);
-            setTimeout(() => document.querySelector('.catalog-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
-        } else {
-            doSearch('');
+    if (!append) isLoading.value = false;
+    else isLoadingMore.value = false;
+};
+
+const setCategory = (cat) => {
+    activeCategory.value = cat;
+    currentPage.value = 1;
+    loadProducts();
+};
+
+const reloadCatalog = () => {
+    currentPage.value = 1;
+    loadProducts();
+};
+
+watch(() => route.query, async () => {
+    const q = route.query.q;
+    const cat = route.query.category;
+    
+    if (q) {
+        catalogSearch.value = q.toString().toLowerCase();
+        activeCategory.value = 'semua';
+    } else if (cat) {
+        const catStr = String(cat).toLowerCase();
+        let searchKeyword = catStr;
+        if (catStr === 'ui-templates') searchKeyword = 'ui kit';
+        else if (catStr === 'plugins') searchKeyword = 'plugin';
+        else if (catStr === 'source-code') searchKeyword = 'source code';
+        activeCategory.value = searchKeyword;
+        catalogSearch.value = '';
+    } else {
+        catalogSearch.value = '';
+        activeCategory.value = 'semua';
+    }
+    currentPage.value = 1;
+    await loadProducts();
+    if (q || cat) {
+        setTimeout(() => document.querySelector('.catalog-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+}, { immediate: true });
+
+
+onMounted(async () => {
+    await refreshHotProducts();
+
+    // Intersection Observer for infinite scroll
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore.value && !isLoadingMore.value) {
+            currentPage.value++;
+            loadProducts(true);
         }
-    };
+    }, { rootMargin: '100px' });
 
-    applyQueryFilters();
-    watch(() => route.query, () => {
-        applyQueryFilters();
+    if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value);
+
+    // Event Delegation for Add to Cart
+    document.addEventListener('click', async e => {
+        const btnBuyDirect = e.target.closest('.card-buy-direct');
+        if (btnBuyDirect) {
+            e.stopPropagation();
+            const card = btnBuyDirect.closest('.product-card');
+            if (card && card.dataset.free !== 'true') {
+                const success = await apiAddToCart(card.dataset.productId || card.dataset.id, 1);
+                if (success) window.location.href = '/checkout';
+            }
+            return;
+        }
+
+        const btnAddCart = e.target.closest('.card-add-cart');
+        if (btnAddCart) {
+            e.stopPropagation();
+            const card = btnAddCart.closest('.product-card');
+            if (!card) return;
+            
+            if (card.dataset.free === 'true') {
+                alert('Mulai mengunduh...');
+                return;
+            }
+            
+            await apiAddToCart(card.dataset.productId || card.dataset.id, 1);
+            return;
+        }
     });
-
 });
 </script>
 
@@ -608,7 +224,7 @@ onMounted(async () => {
                     </article>
                 </template>
                 <template v-else>
-                    <article v-for="(product, index) in catalogProducts.slice(0, 3)" :key="product.id"
+                    <article v-for="(product, index) in hotProducts" :key="product.id"
                         class="stack-card product-card"
                         :class="[`stack-card--${3 - index}`, index === 0 ? 'stack-active' : '']"
                         :data-title="product.name"
@@ -692,24 +308,24 @@ onMounted(async () => {
             <div class="sidebar-section">
                 <div class="sidebar-title">Kategori</div>
                 <ul class="cat-list" id="cat-list">
-                    <li class="cat-item active" data-cat="semua">
-                        Semua <span class="cat-count">6</span>
-                    </li>
-                    <li class="cat-item" data-cat="web template">
-                        Web Template <span class="cat-count">2</span>
-                    </li>
-                    <li class="cat-item" data-cat="ui kit">
-                        UI Kit <span class="cat-count">2</span>
-                    </li>
-                    <li class="cat-item" data-cat="source code">
-                        Source Code <span class="cat-count">2</span>
-                    </li>
-                </ul>
+        <li class="cat-item" :class="{ active: activeCategory === 'semua' }" @click="setCategory('semua')">
+            Semua <span class="cat-count">{{ totalProducts }}</span>
+        </li>
+        <li class="cat-item" :class="{ active: activeCategory === 'web template' }" @click="setCategory('web template')">
+            Web Template
+        </li>
+        <li class="cat-item" :class="{ active: activeCategory === 'ui kit' }" @click="setCategory('ui kit')">
+            UI Kit
+        </li>
+        <li class="cat-item" :class="{ active: activeCategory === 'source code' }" @click="setCategory('source code')">
+            Source Code
+        </li>
+    </ul>
             </div>
 
             <div class="sidebar-section">
                 <div class="sidebar-title">Urutkan</div>
-                <select class="sort-select" id="sort-select">
+                <select class="sort-select" id="sort-select" v-model="sortBy" @change="reloadCatalog()">
                     <option value="newest">Terbaru</option>
                     <option value="price-asc">Harga: Rendah ke Tinggi</option>
                     <option value="price-desc">Harga: Tinggi ke Rendah</option>
@@ -728,10 +344,10 @@ onMounted(async () => {
         <!-- CATALOG AREA -->
         <main class="catalog-area">
             <div class="catalog-top">
-                <span class="catalog-count">Menampilkan <strong id="product-count">6</strong> produk</span>
+                <span class="catalog-count">Menampilkan <strong id="product-count">{{ totalProducts }}</strong> produk</span>
                 <div class="catalog-search">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="catalog-search-input" placeholder="Cari template, UI kit, source code…" autocomplete="off">
+                    <input type="text" id="catalog-search-input" v-model="catalogSearch" @keyup.enter="reloadCatalog()" placeholder="Cari template, UI kit, source code…" autocomplete="off">
                 </div>
             </div>
 

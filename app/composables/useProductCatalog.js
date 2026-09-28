@@ -10,6 +10,11 @@ export const useProductCatalog = () => {
         'icmarket-product-catalog-products',
         () => []
     )
+    
+    const hotProducts = useState(
+        'icmarket-product-catalog-hot-products',
+        () => []
+    )
 
     const stores = useState(
         'icmarket-product-catalog-stores',
@@ -392,19 +397,55 @@ export const useProductCatalog = () => {
      *      ↓
      * Buyer Catalog
      */
-    const refreshCatalog = async () => {
+    const refreshHotProducts = async () => {
+        if (!import.meta.client) return []
+        try {
+            const config = useRuntimeConfig()
+            const response = await $fetch(`${config.public.apiBase}/products?limit=3&sort=rating`)
+            if (response.success) {
+                hotProducts.value = response.data.map(p => {
+                    let rawImages = []
+                    if (Array.isArray(p.images)) rawImages = p.images
+                    else if (typeof p.images === 'string' && p.images) {
+                        try { rawImages = JSON.parse(p.images) } catch { rawImages = [] }
+                    }
+                    const imageUrls = rawImages.map(img => typeof img === 'string' ? img : (img?.imageUrl || img?.url || '')).filter(Boolean)
+                    const thumbnailUrl = p.thumbnailUrl || imageUrls[0] || ''
+                    const sellerName = p.seller?.name || 'Seller IC Market'
+                    const storeSlug = sellerName.toLowerCase().replace(/\s+/g, '-')
+                    return {
+                        ...p,
+                        images: imageUrls.map(url => ({ imageUrl: url })),
+                        thumbnailUrl,
+                        storeName: sellerName,
+                        storeSlug,
+                        storeId: p.seller_id,
+                        catalogId: `api:${p.id}`,
+                        price: Number(p.price || 0),
+                    }
+                })
+                return hotProducts.value
+            }
+        } catch (error) {
+            console.error('Failed to fetch hot products:', error)
+        }
+        return []
+    }
+
+    const refreshCatalog = async (params = {}, append = false) => {
         if (!import.meta.client) {
-            products.value = []
+            if (!append) products.value = []
             stores.value = []
-            return []
+            return { data: [], meta: null }
         }
 
         try {
             const config = useRuntimeConfig()
-            const response = await $fetch(`${config.public.apiBase}/products`)
+            const query = new URLSearchParams(params).toString()
+            const response = await $fetch(`${config.public.apiBase}/products?${query}`)
+            
             if (response.success) {
-                products.value = response.data.map(p => {
-                    // images dari BE bisa berupa JSON string "[\"url\"]" atau sudah array
+                const newProducts = response.data.map(p => {
                     let rawImages = []
                     if (Array.isArray(p.images)) {
                         rawImages = p.images
@@ -412,7 +453,6 @@ export const useProductCatalog = () => {
                         try { rawImages = JSON.parse(p.images) } catch { rawImages = [] }
                     }
 
-                    // pastikan array of string (bukan object)
                     const imageUrls = rawImages.map(img =>
                         typeof img === 'string' ? img : (img?.imageUrl || img?.url || '')
                     ).filter(Boolean)
@@ -429,20 +469,25 @@ export const useProductCatalog = () => {
                         storeName: sellerName,
                         storeSlug,
                         storeId: p.seller_id,
-                        // Normalize catalogId agar card bisa diidentifikasi
                         catalogId: `api:${p.id}`,
-                        // Normalize price ke number
                         price: Number(p.price || 0),
                     }
                 })
+                
+                if (append) {
+                    products.value = [...products.value, ...newProducts]
+                } else {
+                    products.value = newProducts
+                }
+                
                 lastUpdatedAt.value = new Date().toISOString()
-                return products.value
+                return response
             }
         } catch (error) {
             console.error('Failed to fetch products from backend:', error)
         }
 
-        return []
+        return { data: [], meta: null }
     }
 
     /*
@@ -618,6 +663,7 @@ export const useProductCatalog = () => {
 
     return {
         products,
+        hotProducts,
         stores,
 
         activeStores,
@@ -626,6 +672,7 @@ export const useProductCatalog = () => {
         lastUpdatedAt,
 
         refreshCatalog,
+        refreshHotProducts,
 
         getProductByCatalogId,
         getProductById,
