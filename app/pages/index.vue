@@ -67,6 +67,33 @@ const catalogReviews = (product) => Number(product?.reviews || 0);
 const selectedProduct = ref(null);
 
 
+
+
+const isInCart = (productId) => {
+    return apiCart.value?.some(item => item.product_id === productId || item.id === productId);
+};
+
+const handleDirectBuy = async (product, e) => {
+    if (product.price === 0) return;
+    const success = await apiAddToCart(product.id || product.catalogId, 1);
+    if (success) window.location.href = '/checkout';
+};
+
+const handleAddCart = async (product, e) => {
+    if (product.price === 0) {
+        alert('Mulai mengunduh...');
+        return;
+    }
+    
+    if (isInCart(product.id || product.catalogId)) {
+        return; // already in cart
+    }
+    
+    const btn = e.currentTarget;
+    animateToCart(btn);
+    await apiAddToCart(product.id || product.catalogId, 1);
+};
+
 const animateToCart = (btn) => {
     if (!import.meta.client || !btn) return;
     
@@ -232,37 +259,6 @@ onMounted(async () => {
 
     if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value);
 
-    // Event Delegation for Add to Cart
-    document.addEventListener('click', async e => {
-        const btnBuyDirect = e.target.closest('.card-buy-direct');
-        if (btnBuyDirect) {
-            e.stopPropagation();
-            const card = btnBuyDirect.closest('.product-card');
-            if (card && card.dataset.free !== 'true') {
-                const success = await apiAddToCart(card.dataset.productId || card.dataset.id, 1);
-                if (success) window.location.href = '/checkout';
-            }
-            return;
-        }
-
-        
-        const btnAddCart = e.target.closest('.card-add-cart');
-        if (btnAddCart) {
-            e.stopPropagation();
-            const card = btnAddCart.closest('.product-card');
-            if (!card) return;
-            
-            if (card.dataset.free === 'true') {
-                alert('Mulai mengunduh...');
-                return;
-            }
-            
-            animateToCart(btnAddCart);
-            await apiAddToCart(card.dataset.productId || card.dataset.id, 1);
-            return;
-        }
-
-    });
 });
 </script>
 
@@ -522,17 +518,26 @@ onMounted(async () => {
                                 v-if="product.price > 0"
                                 class="btn-primary card-buy-direct"
                                 aria-label="Beli Langsung"
+                                @click.stop="handleDirectBuy(product, $event)"
                             >
                                 <i class="fa-solid fa-bolt"></i> Beli
                             </button>
                             <button
                                 class="btn-icon card-add-cart"
-                                :class="{ 'btn-primary download': product.price === 0 }"
+                                :class="{ 'btn-primary download': product.price === 0, 'in-cart': product.price > 0 && isInCart(product.id || product.catalogId) }"
                                 :style="product.price === 0 ? 'width:100%;' : ''"
                                 :aria-label="product.price === 0 ? 'Download gratis' : 'Tambahkan Keranjang'"
+                                @click.stop="handleAddCart(product, $event)"
                             >
-                                <i :class="product.price === 0 ? 'fa-solid fa-download' : 'fa-solid fa-cart-plus'"></i>
-                                <template v-if="product.price === 0"> Download</template>
+                                <template v-if="product.price === 0">
+                                    <i class="fa-solid fa-download"></i> Download
+                                </template>
+                                <template v-else-if="isInCart(product.id || product.catalogId)">
+                                    <i class="fa-solid fa-check"></i>
+                                </template>
+                                <template v-else>
+                                    <i class="fa-solid fa-cart-plus"></i>
+                                </template>
                             </button>
                         </div>
                     </div>
@@ -847,11 +852,11 @@ onMounted(async () => {
                 </div>
                 <div class="modal-cta" style="display:flex; flex-direction:column; gap:12px;">
                     <div style="display:flex; gap:12px; width:100%;">
-                        <button class="cta-buy" id="modal-buy-direct-btn" style="flex:1;" @click="useCart().buyNow({ id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, images: typeof selectedProduct.images === 'string' ? JSON.parse(selectedProduct.images) : selectedProduct.images, category: selectedProduct.category, storeName: selectedProduct.storeName }); closePreview(); navigateTo('/checkout')">
+                        <button class="cta-buy" id="modal-buy-direct-btn" style="flex:1;" @click="handleDirectBuy(selectedProduct, $event); closePreview()">
                             <i class="fa-solid fa-bolt"></i>
                             <span>Beli Langsung</span>
                         </button>
-                        <button class="cta-buy" id="modal-add-cart-btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);" @click="animateToCart($event.currentTarget); useCart().addItem({ id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, images: typeof selectedProduct.images === 'string' ? JSON.parse(selectedProduct.images) : selectedProduct.images, category: selectedProduct.category, storeName: selectedProduct.storeName }); closePreview()">
+                        <button class="cta-buy" id="modal-add-cart-btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);" @click="handleAddCart(selectedProduct, $event); closePreview()">
                             <i class="fa-solid fa-cart-plus"></i>
                             <span>Tambahkan Keranjang</span>
                         </button>
@@ -1142,6 +1147,16 @@ onMounted(async () => {
 @keyframes spinSlow {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.card-add-cart.in-cart {
+    background: #10b981 !important;
+    color: #fff !important;
+    border-color: #10b981 !important;
+}
+.card-add-cart.in-cart:hover {
+    background: #059669 !important;
+    border-color: #059669 !important;
 }
 </style>
 
