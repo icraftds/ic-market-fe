@@ -57,21 +57,21 @@ router.afterEach(() => {
 .loader-icon {
     width: 80px;
     height: 80px;
-    animation: flipCoin 1.5s linear infinite;
+    animation: flipCoinAnimation 1.5s linear infinite;
     filter: drop-shadow(0 0 16px rgba(20, 114, 255, 0.6));
 }
 .loader-text {
     font-family: 'Outfit', sans-serif;
-    color: #fff;
+    color: #ffffff !important;
     font-size: 1.2rem;
     font-weight: 600;
     letter-spacing: 0.5px;
     animation: pulseText 1.5s ease-in-out infinite alternate;
 }
 
-@keyframes flipCoin {
-    0% { transform: perspective(400px) rotateY(0); }
-    100% { transform: perspective(400px) rotateY(360deg); }
+@keyframes flipCoinAnimation {
+    0% { transform: perspective(600px) rotateY(0deg); }
+    100% { transform: perspective(600px) rotateY(360deg); }
 }
 @keyframes pulseText {
     0% { opacity: 0.6; }
