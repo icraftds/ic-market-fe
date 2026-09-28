@@ -248,18 +248,7 @@ onMounted(async () => {
                             <div class="skeleton-box skeleton-text large" style="width: 90%; margin-bottom: 16px;"></div>
                         </div>
                     </article>
-                
-    <Transition name="welcome-fade">
-        <div v-if="showWelcome" class="welcome-overlay">
-            <div class="welcome-glow"></div>
-            <div class="welcome-content">
-                <img src="/icoinz.svg" class="welcome-logo" alt="iCoinz" />
-                <h2 class="welcome-title">Selamat Datang, {{ welcomeUser }}!</h2>
-                <p class="welcome-subtitle">Berhasil masuk ke IC Market</p>
-            </div>
-        </div>
-    </Transition>
-</template>
+                </template>
 
                 <template v-else>
                     <article v-for="(product, index) in hotProducts" :key="product.id"
@@ -845,7 +834,20 @@ onMounted(async () => {
     </dialog>
 
     <!-- ======= SCRIPTS ======= -->
-  </div>
+      </div>
+
+    <!-- Welcome Popup -->
+    <Transition name="welcome-fade">
+        <div v-if="showWelcome" class="welcome-overlay">
+            <div class="welcome-glow"></div>
+            <div class="welcome-content">
+                <img src="/icoinz.svg" class="welcome-logo" alt="iCoinz" />
+                <h2 class="welcome-title">Selamat Datang, {{ welcomeUser }}!</h2>
+                <p class="welcome-subtitle">Berhasil masuk ke IC Market</p>
+            </div>
+        </div>
+    </Transition>
+
 </template>
 
 <style scoped>
