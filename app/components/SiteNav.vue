@@ -855,10 +855,6 @@ onBeforeUnmount(() => {
   .desktop-auth-btns { display: none; }
   .mobile-auth-burger { display: block; }
 }
-  .nav-logo-text { display: none; }
-  .nav-user-info, .nav-caret { display: none; }
-  .nav-bottom-inner { padding: 0 14px; }
-}
 @media (max-width: 480px) {
   .nav-action-label { display: none; }
   .nav-search-btn span { display: none; }
