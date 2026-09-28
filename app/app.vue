@@ -57,7 +57,7 @@ router.afterEach(() => {
 .loader-icon {
     width: 80px;
     height: 80px;
-    animation: spinRotate 1.5s linear infinite;
+    animation: flipCoin 1.5s linear infinite;
     filter: drop-shadow(0 0 16px rgba(20, 114, 255, 0.6));
 }
 .loader-text {
@@ -69,10 +69,9 @@ router.afterEach(() => {
     animation: pulseText 1.5s ease-in-out infinite alternate;
 }
 
-@keyframes spinRotate {
-    0% { transform: rotate(0deg) scale(1); }
-    50% { transform: rotate(180deg) scale(1.1); }
-    100% { transform: rotate(360deg) scale(1); }
+@keyframes flipCoin {
+    0% { transform: perspective(400px) rotateY(0); }
+    100% { transform: perspective(400px) rotateY(360deg); }
 }
 @keyframes pulseText {
     0% { opacity: 0.6; }
