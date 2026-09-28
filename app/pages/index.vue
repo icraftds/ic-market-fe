@@ -198,6 +198,7 @@ onMounted(async () => {
 
     <!-- ======= HERO ======= -->
     <section class="hero-strip">
+        <div class="hero-inner">
         <div class="hero-text">
             <div class="hero-label">IC Market · Open Store</div>
             <h1>Aset Digital<br><em>Premium,</em><br>Harga Terjangkau.</h1>
@@ -291,6 +292,7 @@ onMounted(async () => {
                     <i class="fa-solid fa-hand-pointer"></i> Klik kartu belakang untuk pindah
                 </div>
             </div>
+        </div>
         </div>
     </section>
 
