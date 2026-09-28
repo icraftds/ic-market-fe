@@ -1,5 +1,6 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
+import OtpForm from '~/components/OtpForm.vue'
 
 definePageMeta({ layout: 'blank' })
 
@@ -22,6 +23,14 @@ const showOtpForm = ref(false)
 const otpCode = ref('')
 const isVerifyingOtp = ref(false)
 const resendMessage = ref('')
+
+onMounted(() => {
+  const savedEmail = sessionStorage.getItem('icmarket_login_email')
+  if (savedEmail) {
+    form.email = savedEmail
+    showOtpForm.value = true
+  }
+})
 
 const DUMMY_ACCOUNTS = [
   {
@@ -196,6 +205,7 @@ async function submitLogin() {
 
   if (!result.success) {
     if (result.is_unverified) {
+      sessionStorage.setItem('icmarket_login_email', email)
       showOtpForm.value = true
     } else {
       error.value = result.message
@@ -211,16 +221,17 @@ async function submitLogin() {
   }
 }
 
-async function submitOtp() {
+async function submitOtp(code) {
   error.value = ''
   resendMessage.value = ''
   isVerifyingOtp.value = true
   
   const { verifyOtp } = useDemoAuth()
-  const res = await verifyOtp(form.email.trim().toLowerCase(), otpCode.value)
+  const res = await verifyOtp(form.email.trim().toLowerCase(), code)
   isVerifyingOtp.value = false
 
   if (res.success) {
+    sessionStorage.removeItem('icmarket_login_email')
     showOtpForm.value = false
     const { session } = useDemoAuth()
     if (session.value?.role === 'seller') {
@@ -234,10 +245,18 @@ async function submitOtp() {
 }
 
 async function handleResendOtp() {
-  resendMessage.value = 'Mengirim ulang OTP...'
+  error.value = ''
   const { resendOtp } = useDemoAuth()
   const res = await resendOtp(form.email.trim().toLowerCase())
-  resendMessage.value = res.message || 'OTP berhasil dikirim ulang.'
+  if (!res.success) {
+    error.value = res.message || 'Gagal mengirim ulang OTP.'
+  }
+}
+
+function cancelOtp() {
+  sessionStorage.removeItem('icmarket_login_email')
+  showOtpForm.value = false
+  error.value = ''
 }
 </script>
 
@@ -256,37 +275,15 @@ async function handleResendOtp() {
         Login diperlukan untuk membuka halaman tersebut.
       </div>
 
-      <div v-if="showOtpForm" class="otp-box">
-        <h2>Verifikasi Email</h2>
-        <p>Kami telah mengirimkan kode OTP baru ke email <strong>{{ form.email }}</strong></p>
-        
-        <form @submit.prevent="submitOtp">
-          <label>
-            Kode OTP
-            <input
-              v-model="otpCode"
-              type="text"
-              autocomplete="one-time-code"
-              placeholder="Masukkan 6 digit OTP"
-              maxlength="6"
-            />
-          </label>
-
-          <p v-if="error" class="error-text">
-            {{ error }}
-          </p>
-
-          <button class="primary-btn" type="submit" :disabled="isVerifyingOtp">
-            {{ isVerifyingOtp ? 'Memverifikasi...' : 'Verifikasi OTP' }}
-          </button>
-        </form>
-
-        <p class="switch-text">
-          Belum menerima email?
-          <button type="button" class="text-btn" @click="handleResendOtp">Kirim Ulang</button>
-        </p>
-        <p v-if="resendMessage" class="resend-msg">{{ resendMessage }}</p>
-      </div>
+      <OtpForm
+        v-if="showOtpForm"
+        :email="form.email"
+        :is-verifying="isVerifyingOtp"
+        :error="error"
+        @submit="submitOtp"
+        @resend="handleResendOtp"
+        @back="cancelOtp"
+      />
 
       <form v-else @submit.prevent="submitLogin">
         <label>
@@ -462,18 +459,5 @@ input:focus {
   text-decoration: underline;
 }
 
-.resend-msg {
-  text-align: center;
-  font-size: 13px;
-  color: #059669;
-  margin-top: 8px;
-}
-.otp-box h2 {
-  text-align: center;
-  margin-bottom: 8px;
-}
-.otp-box p {
-  text-align: center;
-  margin-bottom: 20px;
-}
+
 </style>
