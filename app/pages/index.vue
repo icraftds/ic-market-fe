@@ -851,7 +851,7 @@ onMounted(async () => {
                 <h2 class="welcome-title">Selamat Datang, {{ welcomeUser }}!</h2>
                 <p class="welcome-subtitle" v-if="welcomeType === 'login'">Berhasil masuk ke IC Market</p>
                 <p class="welcome-subtitle bonus-text" v-if="welcomeType === 'register'">
-                    Selamat bergabung! Anda mendapatkan <strong>10.000 iCoin-Z</strong>.
+                    Anda mendapatkan <strong>10.000 iCoin-Z</strong> sebagai pengguna baru.
                 </p>
             </div>
         </div>
