@@ -13,6 +13,8 @@ const {
     refreshCatalog
 } = useProductCatalog();
 
+const isLoading = ref(true);
+
 const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart();
 
 const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80';
@@ -55,6 +57,7 @@ const catalogReviews = (product) => Number(product?.reviews || 0);
 onMounted(async () => {
 
     await refreshCatalog();
+    isLoading.value = false;
     await nextTick();
 
     const welcomeId = sessionStorage.getItem('icmarket_show_welcome');
@@ -71,13 +74,14 @@ onMounted(async () => {
 
         /* ── Category Filter ── */
         const catItems = document.querySelectorAll('.cat-item');
-        const cards    = document.querySelectorAll('.product-card');
+        const gridCards = document.querySelectorAll('#product-grid .product-card');
+        const allCards = document.querySelectorAll('.product-card');
         const countEl  = document.getElementById('product-count');
-        if (countEl) countEl.textContent = cards.length;
+        if (countEl) countEl.textContent = gridCards.length;
 
         function filterCards(cat) {
             let visible = 0;
-            cards.forEach(card => {
+            gridCards.forEach(card => {
                 const cardCat = card.dataset.category;
                 const show    = cat === 'semua' || cardCat === cat;
                 card.style.display = show ? '' : 'none';
@@ -96,19 +100,33 @@ onMounted(async () => {
 
         /* ── Search Filter ── */
         const searchInput = document.getElementById('main-search');
+        const catalogSearchInput = document.getElementById('catalog-search-input');
+        
+        function applySearchFilter(q) {
+            let visible = 0;
+            gridCards.forEach(card => {
+                const title = (card.dataset.title || '').toLowerCase();
+                const cat   = (card.dataset.category || '').toLowerCase();
+                const tags  = (card.dataset.tags || '').toLowerCase();
+                const show  = !q || title.includes(q) || cat.includes(q) || tags.includes(q);
+                card.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            if (countEl) countEl.textContent = visible;
+        }
+
         if (searchInput) {
             searchInput.addEventListener('input', () => {
                 const q = searchInput.value.toLowerCase().trim();
-                let visible = 0;
-                cards.forEach(card => {
-                    const title = (card.dataset.title || '').toLowerCase();
-                    const cat   = (card.dataset.category || '').toLowerCase();
-                    const tags  = (card.dataset.tags || '').toLowerCase();
-                    const show  = !q || title.includes(q) || cat.includes(q) || tags.includes(q);
-                    card.style.display = show ? '' : 'none';
-                    if (show) visible++;
-                });
-                if (countEl) countEl.textContent = visible;
+                applySearchFilter(q);
+                if (catalogSearchInput) catalogSearchInput.value = searchInput.value;
+            });
+        }
+        if (catalogSearchInput) {
+            catalogSearchInput.addEventListener('input', () => {
+                const q = catalogSearchInput.value.toLowerCase().trim();
+                applySearchFilter(q);
+                if (searchInput) searchInput.value = catalogSearchInput.value;
             });
         }
 
@@ -427,7 +445,7 @@ onMounted(async () => {
         });
 
         // Whole card click opens preview
-        cards.forEach(card => {
+        allCards.forEach(card => {
             card.addEventListener('click', e => {
                 if (!e.target.closest('.btn-primary') && !e.target.closest('.btn-icon') && !e.target.closest('.card-store')) {
                     openPreview(card);
@@ -667,16 +685,30 @@ onMounted(async () => {
                 <span class="catalog-count">Menampilkan <strong id="product-count">6</strong> produk</span>
                 <div class="catalog-search">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="main-search" placeholder="Cari template, UI kit, source code…" autocomplete="off">
+                    <input type="text" id="catalog-search-input" placeholder="Cari template, UI kit, source code…" autocomplete="off">
                 </div>
             </div>
 
             <!-- PRODUCT GRID -->
             <div class="product-grid" id="product-grid">
+                
+                <template v-if="isLoading">
+                    <!-- Skeleton Cards -->
+                    <article v-for="i in 6" :key="i" class="product-card skeleton-card">
+                        <div class="card-thumb skeleton-box" style="height: 180px;"></div>
+                        <div class="card-body">
+                            <div class="skeleton-box skeleton-text small" style="width: 40%; margin-bottom: 8px;"></div>
+                            <div class="skeleton-box skeleton-text medium" style="width: 70%; margin-bottom: 8px;"></div>
+                            <div class="skeleton-box skeleton-text large" style="width: 90%; margin-bottom: 16px;"></div>
+                            <div class="skeleton-box skeleton-btn" style="height: 38px; border-radius: 8px;"></div>
+                        </div>
+                    </article>
+                </template>
 
-                <!-- Produk seller dinamis: memakai UI card yang sama dengan file ZIP -->
-                <article
-                    v-for="product in catalogProducts"
+                <template v-else>
+                    <!-- Produk seller dinamis: memakai UI card yang sama dengan file ZIP -->
+                    <article
+                        v-for="product in catalogProducts"
                     :key="product.catalogId"
                     class="product-card"
                     :data-category="String(product.category || '').toLowerCase()"
@@ -746,6 +778,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </article>
+                </template>
 
             </div><!-- /product-grid -->
         </main>
@@ -1161,5 +1194,27 @@ onMounted(async () => {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* Skeleton Loaders */
+.skeleton-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #eaeaea;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.skeleton-box {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loadingSkeleton 1.5s infinite;
+}
+.skeleton-text {
+  height: 14px;
+  border-radius: 4px;
+}
+@keyframes loadingSkeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 </style>
