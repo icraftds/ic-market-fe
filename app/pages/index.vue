@@ -94,7 +94,7 @@ const reloadCatalog = () => {
     loadProducts();
 };
 
-watch(() => route.query, async () => {
+const applyRouteQuery = async () => {
     const q = route.query.q;
     const cat = route.query.category;
     
@@ -118,10 +118,14 @@ watch(() => route.query, async () => {
     if (q || cat) {
         setTimeout(() => document.querySelector('.catalog-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
-}, { immediate: true });
+};
 
+watch(() => route.query, () => {
+    applyRouteQuery();
+});
 
 onMounted(async () => {
+    await applyRouteQuery();
     await refreshHotProducts();
 
     // Intersection Observer for infinite scroll
