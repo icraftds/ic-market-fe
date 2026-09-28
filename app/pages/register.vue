@@ -115,7 +115,16 @@ function cancelOtp() {
         <p>
           Akun Anda telah berhasil diverifikasi dan Anda sudah login.
         </p>
-        <NuxtLink class="primary-btn" to="/">
+        <NuxtLink 
+          class="primary-btn" 
+          to="/" 
+          @click="() => {
+            if (import.meta.client) {
+              const { session } = useDemoAuth()
+              sessionStorage.setItem('icmarket_show_welcome', session.value?.id || 'sekian')
+            }
+          }"
+        >
           Lanjut ke Beranda
         </NuxtLink>
       </div>

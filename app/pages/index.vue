@@ -1,7 +1,11 @@
 <script setup>
-import { nextTick, onMounted } from 'vue';
+import { nextTick, onMounted, ref } from 'vue';
 
 definePageMeta({ layout: 'default' })
+
+const showWelcomePopup = ref(false);
+const welcomeUserId = ref('1');
+const welcomeCoins = ref('1.000');
 
 
 const {
@@ -52,6 +56,13 @@ onMounted(async () => {
 
     await refreshCatalog();
     await nextTick();
+
+    const welcomeId = sessionStorage.getItem('icmarket_show_welcome');
+    if (welcomeId) {
+        welcomeUserId.value = welcomeId;
+        showWelcomePopup.value = true;
+        sessionStorage.removeItem('icmarket_show_welcome');
+    }
 
     const authToken = useCookie('icmarket_auth_token');
 
@@ -491,6 +502,14 @@ onMounted(async () => {
 <template>
   <div>
 
+    <!-- ======= WELCOME POPUP ======= -->
+    <div v-if="showWelcomePopup" class="welcome-overlay" @click="showWelcomePopup = false">
+      <div class="welcome-content" @click.stop>
+        <div class="welcome-text">Selamat, kamu pendaftar ke - {{ welcomeUserId }}</div>
+        <div class="welcome-text">dan mendapatkan {{ welcomeCoins }} iCoinz!</div>
+        <button class="welcome-btn" @click="showWelcomePopup = false">Belanja Sekarang</button>
+      </div>
+    </div>
 
     <!-- ======= HEADER ======= -->
     
@@ -1091,6 +1110,56 @@ onMounted(async () => {
     </dialog>
 
     <!-- ======= SCRIPTS ======= -->
-    
   </div>
 </template>
+
+<style scoped>
+/* Welcome Popup */
+.welcome-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.4s ease-out;
+}
+.welcome-content {
+  text-align: center;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+.welcome-text {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.welcome-btn {
+  margin-top: 24px;
+  padding: 14px 36px;
+  background: transparent;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.welcome-btn:hover {
+  background: #fff;
+  color: #000;
+  transform: translateY(-2px);
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+</style>

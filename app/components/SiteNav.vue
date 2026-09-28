@@ -7,10 +7,15 @@ const role = computed(() => session.value?.role || null)
 const isLoggedIn = computed(() => Boolean(session.value))
 const isMenuOpen = ref(false)
 const dropdownRef = ref(null)
+const isSearchOpen = ref(false)
+const searchWrapRef = ref(null)
 
 const handleClickOutside = (e) => {
   if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
     isMenuOpen.value = false
+  }
+  if (searchWrapRef.value && !searchWrapRef.value.contains(e.target)) {
+    isSearchOpen.value = false
   }
 }
 
@@ -66,7 +71,7 @@ onBeforeUnmount(() => {
         </NuxtLink>
 
         <!-- Search -->
-        <div class="nav-search-wrap">
+        <div class="nav-search-wrap" ref="searchWrapRef">
           <div class="nav-search">
             <i class="fa-solid fa-magnifying-glass nav-search-icon"></i>
             <input
@@ -76,11 +81,34 @@ onBeforeUnmount(() => {
               placeholder="Cari template, UI kit, source code, dan lainnya…"
               autocomplete="off"
               aria-label="Cari produk"
+              @focus="isSearchOpen = true"
             />
             <button class="nav-search-btn" aria-label="Cari">
               <i class="fa-solid fa-magnifying-glass"></i>
               <span>Cari</span>
             </button>
+          </div>
+          
+          <!-- Search Dropdown -->
+          <div v-if="isSearchOpen" class="search-dropdown">
+            <div class="search-section">
+              <div class="search-title">Pencarian Populer</div>
+              <div class="search-tags">
+                <NuxtLink to="/search?q=UI+Kit" class="search-tag" @click="isSearchOpen = false">UI Kit</NuxtLink>
+                <NuxtLink to="/search?q=Dashboard" class="search-tag" @click="isSearchOpen = false">Dashboard</NuxtLink>
+                <NuxtLink to="/search?q=Landing+Page" class="search-tag" @click="isSearchOpen = false">Landing Page</NuxtLink>
+                <NuxtLink to="/search?q=E-Commerce" class="search-tag" @click="isSearchOpen = false">E-Commerce</NuxtLink>
+                <NuxtLink to="/search?q=Laravel" class="search-tag" @click="isSearchOpen = false">Laravel</NuxtLink>
+              </div>
+            </div>
+            <div class="search-section">
+              <div class="search-title">Kategori</div>
+              <ul class="search-categories">
+                <li><NuxtLink to="/category/ui-templates" @click="isSearchOpen = false"><i class="fa-solid fa-layer-group"></i> UI Templates</NuxtLink></li>
+                <li><NuxtLink to="/category/plugins" @click="isSearchOpen = false"><i class="fa-solid fa-plug"></i> Plugins & Extensions</NuxtLink></li>
+                <li><NuxtLink to="/category/source-code" @click="isSearchOpen = false"><i class="fa-solid fa-code"></i> Source Code</NuxtLink></li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -361,6 +389,93 @@ onBeforeUnmount(() => {
   transition: background 0.2s;
 }
 .nav-search-btn:hover { background: #1060d0; }
+
+/* Search Dropdown */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #ebebeb;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  padding: 20px;
+  z-index: 200;
+  animation: dd-in 0.18s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  box-sizing: border-box;
+}
+.nav-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.search-section {
+  margin-bottom: 20px;
+}
+.search-section:last-child {
+  margin-bottom: 0;
+}
+.search-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+.search-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.search-tag {
+  padding: 6px 12px;
+  background: #f5f5f7;
+  border: 1px solid #e8e8e8;
+  border-radius: 99px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #444;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.search-tag:hover {
+  background: #eef4ff;
+  border-color: #1472ff;
+  color: #1472ff;
+}
+.search-categories {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.search-categories li a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.search-categories li a i {
+  color: #999;
+  font-size: 0.9rem;
+  width: 16px;
+  text-align: center;
+}
+.search-categories li a:hover {
+  background: #f5f5f7;
+}
+.search-categories li a:hover i {
+  color: #1472ff;
+}
 
 /* Actions */
 .nav-actions {
