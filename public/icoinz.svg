@@ -1,4 +1,117 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="12" cy="12" r="10" stroke="#00A3FF" stroke-width="2"/>
-<text x="12" y="16" font-size="12" text-anchor="middle" fill="#00A3FF">iC</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <defs>
+    <!-- Outer Rim Gradients -->
+    <linearGradient id="rimGrad_gold" x1="80" y1="40" x2="432" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="35%" stop-color="#F59E0B" />
+      <stop offset="70%" stop-color="#78350F" />
+      <stop offset="100%" stop-color="#FBBF24" />
+    </linearGradient>
+
+    <!-- Inner Plate Background -->
+    <radialGradient id="plateGrad_gold" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#1E1B18" />
+      <stop offset="100%" stop-color="#120F0D" />
+    </radialGradient>
+
+    <!-- Diagonal Slash Gradient (Top-Right to Bottom-Left) -->
+    <linearGradient id="slashGrad_gold" x1="450" y1="60" x2="60" y2="450" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#FDE68A" stop-opacity="1" />
+      <stop offset="100%" stop-color="#FDE68A" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Coin Bevel Glow -->
+    <linearGradient id="bevelGrad_gold" x1="120" y1="80" x2="400" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#D97706" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#78350F" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Drop Shadow Filter for Internal Slices -->
+    <filter id="cutShadow_gold" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="-4" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <filter id="laserGlow_gold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Clip Paths for upper and lower sliced coin halves -->
+    <clipPath id="upperHalfClip_gold">
+      <!-- Polygon covering top right divided by diagonal slash path -->
+      <polygon points="530,-20 -20,-20 110,130 455,475 530,380" />
+    </clipPath>
+
+    <clipPath id="lowerHalfClip_gold">
+      <!-- Polygon covering bottom left -->
+      <polygon points="-20,-20 -20,530 530,530 380,530 65,215" />
+    </clipPath>
+  </defs>
+
+  <!-- ================= BASE COIN BODY (Hex-Curved Token) ================= -->
+  <!-- Outer Chamfered Ring -->
+  <path d="M164 48 L348 48 Q396 48 430 82 Q464 116 464 164 L464 348 Q464 396 430 430 Q396 464 348 464 L164 464 Q116 464 82 430 Q48 396 48 348 L48 164 Q48 116 82 82 Q116 48 164 48 Z" 
+        fill="url(#rimGrad_gold)" />
+
+  <!-- Inner Plate with Depth Rim -->
+  <path d="M168 62 L344 62 Q386 62 416 92 Q446 122 446 164 L446 348 Q446 390 416 420 Q386 450 344 450 L168 450 Q126 450 96 420 Q66 390 66 348 L66 164 Q66 122 96 92 Q126 62 168 62 Z" 
+        fill="url(#plateGrad_gold)" 
+        stroke="url(#bevelGrad_gold)" 
+        stroke-width="3" />
+
+  <!-- Concentric Coin Grooves (Fintech Security Line Pattern) -->
+  <circle cx="256" cy="256" r="150" stroke="rgba(255,255,255,0.06)" stroke-width="2" stroke-dasharray="4 6" />
+  <circle cx="256" cy="256" r="126" stroke="rgba(255,255,255,0.04)" stroke-width="1.5" />
+
+  <!-- ================= MONOGRAM: iCoinZ Sliced Glyph ================= -->
+  <!-- Lower section of Z -->
+  <g filter="url(#cutShadow_gold)">
+    <!-- Top Monogram Component (i dot & top bar of Z) -->
+    <path d="M 230 148 L 332 148 C 342 148 348 156 344 165 L 290 236 L 244 236 L 282 186 L 230 186 C 220 186 216 178 220 170 Z" 
+          fill="#FFFFFF" opacity="0.95" />
+    
+    <!-- Distinct "i" Token Orb (Integrated in top-left bay) -->
+    <circle cx="198" cy="166" r="14" fill="#FDE68A" />
+
+    <!-- Bottom Monogram Component (Z Base & Stem) -->
+    <path d="M 226 276 L 272 276 L 222 342 L 340 342 C 348 342 354 350 350 358 L 346 364 C 342 370 336 374 328 374 L 176 374 C 166 374 162 364 168 356 Z" 
+          fill="#FFFFFF" opacity="0.95" />
+  </g>
+
+  <!-- ================= THE SIGNATURE DIAGONAL SLASH ("BESETAN") ================= -->
+  <!-- Top-Right (approx 440, 72) down to Bottom-Left (approx 72, 440) -->
+  <!-- 1. Ambient Glow Underlay -->
+  <line x1="455" y1="57" x2="57" y2="455" 
+        stroke="#FDE68A" 
+        stroke-width="14" 
+        stroke-linecap="round" 
+        opacity="0.35" 
+        filter="url(#laserGlow_gold)" />
+
+  <!-- 2. Dark Trench / Razor Separation Slot -->
+  <line x1="452" y1="60" x2="60" y2="452" 
+        stroke="#04060B" 
+        stroke-width="11" 
+        stroke-linecap="round" />
+
+  <!-- 3. Dynamic Sharp Energy Core Blade -->
+  <line x1="446" y1="66" x2="66" y2="446" 
+        stroke="url(#slashGrad_gold)" 
+        stroke-width="4.5" 
+        stroke-linecap="round" />
+
+  <!-- 4. Upper & Lower Offset Accent Flakes (Highlights the mechanical slice) -->
+  <path d="M 436 84 L 420 100 L 406 100" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round" opacity="0.8" />
+  <path d="M 106 412 L 92 426 L 78 426" stroke="#FDE68A" stroke-width="2.5" stroke-linecap="round" opacity="0.8" />
+
+  <!-- Corner Notch Accents on Coin Edge -->
+  <circle cx="256" cy="80" r="3" fill="#FDE68A" opacity="0.7" />
+  <circle cx="256" cy="432" r="3" fill="#78350F" opacity="0.7" />
+  <circle cx="80" cy="256" r="3" fill="#F59E0B" opacity="0.7" />
+  <circle cx="432" cy="256" r="3" fill="#FBBF24" opacity="0.7" />
 </svg>
