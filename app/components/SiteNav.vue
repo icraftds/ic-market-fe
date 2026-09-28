@@ -149,7 +149,7 @@ onBeforeUnmount(() => {
             <!-- Coin -->
             <NuxtLink to="/topup" class="nav-coin-chip" title="Riwayat Top Up iCoinZ" style="text-decoration: none;">
               <div class="nav-coin-icon">
-                <i class="fa-solid fa-coins"></i>
+                <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" />
               </div>
               <div class="nav-coin-detail">
                 <span class="nav-coin-lbl">iCoinZ</span>
@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
                   </template>
                   <div class="dd-divider"></div>
                   <NuxtLink to="/topup" class="dd-item accent" @click="isMenuOpen = false">
-                    <i class="fa-solid fa-coins"></i><span>Top Up iCoinZ</span>
+                    <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /><span>Top Up iCoinZ</span>
                   </NuxtLink>
                   <NuxtLink to="/profile" class="dd-item" @click="isMenuOpen = false">
                     <i class="fa-solid fa-user-circle"></i><span>Profil Saya</span>

@@ -202,7 +202,7 @@ onMounted(async () => {
                     {{ group.name }}
                   </NuxtLink>
                   <span class="cart-store-count">
-                    {{ group.items.length }} produk · <i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(group.subtotal) }}
+                    {{ group.items.length }} produk · <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(group.subtotal) }}
                   </span>
                 </div>
                 <div v-for="item in group.items" :key="item.id" class="cart-item">
@@ -215,7 +215,7 @@ onMounted(async () => {
                     </div>
                   </div>
                   <div class="cart-item-right">
-                    <div class="cart-item-price" :class="{ free: item.isFree }"><span v-if="item.isFree">Gratis</span><span v-else><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(item.price) }}</span></div>
+                    <div class="cart-item-price" :class="{ free: item.isFree }"><span v-if="item.isFree">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(item.price) }}</span></div>
                     <button class="cart-remove-btn" @click="removeItem(item.cartIndex)">
                       <i class="fa-regular fa-trash-can"></i> Hapus
                     </button>

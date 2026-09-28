@@ -49,17 +49,17 @@ defineExpose({ refresh })
             <div style="font-size:0.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ item.category }}<span v-if="item.store || item.storeName"> · {{ item.store || item.storeName }}</span></div>
           </div>
           <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:0.88rem;color:var(--text);white-space:nowrap;">
-            <span v-if="item.isFree">Gratis</span><span v-else><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(item.price) }}</span>
+            <span v-if="item.isFree">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(item.price) }}</span>
           </div>
         </div>
       </div>
       
       <div class="summary-row" :style="props.showItems ? 'margin-top:8px;' : ''">
         <span class="lbl">Subtotal <span v-if="!props.showItems">({{ cart.length }} item)</span></span>
-        <span class="val"><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(subtotal) }}</span>
+        <span class="val"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(subtotal) }}</span>
       </div>
       <div v-if="discount > 0" class="summary-row discount">
-        <span class="lbl">Diskon Promo</span><span class="val">− <i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(discount) }}</span>
+        <span class="lbl">Diskon Promo</span><span class="val">− <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(discount) }}</span>
       </div>
       <div class="summary-row">
         <span class="lbl">Biaya Admin</span><span class="val">Rp 0</span>
@@ -67,7 +67,7 @@ defineExpose({ refresh })
       <div class="flow-divider"></div>
       <div class="summary-row total">
         <span class="lbl">Total</span>
-        <span class="val"><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(total) }}</span>
+        <span class="val"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(total) }}</span>
       </div>
       
       <slot name="footer"></slot>

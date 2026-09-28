@@ -198,7 +198,7 @@ const processTopup = async () => {
         >
           <div v-if="amt.discount" class="discount-badge">{{ amt.discount }}</div>
           <div class="coin-val"><span class="icoin-icon">C</span> {{ Number(amt.value).toLocaleString('id-ID') }}</div>
-          <div class="price-val">Harga: <strong style="color:var(--text);"><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(amt.price) }}</strong></div>
+          <div class="price-val">Harga: <strong style="color:var(--text);"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(amt.price) }}</strong></div>
         </div>
       </div>
 
@@ -220,7 +220,7 @@ const processTopup = async () => {
       <div class="checkout-section">
         <div class="summary">
           <span>Total Pembayaran:</span>
-          <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(selectedAmount.price) }}</strong>
+          <strong><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(selectedAmount.price) }}</strong>
         </div>
         
         <div class="checkout-actions">

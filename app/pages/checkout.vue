@@ -255,18 +255,18 @@ onMounted(async () => {
                   <strong>{{ group.name }}</strong>
                   <span>{{ group.items?.length || 0 }} produk</span>
                 </div>
-                <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(groupSubtotal(group)) }}</strong>
+                <strong><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(groupSubtotal(group)) }}</strong>
               </div>
               <div class="checkout-store-items">
                 <div v-for="item in group.items" :key="item.catalogId || item.id" class="checkout-store-item">
                   <span>{{ item.name }}</span>
-                  <span v-if="item.isFree">Gratis</span><span v-else><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(Number(item.price || 0) * Number(item.quantity || item.qty || 1)) }}</span>
+                  <span v-if="item.isFree">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(Number(item.price || 0) * Number(item.quantity || item.qty || 1)) }}</span>
                 </div>
               </div>
             </div>
             <div class="checkout-store-total">
               <span>Subtotal seluruh toko</span>
-              <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(checkoutSubtotal) }}</strong>
+              <strong><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(checkoutSubtotal) }}</strong>
             </div>
           </div>
         </div>
@@ -364,8 +364,8 @@ onMounted(async () => {
             <!-- Coin Detail -->
             <div v-if="selectedMethod === 'coin'" class="payment-detail-pane visible">
               <div class="flow-alert info">
-                <i class="fa-solid fa-coins"></i>
-                Saldo iCoin-Z Anda: <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(session?.coins || 0).replace('Rp', '') }} iCoin-Z</strong>. Total pesanan akan langsung dipotong dari saldo iCoin-Z.
+                <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" />
+                Saldo iCoin-Z Anda: <strong><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(session?.coins || 0).replace('Rp', '') }} iCoin-Z</strong>. Total pesanan akan langsung dipotong dari saldo iCoin-Z.
               </div>
               <div v-if="(session?.coins || 0) < checkoutSubtotal" class="flow-alert warn" style="margin-top: 10px;">
                 <i class="fa-solid fa-triangle-exclamation"></i>

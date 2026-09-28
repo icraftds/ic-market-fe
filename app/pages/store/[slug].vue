@@ -248,7 +248,7 @@ onMounted(() => {
               </div>
 
               <div class="product-bottom">
-                <strong><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(product.price) }}</strong>
+                <strong><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(product.price) }}</strong>
                 <button type="button" @click="addToCart(product)">
                   {{ Number(product.price) === 0 ? 'Download' : 'Tambah' }}
                 </button>

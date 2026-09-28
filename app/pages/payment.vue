@@ -184,7 +184,7 @@ onUnmounted(() => {
           <div class="flow-box-body">
             <div class="payment-amount-display">
               <span class="pay-amount-label">Jumlah yang harus ditransfer</span>
-              <span class="pay-amount-value"><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(transferTotal) }}</span>
+              <span class="pay-amount-value"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(transferTotal) }}</span>
             </div>
             <div class="flow-alert warn">
               <i class="fa-solid fa-triangle-exclamation"></i>
@@ -246,7 +246,7 @@ onUnmounted(() => {
           <div class="flow-box-body">
             <div class="payment-amount-display">
               <span class="pay-amount-label">Total Pembayaran</span>
-              <span class="pay-amount-value"><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ formatCoin(total) }}</span>
+              <span class="pay-amount-value"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(total) }}</span>
             </div>
             <div class="qr-wrapper">
               <div class="qr-placeholder"><i class="fa-solid fa-qrcode"></i></div>

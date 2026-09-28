@@ -182,7 +182,7 @@ onMounted(async () => {
       <div class="welcome-content" @click.stop>
         <div class="welcome-icon-wrapper">
             <div class="welcome-icon-glow"></div>
-            <i class="fa-solid fa-coins welcome-icon"></i>
+            <img src="/icoinz.svg" alt="iCoinz" class="welcome-icon" />
         </div>
         <div class="welcome-text">Selamat, kamu pendaftar ke-{{ welcomeUserId }}</div>
         <div class="welcome-text highlight-text">dan mendapatkan {{ welcomeCoins }} iCoinz!</div>
@@ -262,7 +262,7 @@ onMounted(async () => {
                         <h3 class="card-title">{{ product.name }}</h3>
                         <div class="card-footer">
                             <span class="card-price" :class="{ 'free-price': product.price === 0 }">
-                                <span v-if="product.price === 0">Gratis</span><span v-else><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ Number(product.price).toLocaleString('id-ID') }}</span>
+                                <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
                             </span>
                             <div class="card-rating">
                                 <i class="fa-solid fa-star"></i>
@@ -429,7 +429,7 @@ onMounted(async () => {
                         <h3 class="card-title">{{ product.name }}</h3>
                         <div class="card-footer">
                             <span class="card-price" :class="{ 'free-price': product.price === 0 }">
-                                <span v-if="product.price === 0">Gratis</span><span v-else><i class="fa-solid fa-coins" style="color: #f59e0b"></i> {{ Number(product.price).toLocaleString('id-ID') }}</span>
+                                <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
                             </span>
                             <div class="card-rating">
                                 <i class="fa-solid fa-star"></i>
