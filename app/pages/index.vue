@@ -177,11 +177,19 @@ onMounted(async () => {
   <div>
 
     <!-- ======= WELCOME POPUP ======= -->
-    <div v-if="showWelcomePopup" class="welcome-overlay" @click="showWelcomePopup = false">
+        <div v-if="showWelcomePopup" class="welcome-overlay" @click="showWelcomePopup = false">
+      <div class="welcome-glow"></div>
       <div class="welcome-content" @click.stop>
-        <div class="welcome-text">Selamat, kamu pendaftar ke - {{ welcomeUserId }}</div>
-        <div class="welcome-text">dan mendapatkan {{ welcomeCoins }} iCoinz!</div>
-        <button class="welcome-btn" @click="showWelcomePopup = false">Belanja Sekarang</button>
+        <div class="welcome-icon-wrapper">
+            <div class="welcome-icon-glow"></div>
+            <i class="fa-solid fa-coins welcome-icon"></i>
+        </div>
+        <div class="welcome-text">Selamat, kamu pendaftar ke-{{ welcomeUserId }}</div>
+        <div class="welcome-text highlight-text">dan mendapatkan {{ welcomeCoins }} iCoinz!</div>
+        <button class="welcome-btn" @click="showWelcomePopup = false">
+            <span>Belanja Sekarang</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </button>
       </div>
     </div>
 
@@ -821,46 +829,136 @@ onMounted(async () => {
 .welcome-overlay {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.5s ease-out;
+  overflow: hidden;
 }
+
+.welcome-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 163, 255, 0.25) 0%, rgba(0, 163, 255, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pulseGlow 4s infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.2); opacity: 1; }
+}
+
 .welcome-content {
   text-align: center;
   color: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
+  z-index: 1;
+  position: relative;
+  animation: floatUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+  transform: translateY(30px);
 }
+
+@keyframes floatUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-icon-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.welcome-icon-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px; height: 100px;
+  background: rgba(0, 163, 255, 0.4);
+  border-radius: 50%;
+  filter: blur(20px);
+  animation: pulseGlow 3s linear infinite alternate;
+}
+
+.welcome-icon {
+  font-size: 64px;
+  color: #00d2ff;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
+  animation: floatIcon 3s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
 .welcome-text {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: -0.5px;
   text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  line-height: 1.2;
 }
+
+.welcome-text.highlight-text {
+  background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 163, 255, 0.3));
+}
+
 .welcome-btn {
-  margin-top: 24px;
-  padding: 14px 36px;
-  background: transparent;
-  border: 2px solid #fff;
+  margin-top: 32px;
+  padding: 16px 40px;
+  background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+  border: none;
   color: #fff;
   font-size: 18px;
   font-weight: 700;
   border-radius: 99px;
   cursor: pointer;
   transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 163, 255, 0.4);
+  position: relative;
+  overflow: hidden;
 }
+
+.welcome-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transform: skewX(-20deg);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  20% { left: 200%; }
+  100% { left: 200%; }
+}
+
 .welcome-btn:hover {
-  background: #fff;
-  color: #000;
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(0, 163, 255, 0.6);
 }
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
