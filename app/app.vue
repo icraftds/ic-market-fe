@@ -8,14 +8,20 @@ const router = useRouter()
 router.beforeEach((to, from, next) => {
     if (to.path !== from.path) {
         isLoading.value = true
+        // Allow the loading screen to become fully visible before changing the route
+        setTimeout(() => {
+            next()
+        }, 300)
+    } else {
+        next()
     }
-    next()
 })
 
 router.afterEach(() => {
+    // Wait a brief moment after the route has rendered before hiding the loader
     setTimeout(() => {
         isLoading.value = false
-    }, 600)
+    }, 400)
 })
 </script>
 
