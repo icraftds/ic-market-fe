@@ -97,18 +97,6 @@ const handleAddCart = async (product, e) => {
 const animateToCart = (btn) => {
     if (!import.meta.client || !btn) return;
     
-    // Success state on button temporarily
-    const originalHTML = btn.innerHTML;
-    const originalBg = btn.style.background;
-    const originalColor = btn.style.color;
-    const originalBorder = btn.style.borderColor;
-    
-    btn.style.background = '#10b981';
-    btn.style.color = '#fff';
-    btn.style.borderColor = '#10b981';
-    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-    
-    // Vue will automatically handle reverting or keeping the state based on isInCart reactive data.
     // Flying dot
     const rect = btn.getBoundingClientRect();
     const cartBtn = document.querySelector('#cart-btn');

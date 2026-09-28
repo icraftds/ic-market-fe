@@ -5,15 +5,11 @@ import { useRouter } from 'vue-router'
 const isLoading = ref(false)
 const router = useRouter()
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from) => {
     if (to.path !== from.path) {
         isLoading.value = true
         // Allow the loading screen to become fully visible before changing the route
-        setTimeout(() => {
-            next()
-        }, 300)
-    } else {
-        next()
+        await new Promise(resolve => setTimeout(resolve, 300))
     }
 })
 
