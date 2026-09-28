@@ -96,6 +96,13 @@ function cancelOtp() {
   showOtpForm.value = false
   error.value = ''
 }
+
+function handleGoHome() {
+  if (import.meta.client) {
+    const { session } = useDemoAuth()
+    sessionStorage.setItem('icmarket_show_welcome', session.value?.id || 'sekian')
+  }
+}
 </script>
 
 <template>
@@ -118,12 +125,7 @@ function cancelOtp() {
         <NuxtLink 
           class="primary-btn" 
           to="/" 
-          @click="() => {
-            if (import.meta.client) {
-              const { session } = useDemoAuth()
-              sessionStorage.setItem('icmarket_show_welcome', session.value?.id || 'sekian')
-            }
-          }"
+          @click="handleGoHome"
         >
           Lanjut ke Beranda
         </NuxtLink>
