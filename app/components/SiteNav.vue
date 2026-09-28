@@ -254,6 +254,7 @@ onBeforeUnmount(() => {
 
         <!-- Links utama (selalu tampil) -->
         <NuxtLink to="/" class="nb-link">Beranda</NuxtLink>
+        <a href="https://gamez.icraftds.id" class="nb-link" target="_blank" rel="noopener noreferrer">Game-Z</a>
         <NuxtLink to="/seller/register" class="nb-link highlight">
           {{ role === 'seller' ? 'Toko Saya' : 'Buka Toko' }}
         </NuxtLink>
