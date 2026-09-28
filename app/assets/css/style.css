@@ -357,7 +357,7 @@ a { text-decoration: none; color: inherit; }
     align-items: center;
     gap: 12px;
     flex-shrink: 0;
-    width: 300px;
+    width: 360px;
 }
 
 .hot-label {
@@ -378,7 +378,7 @@ a { text-decoration: none; color: inherit; }
     width: 280px;
     height: 320px;
     margin: 10px auto 0; /* Agak ke bawah */
-    left: -35px;         /* Agak ke kiri */
+    left: 0;             /* Center the stack */
     perspective: 1000px;
 }
 
