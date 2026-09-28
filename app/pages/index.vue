@@ -117,7 +117,7 @@ const animateToCart = (btn) => {
 
     // Flying dot
     const rect = btn.getBoundingClientRect();
-    const cartBtn = document.querySelector('.cart-btn');
+    const cartBtn = document.querySelector('#cart-btn');
     if (!cartBtn) return;
     
     const cartBtnRect = cartBtn.getBoundingClientRect();
