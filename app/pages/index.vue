@@ -241,7 +241,7 @@ onMounted(async () => {
                 </template>
                 <template v-else>
                     <article v-for="(product, index) in hotProducts" :key="product.id"
-                        class="stack-card product-card"
+                        class="stack-card product-card" @click="openPreview(product)"
                         :class="[`stack-card--${3 - index}`, index === 0 ? 'stack-active' : '']"
                         :data-title="product.name"
                         :data-store="product.storeName"
@@ -388,7 +388,7 @@ onMounted(async () => {
                     <article
                         v-for="product in catalogProducts"
                     :key="product.catalogId"
-                    class="product-card"
+                    class="product-card" @click="openPreview(product)"
                     :data-category="String(product.category || '').toLowerCase()"
                     :data-price="product.price"
                     :data-img="catalogImage(product)"
@@ -699,81 +699,82 @@ onMounted(async () => {
         <span class="footer-bottom-text">Made with ♥ in Indonesia</span>
     </div>
 
-    <!-- ======= PREVIEW MODAL ======= -->
+        <!-- ======= PREVIEW MODAL ======= -->
     <dialog id="preview-modal" class="preview-modal">
-        <button class="modal-close-btn" id="close-preview" aria-label="Tutup">
+        <button class="modal-close-btn" id="close-preview" aria-label="Tutup" @click="closePreview">
             <i class="fa-solid fa-xmark"></i>
         </button>
         <div class="modal-drag-bar"><div class="drag-handle"></div></div>
-        <div class="modal-inner">
+        <div class="modal-inner" v-if="selectedProduct">
             <!-- Gallery -->
             <div class="modal-gallery">
-                <img src="" alt="Preview" id="modal-img">
-                <div class="gallery-nav">
-                    <button class="gallery-nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button class="gallery-nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
+                <img :src="catalogImage(selectedProduct)" :alt="selectedProduct.name" id="modal-img">
             </div>
             <!-- Detail -->
             <div class="modal-detail">
                 <div class="modal-detail-header">
-                    <div class="modal-tags" id="modal-tags"></div>
-                    <h2 class="modal-title" id="modal-title">—</h2>
-                    <a id="modal-seller-link" class="card-store" href="#" style="margin-top:0; margin-bottom:2px; width:max-content;">Oleh: —</a>
+                    <div class="modal-tags" id="modal-tags">
+                        <span class="card-badge premium" v-for="tag in catalogTags(selectedProduct)" :key="tag">{{ tag }}</span>
+                    </div>
+                    <h2 class="modal-title" id="modal-title">{{ selectedProduct.name }}</h2>
+                    <NuxtLink :to="'/store/' + selectedProduct.storeSlug" id="modal-seller-link" class="card-store" style="margin-top:0; margin-bottom:2px; width:max-content;">
+                        Oleh: {{ selectedProduct.storeName }}
+                    </NuxtLink>
                     <div class="modal-price-row">
-                        <span class="modal-price" id="modal-price">—</span>
+                        <span class="modal-price" id="modal-price">
+                            <span v-if="selectedProduct.price === 0">Gratis</span>
+                            <span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(selectedProduct.price).toLocaleString('id-ID') }}</span>
+                        </span>
                         <div class="modal-stars" id="modal-stars">
                             <i class="fa-solid fa-star"></i>
-                            <span id="modal-rating-text">—</span>
+                            <span id="modal-rating-text">{{ catalogRating(selectedProduct) }} ({{ catalogReviews(selectedProduct) }} ulasan)</span>
                         </div>
                     </div>
                 </div>
                 <div class="modal-detail-body">
                     <div>
                         <div class="detail-section-label">Deskripsi</div>
-                        <p class="detail-desc" id="modal-desc">—</p>
+                        <p class="detail-desc" id="modal-desc">{{ selectedProduct.description }}</p>
                     </div>
                     <div>
                         <div class="detail-section-label">Fitur Utama</div>
-                        <ul class="feature-list" id="modal-features"></ul>
+                        <ul class="feature-list" id="modal-features">
+                            <li v-for="feature in catalogFeatures(selectedProduct)" :key="feature"><i class="fa-solid fa-check"></i> <span>{{ feature }}</span></li>
+                        </ul>
                     </div>
                     <div>
                         <div class="detail-section-label">Spesifikasi</div>
                         <div class="specs-row">
                             <div class="spec-pill">
                                 <span class="spec-pill-label">Terakhir Update</span>
-                                <span class="spec-pill-val"><i class="fa-regular fa-calendar"></i><span id="modal-spec-updated">Agustus 2026</span></span>
+                                <span class="spec-pill-val"><i class="fa-regular fa-calendar"></i><span id="modal-spec-updated">{{ catalogSpecifications(selectedProduct).lastUpdated }}</span></span>
                             </div>
                             <div class="spec-pill">
                                 <span class="spec-pill-label">Dukungan</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-headset"></i><span id="modal-spec-support">30 Hari</span></span>
+                                <span class="spec-pill-val"><i class="fa-solid fa-headset"></i><span id="modal-spec-support">{{ catalogSpecifications(selectedProduct).support }}</span></span>
                             </div>
                             <div class="spec-pill">
                                 <span class="spec-pill-label">Format File</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-file-zipper"></i><span id="modal-spec-format">.ZIP + Docs</span></span>
+                                <span class="spec-pill-val"><i class="fa-solid fa-file-zipper"></i><span id="modal-spec-format">{{ catalogSpecifications(selectedProduct).fileFormat }}</span></span>
                             </div>
                             <div class="spec-pill">
                                 <span class="spec-pill-label">Lisensi</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-shield"></i><span id="modal-spec-license">Extended</span></span>
+                                <span class="spec-pill-val"><i class="fa-solid fa-shield"></i><span id="modal-spec-license">{{ catalogSpecifications(selectedProduct).license }}</span></span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-cta" style="display:flex; flex-direction:column; gap:12px;">
                     <div style="display:flex; gap:12px; width:100%;">
-                        <button class="cta-buy" id="modal-buy-direct-btn" style="flex:1;">
+                        <button class="cta-buy" id="modal-buy-direct-btn" style="flex:1;" @click="useCart().buyNow({ id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, images: typeof selectedProduct.images === 'string' ? JSON.parse(selectedProduct.images) : selectedProduct.images, category: selectedProduct.category, storeName: selectedProduct.storeName }); closePreview(); navigateTo('/checkout')">
                             <i class="fa-solid fa-bolt"></i>
                             <span>Beli Langsung</span>
                         </button>
-                        <button class="cta-buy" id="modal-add-cart-btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);">
+                        <button class="cta-buy" id="modal-add-cart-btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);" @click="useCart().addItem({ id: selectedProduct.id, name: selectedProduct.name, price: selectedProduct.price, images: typeof selectedProduct.images === 'string' ? JSON.parse(selectedProduct.images) : selectedProduct.images, category: selectedProduct.category, storeName: selectedProduct.storeName }); closePreview()">
                             <i class="fa-solid fa-cart-plus"></i>
                             <span>Tambahkan Keranjang</span>
                         </button>
                     </div>
-                    <a href="#" class="cta-preview-link" target="_blank" style="align-self:center;">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                        Live Preview
-                    </a>
                 </div>
             </div>
         </div>
