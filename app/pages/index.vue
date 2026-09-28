@@ -108,13 +108,7 @@ const animateToCart = (btn) => {
     btn.style.borderColor = '#10b981';
     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
     
-    setTimeout(() => {
-        btn.innerHTML = originalHTML;
-        btn.style.background = originalBg;
-        btn.style.color = originalColor;
-        btn.style.borderColor = originalBorder;
-    }, 1500);
-
+    // Vue will automatically handle reverting or keeping the state based on isInCart reactive data.
     // Flying dot
     const rect = btn.getBoundingClientRect();
     const cartBtn = document.querySelector('#cart-btn');
@@ -517,8 +511,10 @@ onMounted(async () => {
                             <button
                                 v-if="product.price > 0"
                                 class="btn-primary card-buy-direct"
+                                :style="isInCart(product.id || product.catalogId) ? 'opacity: 0.5; cursor: not-allowed;' : ''"
+                                :disabled="isInCart(product.id || product.catalogId)"
                                 aria-label="Beli Langsung"
-                                @click.stop="handleDirectBuy(product, $event)"
+                                @click.stop="!isInCart(product.id || product.catalogId) && handleDirectBuy(product, $event)"
                             >
                                 <i class="fa-solid fa-bolt"></i> Beli
                             </button>
@@ -852,13 +848,26 @@ onMounted(async () => {
                 </div>
                 <div class="modal-cta" style="display:flex; flex-direction:column; gap:12px;">
                     <div style="display:flex; gap:12px; width:100%;">
-                        <button class="cta-buy" id="modal-buy-direct-btn" style="flex:1;" @click="handleDirectBuy(selectedProduct, $event); closePreview()">
+                        <button class="cta-buy" id="modal-buy-direct-btn" 
+                                style="flex:1;" 
+                                :style="selectedProduct && isInCart(selectedProduct.id || selectedProduct.catalogId) ? 'opacity: 0.5; cursor: not-allowed;' : ''"
+                                :disabled="selectedProduct && isInCart(selectedProduct.id || selectedProduct.catalogId)"
+                                @click="handleDirectBuy(selectedProduct, $event); closePreview()">
                             <i class="fa-solid fa-bolt"></i>
                             <span>Beli Langsung</span>
                         </button>
-                        <button class="cta-buy" id="modal-add-cart-btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);" @click="handleAddCart(selectedProduct, $event); closePreview()">
-                            <i class="fa-solid fa-cart-plus"></i>
-                            <span>Tambahkan Keranjang</span>
+                        <button class="cta-buy" id="modal-add-cart-btn" 
+                                style="flex:1;"
+                                :style="selectedProduct && isInCart(selectedProduct.id || selectedProduct.catalogId) ? 'background: #10b981; color: #fff; border: 1px solid #10b981;' : 'background:var(--surface); color:var(--text); border:1px solid var(--border);'"
+                                @click="handleAddCart(selectedProduct, $event); closePreview()">
+                            <template v-if="selectedProduct && isInCart(selectedProduct.id || selectedProduct.catalogId)">
+                                <i class="fa-solid fa-check"></i>
+                                <span>Di Keranjang</span>
+                            </template>
+                            <template v-else>
+                                <i class="fa-solid fa-cart-plus"></i>
+                                <span>Tambahkan Keranjang</span>
+                            </template>
                         </button>
                     </div>
                 </div>
