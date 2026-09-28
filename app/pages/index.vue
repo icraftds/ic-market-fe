@@ -21,6 +21,8 @@ const totalProducts = ref(0);
 const hasMore = ref(false);
 const isLoadingMore = ref(false);
 const loadMoreTrigger = ref(null);
+const showWelcome = ref(false);
+const welcomeUser = ref('');
 
 
 const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart();
@@ -129,6 +131,13 @@ watch(() => route.query, () => {
 });
 
 onMounted(async () => {
+    if (import.meta.client && sessionStorage.getItem('icmarket_show_welcome')) {
+        const { session } = useDemoAuth();
+        welcomeUser.value = session.value?.name || 'Pengguna';
+        showWelcome.value = true;
+        sessionStorage.removeItem('icmarket_show_welcome');
+        setTimeout(() => { showWelcome.value = false; }, 4000);
+    }
     await applyRouteQuery();
     await refreshHotProducts();
 
@@ -239,7 +248,19 @@ onMounted(async () => {
                             <div class="skeleton-box skeleton-text large" style="width: 90%; margin-bottom: 16px;"></div>
                         </div>
                     </article>
-                </template>
+                
+    <Transition name="welcome-fade">
+        <div v-if="showWelcome" class="welcome-overlay">
+            <div class="welcome-glow"></div>
+            <div class="welcome-content">
+                <img src="/icoinz.svg" class="welcome-logo" alt="iCoinz" />
+                <h2 class="welcome-title">Selamat Datang, {{ welcomeUser }}!</h2>
+                <p class="welcome-subtitle">Berhasil masuk ke IC Market</p>
+            </div>
+        </div>
+    </Transition>
+</template>
+
                 <template v-else>
                     <article v-for="(product, index) in hotProducts" :key="product.id"
                         class="stack-card product-card" @click="openPreview(product)"
@@ -987,5 +1008,75 @@ onMounted(async () => {
 @keyframes loadingSkeleton {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+</style>
+
+
+<style scoped>
+.welcome-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    background: rgba(10, 15, 30, 0.7);
+    backdrop-filter: blur(8px);
+}
+.welcome-glow {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(20,114,255,0.5) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: pulseGlow 2s infinite alternate;
+}
+.welcome-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.welcome-logo {
+    width: 80px;
+    height: 80px;
+    filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
+    animation: spinSlow 4s linear infinite;
+}
+.welcome-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-shadow: 0 0 30px rgba(20,114,255,0.8);
+    margin: 0;
+}
+.welcome-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+.welcome-fade-enter-active,
+.welcome-fade-leave-active {
+    transition: opacity 0.5s ease;
+}
+.welcome-fade-enter-from,
+.welcome-fade-leave-to {
+    opacity: 0;
+}
+@keyframes pulseGlow {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(1.5); opacity: 1; }
+}
+@keyframes floatUp {
+    0% { transform: translateY(40px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes spinSlow {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
 }
 </style>

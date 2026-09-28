@@ -180,6 +180,9 @@ const finishLogin = async (user) => {
   ensureSellerDummyContext(safeUser)
   setSession(safeUser)
 
+    if (import.meta.client && redirectTarget.value === '/') {
+    sessionStorage.setItem('icmarket_show_welcome', '1')
+  }
   await navigateTo(redirectTarget.value)
 }
 
@@ -217,7 +220,10 @@ async function submitLogin() {
   if (session.value?.role === 'seller') {
     await navigateTo('/seller/dashboard')
   } else {
-    await navigateTo(redirectTarget.value)
+      if (import.meta.client && redirectTarget.value === '/') {
+    sessionStorage.setItem('icmarket_show_welcome', '1')
+  }
+  await navigateTo(redirectTarget.value)
   }
 }
 
@@ -237,7 +243,10 @@ async function submitOtp(code) {
     if (session.value?.role === 'seller') {
       await navigateTo('/seller/dashboard')
     } else {
-      await navigateTo(redirectTarget.value)
+        if (import.meta.client && redirectTarget.value === '/') {
+    sessionStorage.setItem('icmarket_show_welcome', '1')
+  }
+  await navigateTo(redirectTarget.value)
     }
   } else {
     error.value = res.message || 'Verifikasi gagal.'
