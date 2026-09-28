@@ -563,16 +563,29 @@ onMounted(async () => {
             <!-- Card Stack (bertumpuk & miring) -->
             <div class="hero-card-stack" id="hero-card-stack">
 
-                <article v-for="(product, index) in catalogProducts.slice(0, 3)" :key="product.id"
-                    class="stack-card product-card"
-                    :class="[`stack-card--${3 - index}`, index === 0 ? 'stack-active' : '']"
-                    :data-title="product.name"
-                    :data-store="product.storeName"
-                    :data-store-slug="product.storeSlug"
-                    :data-category="product.category"
-                    :data-price="product.price"
-                    :data-img="catalogImage(product)"
-                    :data-tags="catalogTags(product).join(',')">
+                <template v-if="isLoading">
+                    <article v-for="i in 3" :key="i"
+                        class="stack-card product-card skeleton-card"
+                        :class="[`stack-card--${4 - i}`, i === 1 ? 'stack-active' : '']">
+                        <div class="card-thumb skeleton-box" style="height: 120px;"></div>
+                        <div class="card-body">
+                            <div class="skeleton-box skeleton-text small" style="width: 40%; margin-bottom: 8px;"></div>
+                            <div class="skeleton-box skeleton-text medium" style="width: 70%; margin-bottom: 8px;"></div>
+                            <div class="skeleton-box skeleton-text large" style="width: 90%; margin-bottom: 16px;"></div>
+                        </div>
+                    </article>
+                </template>
+                <template v-else>
+                    <article v-for="(product, index) in catalogProducts.slice(0, 3)" :key="product.id"
+                        class="stack-card product-card"
+                        :class="[`stack-card--${3 - index}`, index === 0 ? 'stack-active' : '']"
+                        :data-title="product.name"
+                        :data-store="product.storeName"
+                        :data-store-slug="product.storeSlug"
+                        :data-category="product.category"
+                        :data-price="product.price"
+                        :data-img="catalogImage(product)"
+                        :data-tags="catalogTags(product).join(',')">
                     <div class="card-thumb">
                         <img :src="catalogImage(product)" :alt="product.name">
                         <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
@@ -607,6 +620,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </article>
+                </template>
 
                 <!-- Hint klik -->
                 <div class="stack-hint">

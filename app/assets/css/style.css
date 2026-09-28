@@ -377,7 +377,7 @@ a { text-decoration: none; color: inherit; }
     position: relative;
     width: 280px;
     height: 320px;
-    margin: 40px auto 0; /* Agak ke bawah */
+    margin: 10px auto 0; /* Agak ke bawah */
     left: -35px;         /* Agak ke kiri */
     perspective: 1000px;
 }
