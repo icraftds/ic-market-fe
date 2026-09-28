@@ -126,7 +126,7 @@ onBeforeUnmount(() => {
         <div class="nav-actions">
 
           <!-- Cart -->
-          <NuxtLink to="/cart" id="cart-btn" class="nav-action-item" title="Keranjang Belanja">
+          <NuxtLink v-if="isLoggedIn" to="/cart" id="cart-btn" class="nav-action-item" title="Keranjang Belanja">
             <div class="nav-action-icon-wrap">
               <i class="fa-solid fa-cart-shopping"></i>
               <span v-if="cartCount > 0" class="nav-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
@@ -134,14 +134,32 @@ onBeforeUnmount(() => {
             <span class="nav-action-label">Keranjang</span>
           </NuxtLink>
 
-          <div class="nav-vsep"></div>
+          <div v-if="isLoggedIn" class="nav-vsep"></div>
 
-          <!-- NOT LOGGED IN -->
+                    <!-- NOT LOGGED IN -->
           <template v-if="!isLoggedIn">
-            <NuxtLink to="/login" class="nav-btn-ghost">Masuk</NuxtLink>
-            <NuxtLink to="/register" class="nav-btn-primary">
-              <i class="fa-solid fa-user-plus"></i> Daftar Gratis
-            </NuxtLink>
+            <div class="desktop-auth-btns">
+              <NuxtLink to="/login" class="nav-btn-ghost">Masuk</NuxtLink>
+              <NuxtLink to="/register" class="nav-btn-primary">
+                <i class="fa-solid fa-user-plus"></i> Daftar Gratis
+              </NuxtLink>
+            </div>
+            
+            <div class="mobile-auth-burger" ref="dropdownRef">
+              <button class="nav-burger-btn" @click="isMenuOpen = !isMenuOpen" aria-label="Menu">
+                <i class="fa-solid fa-bars"></i>
+              </button>
+              <div v-if="isMenuOpen" class="nav-dropdown burger-dropdown">
+                <div class="nav-dropdown-body">
+                  <NuxtLink to="/login" class="dd-item" @click="isMenuOpen = false">
+                    <i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>
+                  </NuxtLink>
+                  <NuxtLink to="/register" class="dd-item accent" @click="isMenuOpen = false">
+                    <i class="fa-solid fa-user-plus"></i><span>Daftar Gratis</span>
+                  </NuxtLink>
+                </div>
+              </div>
+            </div>
           </template>
 
           <!-- LOGGED IN -->
@@ -318,7 +336,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 .nav-logo-img {
-  height: 34px;
+  height: 28px;
   width: auto;
   display: block;
 }
@@ -542,6 +560,30 @@ onBeforeUnmount(() => {
 }
 
 /* Auth buttons */
+.desktop-auth-btns {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mobile-auth-burger {
+  display: none;
+  position: relative;
+}
+.nav-burger-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  color: #444;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.burger-dropdown {
+  min-width: 180px;
+}
+
 .nav-btn-ghost {
   padding: 9px 18px;
   border-radius: 10px;
@@ -801,8 +843,18 @@ onBeforeUnmount(() => {
   .nav-coin-chip, .nav-coin-plus { display: none; }
   .nb-right { display: none; }
 }
-@media (max-width: 760px) {
-  .nav-top-inner { padding: 0 14px; gap: 10px; }
+@media (max-width: 768px) {
+  .nav-top-inner { padding: 0 16px; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .nav-actions { margin-left: auto; order: 2; }
+  .nav-search-wrap { order: 3; flex: 1 1 100%; min-width: 100%; margin-top: 2px; margin-bottom: 4px; }
+  .nav-search-btn { min-height: 42px; padding: 0 16px; font-size: 0.8rem; }
+  .nav-search-input { padding: 10px 14px; font-size: 0.85rem; }
+  .nav-logo-text { display: none; }
+  .nav-user-info, .nav-caret { display: none; }
+  .nav-bottom-inner { padding: 0 16px; }
+  .desktop-auth-btns { display: none; }
+  .mobile-auth-burger { display: block; }
+}
   .nav-logo-text { display: none; }
   .nav-user-info, .nav-caret { display: none; }
   .nav-bottom-inner { padding: 0 14px; }
