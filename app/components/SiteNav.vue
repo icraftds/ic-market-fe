@@ -634,12 +634,9 @@ onBeforeUnmount(() => {
   box-shadow: 0 2px 12px rgba(20,114,255,0.12);
 }
 .nav-coin-icon {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1472ff, #3d8bff);
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 0.80rem;
   flex-shrink: 0;
+  font-size: 1.5rem;
 }
 .nav-coin-detail {
   display: flex; flex-direction: column; line-height: 1;
