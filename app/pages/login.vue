@@ -181,7 +181,7 @@ const finishLogin = async (user) => {
   setSession(safeUser)
 
     if (import.meta.client && redirectTarget.value === '/') {
-    sessionStorage.setItem('icmarket_show_welcome', '1')
+    sessionStorage.setItem('icmarket_show_welcome', 'login')
   }
   await navigateTo(redirectTarget.value)
 }

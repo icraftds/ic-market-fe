@@ -100,7 +100,7 @@ function cancelOtp() {
 function handleGoHome() {
   if (import.meta.client) {
     const { session } = useDemoAuth()
-    sessionStorage.setItem('icmarket_show_welcome', session.value?.id || 'sekian')
+    sessionStorage.setItem('icmarket_show_welcome', 'register')
   }
 }
 </script>

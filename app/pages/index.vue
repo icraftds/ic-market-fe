@@ -23,6 +23,7 @@ const isLoadingMore = ref(false);
 const loadMoreTrigger = ref(null);
 const showWelcome = ref(false);
 const welcomeUser = ref('');
+const welcomeType = ref('login');
 
 
 const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart();
@@ -132,11 +133,15 @@ watch(() => route.query, () => {
 
 onMounted(async () => {
     if (import.meta.client && sessionStorage.getItem('icmarket_show_welcome')) {
+        const type = sessionStorage.getItem('icmarket_show_welcome');
         const { session } = useDemoAuth();
         welcomeUser.value = session.value?.name || 'Pengguna';
+        welcomeType.value = type;
         showWelcome.value = true;
         sessionStorage.removeItem('icmarket_show_welcome');
-        setTimeout(() => { showWelcome.value = false; }, 4000);
+        if (type === 'login') {
+            setTimeout(() => { showWelcome.value = false; }, 4000);
+        }
     }
     await applyRouteQuery();
     await refreshHotProducts();
@@ -841,9 +846,13 @@ onMounted(async () => {
         <div v-if="showWelcome" class="welcome-overlay">
             <div class="welcome-glow"></div>
             <div class="welcome-content">
+                <button v-if="welcomeType === 'register'" class="welcome-close" @click="showWelcome = false">×</button>
                 <img src="/icoinz.svg" class="welcome-logo" alt="iCoinz" />
                 <h2 class="welcome-title">Selamat Datang, {{ welcomeUser }}!</h2>
-                <p class="welcome-subtitle">Berhasil masuk ke IC Market</p>
+                <p class="welcome-subtitle" v-if="welcomeType === 'login'">Berhasil masuk ke IC Market</p>
+                <p class="welcome-subtitle bonus-text" v-if="welcomeType === 'register'">
+                    Selamat bergabung! Anda mendapatkan <strong>10.000 iCoin-Z</strong>.
+                </p>
             </div>
         </div>
     </Transition>
@@ -1080,5 +1089,36 @@ onMounted(async () => {
 @keyframes spinSlow {
     0% { transform: rotateY(0deg); }
     100% { transform: rotateY(360deg); }
+}
+
+.welcome-close {
+    position: absolute;
+    top: -40px;
+    right: -20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+}
+.welcome-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+.bonus-text {
+    background: rgba(20, 114, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(20, 114, 255, 0.4);
+    box-shadow: 0 0 10px rgba(20, 114, 255, 0.2);
+}
+.bonus-text strong {
+    color: #4db8ff;
+    font-weight: 800;
 }
 </style>
