@@ -17,8 +17,8 @@ const notice      = ref({ type: '', msg: '' })
 const searchQuery = ref('')
 
 const form = ref({
-  code: '', type: 'percent', amount: '', is_active: true, max_usage: '', expires_at: '',
-  visibility: 'public', user_id: ''
+  code: '', type: 'percent', amount: '', is_active: true, max_usage: '', max_usage_per_user: 1, expires_at: '',
+  visibility: 'public', target_users: []
 })
 const errors = ref({})
 
@@ -93,13 +93,14 @@ const submitForm = async () => {
   if (!validate()) return
 
   const payload = {
-    code:       form.value.code.trim().toUpperCase(),
-    type:       form.value.type,
-    amount:     Number(form.value.amount),
-    is_active:  form.value.is_active,
-    max_usage:  form.value.max_usage ? Number(form.value.max_usage) : null,
-    expires_at: form.value.expires_at || null,
-    user_id:    form.value.visibility === 'private' && form.value.user_id ? Number(form.value.user_id) : null,
+    code:               form.value.code.trim().toUpperCase(),
+    type:               form.value.type,
+    amount:             Number(form.value.amount),
+    is_active:          form.value.is_active,
+    max_usage:          form.value.max_usage ? Number(form.value.max_usage) : null,
+    max_usage_per_user: form.value.max_usage_per_user ? Number(form.value.max_usage_per_user) : 1,
+    expires_at:         form.value.expires_at || null,
+    target_users:       form.value.visibility === 'private' && form.value.target_users.length ? form.value.target_users : null,
   }
 
   try {
@@ -157,7 +158,7 @@ const openCreate = () => {
   isEditing.value = false
   editId.value    = null
   errors.value    = {}
-  form.value      = { code: '', type: 'percent', amount: '', is_active: true, max_usage: '', expires_at: '', visibility: 'public', user_id: '' }
+  form.value      = { code: '', type: 'percent', amount: '', is_active: true, max_usage: '', max_usage_per_user: 1, expires_at: '', visibility: 'public', target_users: [] }
   showModal.value = true
 }
 
@@ -170,10 +171,11 @@ const openEdit = (v) => {
     type:       v.type,
     amount:     v.amount,
     is_active:  v.is_active,
-    max_usage:  v.max_usage || '',
-    expires_at: v.expires_at ? v.expires_at.slice(0, 16) : '',
-    visibility: v.user_id ? 'private' : 'public',
-    user_id:    v.user_id || ''
+    max_usage:          v.max_usage || '',
+    max_usage_per_user: v.max_usage_per_user || 1,
+    expires_at:         v.expires_at ? v.expires_at.slice(0, 16) : '',
+    visibility:         v.target_users && v.target_users.length ? 'private' : 'public',
+    target_users:       v.target_users || []
   }
   showModal.value = true
 }
@@ -270,8 +272,8 @@ onMounted(() => {
               </span>
             </td>
             <td>
-              <span v-if="v.user_id" style="font-size:0.75rem;font-weight:600;color:#7c3aed;background:rgba(124,58,237,.1);padding:3px 8px;border-radius:6px;">
-                <i class="fa-solid fa-lock"></i> Privat ({{ v.user?.name || 'User ' + v.user_id }})
+              <span v-if="v.target_users && v.target_users.length > 0" style="font-size:0.75rem;font-weight:600;color:#7c3aed;background:rgba(124,58,237,.1);padding:3px 8px;border-radius:6px;">
+                <i class="fa-solid fa-lock"></i> Privat ({{ v.target_users.length }} Pengguna)
               </span>
               <span v-else style="font-size:0.75rem;font-weight:600;color:var(--green);background:rgba(16,185,129,.1);padding:3px 8px;border-radius:6px;">
                 <i class="fa-solid fa-globe"></i> Publik
@@ -338,11 +340,10 @@ onMounted(() => {
                 </div>
                 <div v-if="form.visibility === 'private'" class="form-col" style="grid-column: 1 / -1;">
                   <label class="field-label">Pilih Pengguna <span class="req">*</span></label>
-                  <select v-model="form.user_id" class="field-input">
-                    <option value="" disabled>-- Pilih Pengguna --</option>
+                  <select v-model="form.target_users" class="field-input" multiple style="min-height:100px;">
                     <option v-for="u in usersList" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
                   </select>
-                  <div class="err-msg" style="margin-top:4px;color:var(--muted);"><i class="fa-solid fa-circle-info"></i> Hanya pengguna ini yang dapat melihat dan menggunakan voucher ini.</div>
+                  <div class="err-msg" style="margin-top:4px;color:var(--muted);"><i class="fa-solid fa-circle-info"></i> Tahan tombol Ctrl/Cmd untuk memilih lebih dari satu pengguna.</div>
                 </div>
                 <div class="form-col">
                   <label class="field-label">Jumlah Diskon <span class="req">*</span></label>
@@ -358,8 +359,12 @@ onMounted(() => {
                   </label>
                 </div>
                 <div class="form-col">
-                  <label class="field-label">Maksimal Penggunaan</label>
+                  <label class="field-label">Batas Total Penggunaan Keseluruhan</label>
                   <input v-model="form.max_usage" class="field-input" type="number" placeholder="cth. 100 (kosong = tidak terbatas)" min="1">
+                </div>
+                <div class="form-col">
+                  <label class="field-label">Batas Pakai Per Pengguna</label>
+                  <input v-model="form.max_usage_per_user" class="field-input" type="number" min="1">
                 </div>
                 <div class="form-col">
                   <label class="field-label">Batas Waktu Kedaluwarsa</label>

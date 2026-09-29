@@ -86,9 +86,17 @@ const voucherLabel = (v) => {
 
 const voucherSubLabel = (v) => {
   const parts = []
-  if (v.user_id) parts.push('Voucher Pribadi')
-  else parts.push('Voucher Publik')
-  if (v.max_usage) parts.push(`Sisa ${Math.max(0, v.max_usage - (v.used_count || 0))}x pakai`)
+  const isPrivate = Array.isArray(v.target_users) && v.target_users.length > 0;
+  
+  if (isPrivate) {
+    parts.push('Voucher Privat')
+    if (v.max_usage_per_user) {
+      parts.push(`Maks ${v.max_usage_per_user}x pakai`)
+    }
+  } else {
+    parts.push('Voucher Publik')
+  }
+
   if (v.expires_at) {
     const d = new Date(v.expires_at)
     parts.push(`s/d ${d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}`)
@@ -417,7 +425,7 @@ onMounted(async () => {
                   </div>
                 </div>
                 <div class="vc-right">
-                  <span v-if="v.user_id" class="vc-badge-private"><i class="fa-solid fa-lock"></i> Milikmu</span>
+                  <span v-if="v.target_users && v.target_users.length > 0" class="vc-badge-private"><i class="fa-solid fa-lock"></i> Milikmu</span>
                   <button class="vc-use-btn" @click.stop="useVoucherCard(v)">Pakai</button>
                 </div>
               </div>
