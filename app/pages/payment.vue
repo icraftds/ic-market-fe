@@ -13,6 +13,7 @@ const orderId    = ref('')
 const total      = ref(0)
 const subtotal   = ref(0)
 const discount   = ref(0)
+const itemCount  = ref(0)
 const cart       = ref([])
 const buyer      = ref({})
 
@@ -99,6 +100,7 @@ onMounted(async () => {
   subtotal.value = Number(localStorage.getItem('icmarket_subtotal') || 0)
   discount.value = Number(localStorage.getItem('icmarket_discount') || 0)
   total.value    = Math.max(0, subtotal.value - discount.value)
+  itemCount.value = Number(localStorage.getItem('icmarket_item_count') || 0)
 
   if (!orderId.value) {
     router.push('/cart')
@@ -228,7 +230,7 @@ onUnmounted(() => {
 
       <!-- RIGHT: Summary -->
       <div class="sticky-sidebar">
-        <OrderSummary :showItems="false" :overrideSubtotal="subtotal" :overrideDiscount="discount" :overrideTotal="total">
+        <OrderSummary :showItems="false" :overrideSubtotal="subtotal" :overrideDiscount="discount" :overrideTotal="total" :overrideItemCount="itemCount">
           <template #footer>
             <div v-if="discount > 0" style="font-size:0.75rem;color:var(--green);margin-top:-4px;font-family:'JetBrains Mono',monospace;">
               <i class="fa-solid fa-tag"></i> Voucher diskon diterapkan

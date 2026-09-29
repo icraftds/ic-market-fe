@@ -5,7 +5,8 @@ const props = defineProps({
   showItems: { type: Boolean, default: true },
   overrideSubtotal: { type: Number, default: -1 },
   overrideDiscount: { type: Number, default: -1 },
-  overrideTotal: { type: Number, default: -1 }
+  overrideTotal: { type: Number, default: -1 },
+  overrideItemCount: { type: Number, default: -1 }
 })
 
 const cart = ref([])
@@ -41,6 +42,7 @@ import { computed } from 'vue'
 const subtotal = computed(() => props.overrideSubtotal >= 0 ? props.overrideSubtotal : localSubtotal.value)
 const discount = computed(() => props.overrideDiscount >= 0 ? props.overrideDiscount : localDiscount.value)
 const total = computed(() => props.overrideTotal >= 0 ? props.overrideTotal : localTotal.value)
+const itemCount = computed(() => props.overrideItemCount >= 0 ? props.overrideItemCount : cart.value.length)
 
 const resolveImage = (item) => {
   if (item.img) return item.img
@@ -83,7 +85,7 @@ const resolveImage = (item) => {
       </div>
       
       <div class="summary-row" :style="props.showItems ? 'margin-top:8px;' : ''">
-        <span class="lbl">Subtotal <span v-if="!props.showItems">({{ cart.length }} item)</span></span>
+        <span class="lbl">Subtotal <span v-if="!props.showItems">({{ itemCount }} item)</span></span>
         <span class="val"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(subtotal) }}</span>
       </div>
       <div v-if="discount > 0" class="summary-row discount">

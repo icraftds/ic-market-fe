@@ -124,6 +124,7 @@ const updateTotals = () => {
 
   localStorage.setItem('icmarket_subtotal', subtotal)
   localStorage.setItem('icmarket_total', total)
+  localStorage.setItem('icmarket_item_count', cart.value.length)
 
   if (orderSummaryRef.value) {
     orderSummaryRef.value.refresh()

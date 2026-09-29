@@ -121,6 +121,7 @@ const updateTotals = (voucher) => {
   localStorage.setItem('icmarket_subtotal', subtotal)
   localStorage.setItem('icmarket_discount', discount)
   localStorage.setItem('icmarket_total', total)
+  localStorage.setItem('icmarket_item_count', checkoutCart.value.length)
   if (voucher) {
     localStorage.setItem('icmarket_voucher_code', voucher.code)
   } else {
