@@ -62,7 +62,7 @@ defineExpose({ refresh })
         <span class="lbl">Diskon Promo</span><span class="val">− <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(discount) }}</span>
       </div>
       <div class="summary-row">
-        <span class="lbl">Biaya Admin</span><span class="val">Rp 0</span>
+        <span class="lbl">Biaya Admin</span><span class="val"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> 0</span>
       </div>
       <div class="flow-divider"></div>
       <div class="summary-row total">

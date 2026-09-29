@@ -53,7 +53,7 @@ const applyPromo = async () => {
       promoSuccess.value = true
       const label = res.data.type === 'percent'
         ? `${res.data.amount}%`
-        : `Rp ${Number(res.data.amount).toLocaleString('id-ID')}`
+        : `<img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> ${Number(res.data.amount).toLocaleString('id-ID')}`
       promoMsg.value = `Kode <strong>${code}</strong> berhasil — diskon ${label} diterapkan!`
       updateTotals(res.data)
     }
@@ -81,7 +81,7 @@ const useVoucherCard = (v) => {
 
 const voucherLabel = (v) => {
   if (v.type === 'percent') return `Diskon ${v.amount}%`
-  return `Diskon Rp ${Number(v.amount).toLocaleString('id-ID')}`
+  return `Diskon <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> ${Number(v.amount).toLocaleString('id-ID')}`
 }
 
 const voucherSubLabel = (v) => {
@@ -379,7 +379,8 @@ onMounted(async () => {
               <div class="applied-voucher-info">
                 <i class="fa-solid fa-circle-check" style="color:var(--green);"></i>
                 <span>Voucher <strong>{{ appliedVoucher.code }}</strong> aktif — diskon
-                  <strong>{{ appliedVoucher.type === 'percent' ? appliedVoucher.amount + '%' : 'Rp ' + Number(appliedVoucher.amount).toLocaleString('id-ID') }}</strong>
+                  <strong v-if="appliedVoucher.type === 'percent'">{{ appliedVoucher.amount }}%</strong>
+                  <strong v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(appliedVoucher.amount).toLocaleString('id-ID') }}</strong>
                 </span>
               </div>
               <button class="promo-remove-btn" @click="removePromo">
@@ -410,7 +411,7 @@ onMounted(async () => {
                 <div class="vc-left">
                   <div class="vc-deco"></div>
                   <div class="vc-body">
-                    <div class="vc-label">{{ voucherLabel(v) }}</div>
+                    <div class="vc-label" v-html="voucherLabel(v)"></div>
                     <div class="vc-code">{{ v.code }}</div>
                     <div class="vc-sub">{{ voucherSubLabel(v) }}</div>
                   </div>

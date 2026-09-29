@@ -15,11 +15,10 @@ const statusFilter = ref('all')
 const search = ref('')
 const dataLoading = ref(true)
 
-const formatCurrency = (value) => new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
-  maximumFractionDigits: 0
-}).format(Number(value || 0))
+const formatCurrency = (value) => {
+  const formatted = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(value || 0))
+  return `<img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> ${formatted}`
+}
 
 const formatDate = (value) => {
   if (!value) return '-'
@@ -220,7 +219,7 @@ const isDownloadable = (item) => {
                   <strong>{{ item.name }}</strong>
                   <small>{{ item.category }}</small>
                 </div>
-                <span>{{ item.isFree ? 'Gratis' : formatCurrency(item.price * (item.quantity || 1)) }}</span>
+                <span v-if="item.isFree">Gratis</span><span v-else v-html="formatCurrency(item.price * (item.quantity || 1))"></span>
                 <button
                   v-if="['selesai','completed','paid','success'].includes(String(order.status).toLowerCase()) && (item.type === 'Digital' || item.product?.type === 'Digital')"
                   class="download-btn"
@@ -238,7 +237,7 @@ const isDownloadable = (item) => {
         <div class="order-foot">
           <div>
             <span>Total Pembayaran</span>
-            <strong>{{ formatCurrency(order.totals?.total) }}</strong>
+            <strong v-html="formatCurrency(order.totals?.total)"></strong>
           </div>
 
           <button

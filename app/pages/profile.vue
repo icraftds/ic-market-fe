@@ -102,7 +102,7 @@ const saveProfile = async () => {
           <div class="form-group">
             <label>Saldo iCoin-Z</label>
             <div class="coin-display">
-              <span class="icoin-icon">C</span> Rp {{ Number(form.coins).toLocaleString('id-ID') }} iCoin-Z
+              <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="height:16px;vertical-align:middle;margin-right:4px;" /> {{ Number(form.coins).toLocaleString('id-ID') }} iCoin-Z
             </div>
           </div>
 

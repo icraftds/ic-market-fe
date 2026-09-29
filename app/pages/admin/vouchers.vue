@@ -278,7 +278,8 @@ onMounted(() => {
               </span>
             </td>
             <td class="amount-cell">
-              {{ v.type === 'percent' ? v.amount + '%' : 'Rp ' + Number(v.amount).toLocaleString('id-ID') }}
+              <span v-if="v.type === 'percent'">{{ v.amount }}%</span>
+              <span v-else style="display:inline-flex;align-items:center;gap:4px;"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="height:14px;" /> {{ Number(v.amount).toLocaleString('id-ID') }}</span>
             </td>
             <td><span :class="['status-badge-sm', statusLabel(v).cls]">{{ statusLabel(v).text }}</span></td>
             <td class="usage-cell">
@@ -325,7 +326,7 @@ onMounted(() => {
                   <label class="field-label">Tipe Kupon <span class="req">*</span></label>
                   <select v-model="form.type" class="field-input">
                     <option value="percent">Persentase (%)</option>
-                    <option value="flat">Nominal (Rp)</option>
+                    <option value="flat">Nominal (iCoin-Z)</option>
                   </select>
                 </div>
                 <div class="form-col">
@@ -345,7 +346,7 @@ onMounted(() => {
                 </div>
                 <div class="form-col">
                   <label class="field-label">Jumlah Diskon <span class="req">*</span></label>
-                  <input v-model="form.amount" class="field-input" :class="{ 'field-error': errors.amount }" type="number" :placeholder="form.type === 'percent' ? 'cth. 10 untuk 10%' : 'cth. 50000 untuk Rp 50rb'" min="1">
+                  <input v-model="form.amount" class="field-input" :class="{ 'field-error': errors.amount }" type="number" :placeholder="form.type === 'percent' ? 'cth. 10 untuk 10%' : 'cth. 50000 untuk 50rb iCoin-Z'" min="1">
                   <div v-if="errors.amount" class="err-msg">{{ errors.amount }}</div>
                 </div>
                 <div class="form-col">

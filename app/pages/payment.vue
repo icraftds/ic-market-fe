@@ -162,7 +162,7 @@ onUnmounted(() => {
             <div class="payment-methods-grid">
               <div class="pm-card" :class="{ selected: selectedMethod === 'coin' }" @click="selectedMethod = 'coin'; onMethodChange()">
                 <div class="pm-radio"></div>
-                <div class="pm-icon"><span class="icoin-icon">C</span></div>
+                <div class="pm-icon"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="height:28px;" /></div>
                 <div class="pm-info">
                   <div class="pm-name">iCoin-Z</div>
                   <div class="pm-sub">Bayar dengan saldo iCoin-Z</div>
@@ -175,7 +175,7 @@ onUnmounted(() => {
         <!-- iCoin-Z Processing -->
         <div v-if="selectedMethod === 'coin'" class="flow-box">
           <div class="flow-box-header">
-            <div class="flow-box-title"><span class="icoin-icon">C</span> Pembayaran iCoin-Z</div>
+            <div class="flow-box-title"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="height:20px;margin-right:8px;" /> Pembayaran iCoin-Z</div>
           </div>
           <div class="flow-box-body">
             <!-- Balance Check -->
