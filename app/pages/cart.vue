@@ -12,6 +12,7 @@ const promoCode = ref('')
 const discountPct = ref(0)
 const promoMsg = ref('')
 const promoSuccess = ref(false)
+const removingIndex = ref(null)
 
 const PROMO_CODES = { ICFIRST10: 10, HEMAT20: 20 }
 
@@ -98,17 +99,22 @@ const saveCart = () => {
 }
 
 const removeItem = async (idx) => {
-  const item = cart.value[idx]
-  if (item && item.cart_id) {
-    const { removeFromCart } = useCart()
-    await removeFromCart(item.cart_id)
+  removingIndex.value = idx
+  try {
+    const item = cart.value[idx]
+    if (item && item.cart_id) {
+      const { removeFromCart } = useCart()
+      await removeFromCart(item.cart_id)
+    }
+    
+    cart.value.splice(idx, 1)
+    discountPct.value = 0
+    promoCode.value = ''
+    promoMsg.value = ''
+    updateTotals()
+  } finally {
+    if (removingIndex.value === idx) removingIndex.value = null
   }
-  
-  cart.value.splice(idx, 1)
-  discountPct.value = 0
-  promoCode.value = ''
-  promoMsg.value = ''
-  updateTotals()
 }
 
 const applyPromo = () => {
@@ -205,7 +211,10 @@ onMounted(async () => {
                     {{ group.items.length }} produk · <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(group.subtotal) }}
                   </span>
                 </div>
-                <div v-for="item in group.items" :key="item.id" class="cart-item">
+                <div v-for="item in group.items" :key="item.id" class="cart-item" style="position: relative;">
+                  <div v-if="removingIndex === item.cartIndex" style="position:absolute; inset:0; background:rgba(20,25,40,0.8); display:flex; align-items:center; justify-content:center; z-index:10; border-radius:12px; gap:8px; color:#ef4444; font-weight:600; backdrop-filter:blur(2px);">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> Sedang menghapus...
+                  </div>
                   <img class="cart-item-thumb" :src="item.img" :alt="item.name">
                   <div class="cart-item-info">
                     <div class="cart-item-category">{{ item.category }}</div>
