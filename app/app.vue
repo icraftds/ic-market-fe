@@ -5,6 +5,14 @@ import { useState, useNuxtApp } from '#app'
 
 const isLoading = useState('global_loader', () => false)
 const router = useRouter()
+
+// Auto-hide the global loader when ANY route transition completes
+router.afterEach(() => {
+    // Wait for the next tick / brief moment to ensure DOM is updated
+    setTimeout(() => {
+        isLoading.value = false
+    }, 100)
+})
 </script>
 
 <template>
