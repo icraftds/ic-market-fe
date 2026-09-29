@@ -5,29 +5,14 @@ import { useState, useNuxtApp } from '#app'
 
 const isLoading = useState('global_loader', () => false)
 const router = useRouter()
-const nuxtApp = useNuxtApp()
-
-nuxtApp.hook('page:start', () => {
-    isLoading.value = true
-})
-
-router.beforeEach(async (to, from) => {
-    if (to.path !== from.path) {
-        isLoading.value = true
-    }
-})
-
-router.afterEach(() => {
-    // Wait a brief moment after the route has rendered before hiding the loader
-    setTimeout(() => {
-        isLoading.value = false
-    }, 400)
-})
 </script>
 
 <template>
   <div>
-    <!-- Global Page Loader -->
+    <!-- SPA Progress Bar (Fast Navigation Feedback) -->
+    <NuxtLoadingIndicator color="#1472ff" :height="3" />
+
+    <!-- Global Page Loader (Only for heavy actions like Checkout / Beli) -->
     <Transition name="page-loader">
         <div v-if="isLoading" class="global-page-loader">
             <div class="loader-content">

@@ -13,6 +13,7 @@ const {
 const orders = ref([])
 const statusFilter = ref('all')
 const search = ref('')
+const dataLoading = ref(true)
 
 const formatCurrency = (value) => new Intl.NumberFormat('id-ID', {
   style: 'currency',
@@ -76,6 +77,7 @@ const loadOrders = async () => {
   }
 
   try {
+    dataLoading.value = true
     const config = useRuntimeConfig()
     const token = useCookie('icmarket_auth_token').value
     const response = await $fetch(`${config.public.apiBase}/orders`, {
@@ -119,6 +121,8 @@ const loadOrders = async () => {
     }
   } catch (error) {
     console.error('Failed to load orders', error)
+  } finally {
+    dataLoading.value = false
   }
 }
 
@@ -247,6 +251,12 @@ const isDownloadable = (item) => {
           </button>
         </div>
       </article>
+    </section>
+
+    <section v-else-if="dataLoading" class="empty-state" style="padding: 100px 20px;">
+      <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent); font-size: 40px; margin-bottom: 16px;"></i>
+      <h2 style="margin-bottom: 8px;">Memuat data pesanan...</h2>
+      <p>Mohon tunggu sebentar.</p>
     </section>
 
     <section v-else class="empty-state">
