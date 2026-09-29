@@ -1106,6 +1106,7 @@ onMounted(async () => {
     font-size: 1.8rem;
     font-weight: 800;
     margin: 0 0 8px 0;
+    color: #fff;
 }
 .welcome-subtitle {
     color: #94a3b8;
