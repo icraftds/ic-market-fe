@@ -1,10 +1,15 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useState } from '#app'
+import { useState, useNuxtApp } from '#app'
 
 const isLoading = useState('global_loader', () => false)
 const router = useRouter()
+const nuxtApp = useNuxtApp()
+
+nuxtApp.hook('page:start', () => {
+    isLoading.value = true
+})
 
 router.beforeEach(async (to, from) => {
     if (to.path !== from.path) {

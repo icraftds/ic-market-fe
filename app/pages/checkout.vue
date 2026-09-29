@@ -120,6 +120,7 @@ const placeOrder = async () => {
   }
 
   isSubmitting.value = true
+  useState('global_loader').value = true
 
   try {
     const token = useCookie('icmarket_auth_token').value
@@ -144,6 +145,8 @@ const placeOrder = async () => {
 
     if (!response.success) {
       checkoutError.value = response.message || 'Gagal checkout.'
+      useState('global_loader').value = false
+      isSubmitting.value = false
       return
     }
 
@@ -170,6 +173,7 @@ const placeOrder = async () => {
     checkoutError.value = error.data?.message || 'Pesanan belum dapat diproses. Silakan coba lagi.'
   } finally {
     isSubmitting.value = false
+    useState('global_loader').value = false
   }
 }
 
