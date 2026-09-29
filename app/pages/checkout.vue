@@ -6,6 +6,7 @@ definePageMeta({ layout: 'flow' })
 
 const router = useRouter()
 const { session, syncSession } = useDemoAuth()
+const config = useRuntimeConfig()
 
 const buyerName = ref('')
 const buyerPhone = ref('')
@@ -24,66 +25,41 @@ const promoSuccess = ref(false)
 const appliedVoucher = ref(null)   // { code, type, amount }
 const orderSummaryRef = ref(null)
 
-const VOUCHERS_KEY = 'icmarket_admin_vouchers'
+// ── Voucher helpers (localStorage no longer needed) ──────────────────────────
 
-const loadVouchers = () => {
-  try {
-    return JSON.parse(localStorage.getItem(VOUCHERS_KEY) || '[]')
-  } catch { return [] }
-}
-
-const applyPromo = () => {
+const applyPromo = async () => {
   const code = promoCode.value.trim().toUpperCase()
   if (!code) return
 
-  const vouchers = loadVouchers()
-  const now = new Date()
+  promoMsg.value = ''
+  promoSuccess.value = false
 
-  // Check hardcoded + admin-created vouchers
-  const hardcoded = {
-    ICFIRST10: { type: 'percent', amount: 10 },
-    HEMAT20:   { type: 'percent', amount: 20 },
-  }
+  try {
+    const subtotal = checkoutCart.value.reduce(
+      (sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || 1)),
+      0
+    )
 
-  let voucher = null
+    const res = await $fetch(`${config.public.apiBase}/vouchers/validate`, {
+      method: 'POST',
+      body: { code, subtotal }
+    })
 
-  if (hardcoded[code]) {
-    voucher = { code, ...hardcoded[code] }
-  } else {
-    const found = vouchers.find(v => v.code === code && v.is_active)
-    if (found) {
-      // Check expiry
-      if (found.expires_at && new Date(found.expires_at) < now) {
-        promoSuccess.value = false
-        promoMsg.value = 'Kode voucher sudah kedaluwarsa.'
-        return
-      }
-      // Check max usage
-      if (found.max_usage && found.used_count >= found.max_usage) {
-        promoSuccess.value = false
-        promoMsg.value = 'Kode voucher sudah mencapai batas penggunaan.'
-        return
-      }
-      voucher = { code, type: found.type, amount: found.amount }
+    if (res.success) {
+      appliedVoucher.value = res.data
+      promoSuccess.value = true
+      const label = res.data.type === 'percent'
+        ? `${res.data.amount}%`
+        : `Rp ${Number(res.data.amount).toLocaleString('id-ID')}`
+      promoMsg.value = `Kode <strong>${code}</strong> berhasil — diskon ${label} diterapkan!`
+      updateTotals(res.data)
     }
-  }
-
-  if (!voucher) {
+  } catch (e) {
     appliedVoucher.value = null
     promoSuccess.value = false
-    promoMsg.value = 'Kode promo tidak valid atau tidak aktif.'
+    promoMsg.value = e.data?.message || 'Kode voucher tidak valid.'
     updateTotals(null)
-    return
   }
-
-  appliedVoucher.value = voucher
-  promoSuccess.value = true
-
-  const label = voucher.type === 'percent'
-    ? `${voucher.amount}%`
-    : `Rp ${Number(voucher.amount).toLocaleString('id-ID')}`
-  promoMsg.value = `Kode <strong>${code}</strong> berhasil — diskon ${label} diterapkan!`
-  updateTotals(voucher)
 }
 
 const removePromo = () => {
@@ -229,14 +205,15 @@ const placeOrder = async () => {
     localStorage.removeItem('icmarket_cart')
     localStorage.removeItem('icmarket_checkout_groups')
 
-    // Increment voucher usage if applied
+    // Increment voucher usage via API
     if (appliedVoucher.value) {
-      const vouchers = loadVouchers()
-      const idx = vouchers.findIndex(v => v.code === appliedVoucher.value.code)
-      if (idx !== -1) {
-        vouchers[idx].used_count = (vouchers[idx].used_count || 0) + 1
-        localStorage.setItem(VOUCHERS_KEY, JSON.stringify(vouchers))
-      }
+      try {
+        await $fetch(`${config.public.apiBase}/vouchers/use`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: { code: appliedVoucher.value.code }
+        })
+      } catch (e) { /* non-critical */ }
     }
 
     await syncSession()
