@@ -36,12 +36,12 @@ export const useDemoAuth = () => {
         return await fetchUser()
     }
 
-    const register = async (name, email, password, password_confirmation) => {
+    const register = async (name, email, phone, password, password_confirmation) => {
         try {
             const response = await $fetch(`${config.public.authApiBase}/register`, {
                 method: 'POST',
                 headers: { Accept: 'application/json' },
-                body: { name, email, password, password_confirmation }
+                body: { name, email, phone, password, password_confirmation }
             })
             if (response.success) {
                 // AuthSSO requires OTP, so we just return success to trigger OTP modal
