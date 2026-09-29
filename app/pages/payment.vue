@@ -228,7 +228,7 @@ onUnmounted(() => {
 
       <!-- RIGHT: Summary -->
       <div class="sticky-sidebar">
-        <OrderSummary :showItems="false">
+        <OrderSummary :showItems="false" :overrideSubtotal="subtotal" :overrideDiscount="discount" :overrideTotal="total">
           <template #footer>
             <div v-if="discount > 0" style="font-size:0.75rem;color:var(--green);margin-top:-4px;font-family:'JetBrains Mono',monospace;">
               <i class="fa-solid fa-tag"></i> Voucher diskon diterapkan

@@ -2,13 +2,16 @@
 import { ref, onMounted } from 'vue'
 
 const props = defineProps({
-  showItems: { type: Boolean, default: true }
+  showItems: { type: Boolean, default: true },
+  overrideSubtotal: { type: Number, default: -1 },
+  overrideDiscount: { type: Number, default: -1 },
+  overrideTotal: { type: Number, default: -1 }
 })
 
 const cart = ref([])
-const subtotal = ref(0)
-const discount = ref(0)
-const total = ref(0)
+const localSubtotal = ref(0)
+const localDiscount = ref(0)
+const localTotal = ref(0)
 
 const formatCoin = (n) => Number(n || 0).toLocaleString('id-ID')
 
@@ -22,10 +25,10 @@ const refresh = async () => {
   cart.value.forEach(item => {
     newSubtotal += item.price * (item.quantity || 1)
   })
-  subtotal.value = newSubtotal
+  localSubtotal.value = newSubtotal
   
-  discount.value = Number(localStorage.getItem('icmarket_discount')) || 0
-  total.value = subtotal.value - discount.value
+  localDiscount.value = Number(localStorage.getItem('icmarket_discount')) || 0
+  localTotal.value = localSubtotal.value - localDiscount.value
 }
 
 onMounted(() => {
@@ -33,6 +36,11 @@ onMounted(() => {
 })
 
 defineExpose({ refresh })
+
+import { computed } from 'vue'
+const subtotal = computed(() => props.overrideSubtotal >= 0 ? props.overrideSubtotal : localSubtotal.value)
+const discount = computed(() => props.overrideDiscount >= 0 ? props.overrideDiscount : localDiscount.value)
+const total = computed(() => props.overrideTotal >= 0 ? props.overrideTotal : localTotal.value)
 </script>
 
 <template>
@@ -43,7 +51,7 @@ defineExpose({ refresh })
     <div class="flow-box-body">
       <div v-if="props.showItems" style="display:flex;flex-direction:column;gap:8px;">
         <div v-for="item in cart" :key="item.id" style="display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
-          <img :src="item.img" style="width:44px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;">
+          <img :src="item.img || item.thumbnailUrl || (Array.isArray(item.images) ? item.images[0] : item.images) || '/logo-market.png'" style="width:44px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;">
           <div style="flex:1;min-width:0;">
             <div style="font-size:0.83rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.name }}</div>
             <div style="font-size:0.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ item.category }}<span v-if="item.store || item.storeName"> · {{ item.store || item.storeName }}</span></div>
