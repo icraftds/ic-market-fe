@@ -8,6 +8,7 @@ const token  = useCookie('icmarket_auth_token')
 
 // ── State ─────────────────────────────────────────────────────────────────
 const vouchers    = ref([])
+const usersList   = ref([]) // Store users for dropdown
 const isLoading   = ref(false)
 const showModal   = ref(false)
 const isEditing   = ref(false)
@@ -17,6 +18,7 @@ const searchQuery = ref('')
 
 const form = ref({
   code: '', type: 'percent', amount: '', is_active: true, max_usage: '', expires_at: '',
+  visibility: 'public', user_id: ''
 })
 const errors = ref({})
 
@@ -66,6 +68,17 @@ const load = async () => {
   }
 }
 
+const loadUsers = async () => {
+  try {
+    const res = await $fetch(`${config.public.apiBase}/admin/users`, {
+      headers: authHeaders(),
+    })
+    usersList.value = res.data || []
+  } catch (e) {
+    console.error('Failed to load users for voucher assignment', e)
+  }
+}
+
 const validate = () => {
   const e = {}
   if (!form.value.code.trim()) e.code = 'Kode wajib diisi.'
@@ -86,6 +99,7 @@ const submitForm = async () => {
     is_active:  form.value.is_active,
     max_usage:  form.value.max_usage ? Number(form.value.max_usage) : null,
     expires_at: form.value.expires_at || null,
+    user_id:    form.value.visibility === 'private' && form.value.user_id ? Number(form.value.user_id) : null,
   }
 
   try {
@@ -143,7 +157,7 @@ const openCreate = () => {
   isEditing.value = false
   editId.value    = null
   errors.value    = {}
-  form.value      = { code: '', type: 'percent', amount: '', is_active: true, max_usage: '', expires_at: '' }
+  form.value      = { code: '', type: 'percent', amount: '', is_active: true, max_usage: '', expires_at: '', visibility: 'public', user_id: '' }
   showModal.value = true
 }
 
@@ -158,11 +172,16 @@ const openEdit = (v) => {
     is_active:  v.is_active,
     max_usage:  v.max_usage || '',
     expires_at: v.expires_at ? v.expires_at.slice(0, 16) : '',
+    visibility: v.user_id ? 'private' : 'public',
+    user_id:    v.user_id || ''
   }
   showModal.value = true
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadUsers()
+})
 </script>
 
 <template>
@@ -227,6 +246,7 @@ onMounted(load)
           <tr>
             <th>Kode Kupon</th>
             <th>Tipe</th>
+            <th>Akses</th>
             <th>Jumlah Diskon</th>
             <th>Status</th>
             <th>Penggunaan</th>
@@ -247,6 +267,14 @@ onMounted(load)
             <td>
               <span class="type-badge" :class="v.type === 'percent' ? 'type-percent' : 'type-flat'">
                 {{ v.type === 'percent' ? 'Persen' : 'Nominal' }}
+              </span>
+            </td>
+            <td>
+              <span v-if="v.user_id" style="font-size:0.75rem;font-weight:600;color:#7c3aed;background:rgba(124,58,237,.1);padding:3px 8px;border-radius:6px;">
+                <i class="fa-solid fa-lock"></i> Privat ({{ v.user?.name || 'User ' + v.user_id }})
+              </span>
+              <span v-else style="font-size:0.75rem;font-weight:600;color:var(--green);background:rgba(16,185,129,.1);padding:3px 8px;border-radius:6px;">
+                <i class="fa-solid fa-globe"></i> Publik
               </span>
             </td>
             <td class="amount-cell">
@@ -299,6 +327,21 @@ onMounted(load)
                     <option value="percent">Persentase (%)</option>
                     <option value="flat">Nominal (Rp)</option>
                   </select>
+                </div>
+                <div class="form-col">
+                  <label class="field-label">Akses Voucher <span class="req">*</span></label>
+                  <select v-model="form.visibility" class="field-input">
+                    <option value="public">Publik (Semua Pengguna)</option>
+                    <option value="private">Privat (Spesifik Pengguna)</option>
+                  </select>
+                </div>
+                <div v-if="form.visibility === 'private'" class="form-col" style="grid-column: 1 / -1;">
+                  <label class="field-label">Pilih Pengguna <span class="req">*</span></label>
+                  <select v-model="form.user_id" class="field-input">
+                    <option value="" disabled>-- Pilih Pengguna --</option>
+                    <option v-for="u in usersList" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
+                  </select>
+                  <div class="err-msg" style="margin-top:4px;color:var(--muted);"><i class="fa-solid fa-circle-info"></i> Hanya pengguna ini yang dapat melihat dan menggunakan voucher ini.</div>
                 </div>
                 <div class="form-col">
                   <label class="field-label">Jumlah Diskon <span class="req">*</span></label>
