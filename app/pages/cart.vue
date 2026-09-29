@@ -13,6 +13,7 @@ const discountPct = ref(0)
 const promoMsg = ref('')
 const promoSuccess = ref(false)
 const removingIndex = ref(null)
+const dataLoading = ref(true)
 
 const PROMO_CODES = { ICFIRST10: 10, HEMAT20: 20 }
 
@@ -173,6 +174,7 @@ onMounted(async () => {
   }
   await loadCart()
   updateTotals()
+  dataLoading.value = false
 })
 </script>
 
@@ -191,7 +193,13 @@ onMounted(async () => {
           </div>
           <div class="flow-box-body">
             
-            <div v-if="cart.length === 0" class="empty-cart">
+            <div v-if="dataLoading" class="empty-cart" style="padding: 60px 20px;">
+              <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent); font-size: 32px; margin-bottom: 12px;"></i>
+              <div class="empty-cart-title">Memuat keranjang...</div>
+              <div class="empty-cart-sub">Mohon tunggu sebentar.</div>
+            </div>
+
+            <div v-else-if="cart.length === 0" class="empty-cart">
               <i class="fa-regular fa-bag-shopping"></i>
               <div class="empty-cart-title">Keranjang masih kosong</div>
               <div class="empty-cart-sub">Tambahkan produk dari halaman toko untuk mulai belanja.</div>
