@@ -8,14 +8,10 @@ const router = useRouter()
 const { session, syncSession } = useDemoAuth()
 
 const cart = ref([])
-const promoCode = ref('')
-const discountPct = ref(0)
-const promoMsg = ref('')
-const promoSuccess = ref(false)
 const removingIndex = ref(null)
 const dataLoading = ref(true)
 
-const PROMO_CODES = { ICFIRST10: 10, HEMAT20: 20 }
+
 
 const formatCoin = (n) => Number(n || 0).toLocaleString('id-ID')
 
@@ -109,30 +105,12 @@ const removeItem = async (idx) => {
     }
     
     cart.value.splice(idx, 1)
-    discountPct.value = 0
-    promoCode.value = ''
-    promoMsg.value = ''
     updateTotals()
   } finally {
     if (removingIndex.value === idx) removingIndex.value = null
   }
 }
 
-const applyPromo = () => {
-  const code = promoCode.value.trim().toUpperCase()
-
-  if (PROMO_CODES[code]) {
-    discountPct.value = PROMO_CODES[code]
-    promoSuccess.value = true
-    promoMsg.value = `Kode <strong>${code}</strong> berhasil — diskon ${discountPct.value}% diterapkan!`
-  } else {
-    discountPct.value = 0
-    promoSuccess.value = false
-    promoMsg.value = 'Kode promo tidak valid.'
-  }
-
-  updateTotals()
-}
 
 const orderSummaryRef = ref(null)
 
@@ -141,11 +119,10 @@ const updateTotals = () => {
     (sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || 1)),
     0
   )
-  const discount = Math.round(subtotal * discountPct.value / 100)
+  const discount = Number(localStorage.getItem('icmarket_discount')) || 0
   const total = Math.max(0, subtotal - discount)
 
   localStorage.setItem('icmarket_subtotal', subtotal)
-  localStorage.setItem('icmarket_discount', discount)
   localStorage.setItem('icmarket_total', total)
 
   if (orderSummaryRef.value) {
@@ -243,24 +220,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Promo Code -->
-        <div v-if="cart.length > 0" class="flow-box" style="margin-top:16px;">
-          <div class="flow-box-header">
-            <div class="flow-box-title"><i class="fa-solid fa-tag"></i> Kode Promo</div>
-          </div>
-          <div class="flow-box-body">
-            <div class="promo-row">
-              <input v-model="promoCode" class="promo-input" type="text" placeholder="Masukkan kode promo…" maxlength="20">
-              <button class="promo-apply-btn" @click="applyPromo">Pakai</button>
-            </div>
-            <div v-if="promoMsg" style="font-size:0.8rem;margin-top:-8px;" :style="{ color: promoSuccess ? 'var(--green)' : 'var(--red)' }" v-html="promoMsg"></div>
-            <div class="flow-alert info">
-              <i class="fa-solid fa-circle-info"></i>
-              Coba kode <strong>ICFIRST10</strong> untuk diskon 10% pembelian pertama Anda.
-            </div>
-          </div>
         </div>
-      </div>
 
       <!-- RIGHT: Order Summary -->
       <div class="sticky-sidebar">

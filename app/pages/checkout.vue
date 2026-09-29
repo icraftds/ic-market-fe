@@ -2,13 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-definePageMeta({
-  layout: 'flow'
-})
+definePageMeta({ layout: 'flow' })
 
 const router = useRouter()
 const { session, syncSession } = useDemoAuth()
-const { createOrder, markOrderPaid, lastError } = useOrderStore()
 
 const buyerName = ref('')
 const buyerPhone = ref('')
@@ -20,15 +17,108 @@ const checkoutGroups = ref([])
 const isSubmitting = ref(false)
 const checkoutError = ref('')
 
-const methods = [
-  { id: 'coin', name: 'iCoin-Z', sub: 'Bayar dengan saldo iCoin-Z', icon: 'icoin-icon', iconText: 'C' }
-]
-const selectedMethod = ref('coin')
+// ── Voucher ──────────────────────────────────────────────────────────────────
+const promoCode = ref('')
+const promoMsg = ref('')
+const promoSuccess = ref(false)
+const appliedVoucher = ref(null)   // { code, type, amount }
+const orderSummaryRef = ref(null)
 
-const banks = ['BCA', 'BNI', 'Mandiri']
-const selectedBank = ref('BCA')
-const bankAccounts = { BCA: '1234 5678 9012', BNI: '0987 6543 2100', Mandiri: '1357 2468 9990' }
-const copyText = ref('Salin')
+const VOUCHERS_KEY = 'icmarket_admin_vouchers'
+
+const loadVouchers = () => {
+  try {
+    return JSON.parse(localStorage.getItem(VOUCHERS_KEY) || '[]')
+  } catch { return [] }
+}
+
+const applyPromo = () => {
+  const code = promoCode.value.trim().toUpperCase()
+  if (!code) return
+
+  const vouchers = loadVouchers()
+  const now = new Date()
+
+  // Check hardcoded + admin-created vouchers
+  const hardcoded = {
+    ICFIRST10: { type: 'percent', amount: 10 },
+    HEMAT20:   { type: 'percent', amount: 20 },
+  }
+
+  let voucher = null
+
+  if (hardcoded[code]) {
+    voucher = { code, ...hardcoded[code] }
+  } else {
+    const found = vouchers.find(v => v.code === code && v.is_active)
+    if (found) {
+      // Check expiry
+      if (found.expires_at && new Date(found.expires_at) < now) {
+        promoSuccess.value = false
+        promoMsg.value = 'Kode voucher sudah kedaluwarsa.'
+        return
+      }
+      // Check max usage
+      if (found.max_usage && found.used_count >= found.max_usage) {
+        promoSuccess.value = false
+        promoMsg.value = 'Kode voucher sudah mencapai batas penggunaan.'
+        return
+      }
+      voucher = { code, type: found.type, amount: found.amount }
+    }
+  }
+
+  if (!voucher) {
+    appliedVoucher.value = null
+    promoSuccess.value = false
+    promoMsg.value = 'Kode promo tidak valid atau tidak aktif.'
+    updateTotals(null)
+    return
+  }
+
+  appliedVoucher.value = voucher
+  promoSuccess.value = true
+
+  const label = voucher.type === 'percent'
+    ? `${voucher.amount}%`
+    : `Rp ${Number(voucher.amount).toLocaleString('id-ID')}`
+  promoMsg.value = `Kode <strong>${code}</strong> berhasil — diskon ${label} diterapkan!`
+  updateTotals(voucher)
+}
+
+const removePromo = () => {
+  promoCode.value = ''
+  promoMsg.value = ''
+  promoSuccess.value = false
+  appliedVoucher.value = null
+  updateTotals(null)
+}
+
+const updateTotals = (voucher) => {
+  const subtotal = checkoutCart.value.reduce(
+    (sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || 1)),
+    0
+  )
+  let discount = 0
+  if (voucher) {
+    discount = voucher.type === 'percent'
+      ? Math.round(subtotal * voucher.amount / 100)
+      : Math.min(voucher.amount, subtotal)
+  }
+  const total = Math.max(0, subtotal - discount)
+
+  localStorage.setItem('icmarket_subtotal', subtotal)
+  localStorage.setItem('icmarket_discount', discount)
+  localStorage.setItem('icmarket_total', total)
+  if (voucher) {
+    localStorage.setItem('icmarket_voucher_code', voucher.code)
+  } else {
+    localStorage.removeItem('icmarket_voucher_code')
+  }
+
+  if (orderSummaryRef.value) orderSummaryRef.value.refresh()
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
 
@@ -42,12 +132,6 @@ const checkoutSubtotal = computed(() => checkoutCart.value.reduce(
   0
 ))
 
-const copyAccNum = () => {
-  navigator.clipboard?.writeText(bankAccounts[selectedBank.value].replace(/\s/g, ''))
-  copyText.value = 'Tersalin'
-  setTimeout(() => { copyText.value = 'Salin' }, 2000)
-}
-
 const readJson = (key, fallback) => {
   try {
     const parsed = JSON.parse(localStorage.getItem(key) || 'null')
@@ -59,10 +143,8 @@ const readJson = (key, fallback) => {
 
 const buildGroupsFromCart = (cart) => {
   const bucket = {}
-
   for (const item of cart) {
     const key = item.storeApplicationId || item.storeSlug || item.store || 'icmarket'
-
     if (!bucket[key]) {
       bucket[key] = {
         name: item.store || item.storeName || 'Toko IC Market',
@@ -73,10 +155,8 @@ const buildGroupsFromCart = (cart) => {
         items: []
       }
     }
-
     bucket[key].items.push(item)
   }
-
   return Object.values(bucket)
 }
 
@@ -84,7 +164,6 @@ const loadCheckoutData = async () => {
   const { fetchCart } = useCart()
   const cart = await fetchCart()
   checkoutCart.value = Array.isArray(cart) ? cart : []
-
   checkoutGroups.value = buildGroupsFromCart(checkoutCart.value)
 }
 
@@ -107,11 +186,6 @@ const placeOrder = async () => {
     return
   }
 
-  if (selectedMethod.value === 'coin' && (!session.value || session.value.coins < checkoutSubtotal.value)) {
-    checkoutError.value = 'Saldo iCoin-Z tidak mencukupi untuk melakukan pembayaran. Silakan top up iCoin-Z terlebih dahulu.'
-    return
-  }
-
   await loadCheckoutData()
 
   if (!checkoutCart.value.length) {
@@ -131,15 +205,13 @@ const placeOrder = async () => {
       quantity: c.quantity || 1
     }))
 
-    const paymentMethod = selectedMethod.value === 'coin' ? 'icmarket_coins' : 'bank_transfer'
-    
     const config = useRuntimeConfig()
     const response = await $fetch(`${config.public.apiBase}/orders/checkout`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: {
         items,
-        payment_method: paymentMethod
+        payment_method: 'icmarket_coins'
       }
     })
 
@@ -153,21 +225,27 @@ const placeOrder = async () => {
     // Clear backend cart
     const { clearCart } = useCart()
     await clearCart()
-    
+
     localStorage.removeItem('icmarket_cart')
     localStorage.removeItem('icmarket_checkout_groups')
-    
-    // Sync session to update coin balance
+
+    // Increment voucher usage if applied
+    if (appliedVoucher.value) {
+      const vouchers = loadVouchers()
+      const idx = vouchers.findIndex(v => v.code === appliedVoucher.value.code)
+      if (idx !== -1) {
+        vouchers[idx].used_count = (vouchers[idx].used_count || 0) + 1
+        localStorage.setItem(VOUCHERS_KEY, JSON.stringify(vouchers))
+      }
+    }
+
     await syncSession()
 
     localStorage.setItem('icmarket_order_id', response.data.transaction_id)
     localStorage.setItem('icmarket_order_status', response.data.status)
-    
-    if (response.data.status === 'completed') {
-      router.push('/success')
-    } else {
-      router.push('/payment')
-    }
+
+    // Always go to payment page for iCoin-Z payment
+    router.push('/payment')
   } catch (error) {
     console.error('Gagal menyiapkan pesanan:', error)
     checkoutError.value = error.data?.message || 'Pesanan belum dapat diproses. Silakan coba lagi.'
@@ -203,6 +281,10 @@ onMounted(async () => {
       buyerPhone.value = savedBuyer.phone || ''
     }
   }
+
+  // Reset discount on fresh checkout
+  localStorage.setItem('icmarket_discount', '0')
+  updateTotals(null)
 })
 </script>
 
@@ -275,106 +357,38 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Payment Method -->
+        <!-- Voucher / Kode Promo -->
         <div class="flow-box">
           <div class="flow-box-header">
-            <div class="flow-box-title"><i class="fa-solid fa-credit-card"></i> Metode Pembayaran</div>
+            <div class="flow-box-title"><i class="fa-solid fa-ticket"></i> Kode Voucher</div>
           </div>
           <div class="flow-box-body">
-            <div class="payment-methods-grid">
-              <div v-for="method in methods" :key="method.id" 
-                   class="pm-card" 
-                   :class="{ selected: selectedMethod === method.id }"
-                   @click="selectedMethod = method.id">
-                <div class="pm-radio"></div>
-                <div class="pm-icon">
-                  <span v-if="method.iconText" :class="method.icon">{{ method.iconText }}</span>
-                  <i v-else :class="method.icon"></i>
-                </div>
-                <div class="pm-info">
-                  <div class="pm-name">{{ method.name }}</div>
-                  <div class="pm-sub">{{ method.sub }}</div>
-                </div>
+            <div v-if="appliedVoucher" class="applied-voucher-row">
+              <div class="applied-voucher-info">
+                <i class="fa-solid fa-circle-check" style="color:var(--green);"></i>
+                <span>Voucher <strong>{{ appliedVoucher.code }}</strong> aktif — diskon
+                  <strong>{{ appliedVoucher.type === 'percent' ? appliedVoucher.amount + '%' : 'Rp ' + Number(appliedVoucher.amount).toLocaleString('id-ID') }}</strong>
+                </span>
               </div>
+              <button class="promo-remove-btn" @click="removePromo">
+                <i class="fa-solid fa-xmark"></i> Hapus
+              </button>
             </div>
-
-            <!-- Bank Transfer Detail -->
-            <div v-if="selectedMethod === 'bank_transfer'" class="payment-detail-pane visible">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace;">
-                Pilih Bank Tujuan
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button v-for="bank in banks" :key="bank" 
-                        class="bank-sel-btn" 
-                        :class="{ selected: selectedBank === bank }"
-                        @click="selectedBank = bank">
-                  {{ bank }}
-                </button>
-              </div>
-              <div class="bank-account-row">
-                <div class="bank-logo">{{ selectedBank }}</div>
-                <div class="bank-account-num">{{ bankAccounts[selectedBank] }}</div>
-                <button class="copy-btn" @click="copyAccNum">
-                  <i :class="copyText === 'Salin' ? 'fa-regular fa-copy' : 'fa-solid fa-check'"></i> {{ copyText }}
-                </button>
-              </div>
-              <div style="font-size:0.78rem;color:var(--muted);">
-                a.n. <strong style="color:var(--text);">IC Market · iCraft Studio</strong>
-              </div>
+            <div v-else class="promo-row">
+              <input
+                v-model="promoCode"
+                class="promo-input"
+                type="text"
+                placeholder="Masukkan kode voucher…"
+                maxlength="20"
+                @keyup.enter="applyPromo"
+              >
+              <button class="promo-apply-btn" @click="applyPromo">Pakai</button>
             </div>
-
-            <!-- QRIS Detail -->
-            <div v-if="selectedMethod === 'qris'" class="payment-detail-pane visible">
-              <div class="qr-wrapper">
-                <div class="qr-placeholder"><i class="fa-solid fa-qrcode"></i></div>
-                <div class="qr-label">QR Code akan ditampilkan setelah Anda konfirmasi order.<br>Scan menggunakan aplikasi e-wallet apapun.</div>
-              </div>
-            </div>
-
-            <!-- Credit Card Detail -->
-            <div v-if="selectedMethod === 'credit_card'" class="payment-detail-pane visible">
-              <div class="form-group">
-                <label class="form-label">Nomor Kartu <span class="req">*</span></label>
-                <input class="form-input" type="text" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number">
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Berlaku Hingga <span class="req">*</span></label>
-                  <input class="form-input" type="text" placeholder="MM / YY" maxlength="7" autocomplete="cc-exp">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">CVV <span class="req">*</span></label>
-                  <input class="form-input" type="password" placeholder="•••" maxlength="4" autocomplete="cc-csc">
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Nama di Kartu <span class="req">*</span></label>
-                <input class="form-input" type="text" placeholder="Sesuai yang tercetak di kartu" autocomplete="cc-name">
-              </div>
-              <div class="flow-alert info">
-                <i class="fa-solid fa-lock"></i>
-                Data kartu dienkripsi dengan SSL 256-bit. Kami tidak menyimpan data kartu Anda.
-              </div>
-            </div>
-
-            <!-- PayPal Detail -->
-            <div v-if="selectedMethod === 'paypal'" class="payment-detail-pane visible">
-              <div class="flow-alert info">
-                <i class="fa-brands fa-paypal"></i>
-                Anda akan diarahkan ke halaman PayPal setelah konfirmasi. Pembayaran diproses dalam USD berdasarkan kurs saat transaksi.
-              </div>
-            </div>
-
-            <!-- Coin Detail -->
-            <div v-if="selectedMethod === 'coin'" class="payment-detail-pane visible">
-              <div class="flow-alert info">
-                <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" />
-                Saldo iCoin-Z Anda: <strong><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(session?.coins || 0).replace('Rp', '') }} iCoin-Z</strong>. Total pesanan akan langsung dipotong dari saldo iCoin-Z.
-              </div>
-              <div v-if="(session?.coins || 0) < checkoutSubtotal" class="flow-alert warn" style="margin-top: 10px;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                Saldo iCoin-Z tidak mencukupi untuk pesanan ini.
-              </div>
+            <div v-if="promoMsg" style="font-size:0.8rem;margin-top:4px;" :style="{ color: promoSuccess ? 'var(--green)' : 'var(--red)' }" v-html="promoMsg"></div>
+            <div v-if="!appliedVoucher" class="flow-alert info" style="margin-top:10px;">
+              <i class="fa-solid fa-circle-info"></i>
+              Punya kode voucher? Masukkan di sini sebelum konfirmasi pesanan.
             </div>
           </div>
         </div>
@@ -383,7 +397,7 @@ onMounted(async () => {
 
       <!-- RIGHT: Summary -->
       <div class="sticky-sidebar">
-        <OrderSummary>
+        <OrderSummary ref="orderSummaryRef">
           <template #footer>
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.75rem;color:var(--muted);margin-top:16px;margin-bottom:12px;line-height:1.4;">
               <input v-model="agreeTerms" type="checkbox" style="margin-top:2px;accent-color:var(--accent);flex-shrink:0;">
@@ -423,21 +437,6 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-.bank-sel-btn {
-  padding: 6px 16px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-.bank-sel-btn:hover { border-color: #aaa; color: var(--text); background: var(--subtle); }
-.bank-sel-btn.selected { border-color: var(--accent); color: var(--accent); background: #f0f5ff; }
-
 .checkout-store-list { gap: 12px; }
 .checkout-store-card { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
 .checkout-store-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; background:var(--subtle); }
@@ -448,4 +447,36 @@ onMounted(async () => {
 .checkout-store-item span:first-child { color:var(--text); font-weight:600; }
 .checkout-store-total { display:flex; justify-content:space-between; gap:12px; padding-top:2px; font-size:.82rem; }
 
+.applied-voucher-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.applied-voucher-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+.promo-remove-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.promo-remove-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
 </style>

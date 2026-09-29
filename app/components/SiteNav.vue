@@ -284,6 +284,7 @@ onBeforeUnmount(() => {
           <NuxtLink to="/admin/onboardings" class="nb-link">Onboarding</NuxtLink>
           <NuxtLink to="/admin/stores" class="nb-link">Toko</NuxtLink>
           <NuxtLink to="/admin/orders" class="nb-link">Pesanan</NuxtLink>
+          <NuxtLink to="/admin/vouchers" class="nb-link">Voucher</NuxtLink>
           <NuxtLink to="/admin/settings" class="nb-link">Settings</NuxtLink>
           <NuxtLink to="/admin/payouts" class="nb-link">Payouts</NuxtLink>
         </template>
