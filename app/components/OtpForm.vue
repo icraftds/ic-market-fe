@@ -110,10 +110,12 @@ const handleResendOtp = () => {
 
 <template>
   <div class="otp-box">
-    <h2>Verifikasi OTP</h2>
-    <p>Kami telah mengirimkan kode 6 digit ke email <strong>{{ email }}</strong></p>
+    <div class="auth-heading" style="margin-bottom: 32px; text-align: center;">
+      <h2 style="font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 8px; letter-spacing: -0.5px;">Verifikasi OTP</h2>
+      <p style="color: var(--muted); font-size: 15px; margin: 0;">Kami telah mengirimkan kode 6 digit ke email<br/><strong>{{ email }}</strong></p>
+    </div>
     
-    <form @submit.prevent="submitOtp">
+    <form @submit.prevent="submitOtp" class="modern-form">
       <div class="otp-inputs">
         <input
           v-for="(digit, idx) in 6"
@@ -125,114 +127,138 @@ const handleResendOtp = () => {
           pattern="[0-9]*"
           maxlength="1"
           autocomplete="one-time-code"
+          class="otp-digit"
           @input="onOtpInput(idx, $event)"
           @keydown="onOtpKeydown(idx, $event)"
           @paste="onOtpPaste"
         />
       </div>
 
-      <p v-if="error" class="error-text">
-        {{ error }}
-      </p>
+      <div v-if="error" class="error-banner">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+      </div>
 
-      <button class="primary-btn" type="submit" :disabled="isVerifying || otpCode.length < 6">
-        {{ isVerifying ? 'Memverifikasi...' : 'Verifikasi OTP' }}
+      <button class="primary-btn mt-4" type="submit" :disabled="isVerifying || otpCode.length < 6">
+        <span v-if="!isVerifying">Verifikasi OTP</span>
+        <span v-else class="loader-spinner"></span>
       </button>
     </form>
 
-    <p class="switch-text">
-      Belum menerima email?
-      <button 
-        type="button" 
-        class="text-btn" 
-        @click="handleResendOtp" 
-        :disabled="cooldownSeconds > 0"
-        :class="{ 'disabled-text': cooldownSeconds > 0 }"
-      >
-        {{ cooldownSeconds > 0 ? `Kirim Ulang (${cooldownSeconds}s)` : 'Kirim Ulang' }}
-      </button>
-    </p>
-    <p v-if="resendMessage" class="resend-msg">{{ resendMessage }}</p>
+    <div class="resend-wrapper">
+      <p class="switch-text" style="margin-top: 32px;">
+        Belum menerima email?
+        <button 
+          type="button" 
+          class="switch-link text-btn" 
+          @click="handleResendOtp" 
+          :disabled="cooldownSeconds > 0"
+          :class="{ 'disabled-text': cooldownSeconds > 0 }"
+        >
+          Kirim Ulang {{ cooldownSeconds > 0 ? `(${cooldownSeconds}s)` : '' }}
+        </button>
+      </p>
+      <p v-if="resendMessage" class="resend-msg"><i class="fa-solid fa-check-circle"></i> {{ resendMessage }}</p>
+    </div>
     
     <div class="back-link">
-      <button type="button" class="text-btn back-btn-text" @click="emit('back')">Batalkan</button>
+      <button type="button" class="text-btn back-btn-text" @click="emit('back')">Batalkan Verifikasi</button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.otp-box h2 {
-  text-align: center;
-  margin-bottom: 8px;
-  font-size: 24px;
+.otp-box {
+  display: flex;
+  flex-direction: column;
 }
-.otp-box p {
-  text-align: center;
-  margin-bottom: 24px;
-  color: var(--muted, #6b7280);
-  line-height: 1.5;
+
+.modern-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .otp-inputs {
   display: flex;
   gap: 8px;
-  justify-content: center;
+  justify-content: space-between;
   margin-bottom: 24px;
 }
 
-.otp-inputs input {
-  width: 44px;
-  height: 52px;
+.otp-digit {
+  width: calc(100% / 6 - 8px);
+  aspect-ratio: 1;
+  text-align: center;
   font-size: 24px;
   font-weight: 700;
-  text-align: center;
-  border: 2px solid var(--border, #d1d5db);
-  border-radius: 12px;
-  background: var(--surface, #fff);
-  outline: none;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f9fafb;
+  color: var(--text);
   transition: all 0.2s ease;
-  color: var(--accent, #111);
+  outline: none;
   padding: 0;
 }
 
-.otp-inputs input:focus {
+.otp-digit:focus {
   border-color: var(--accent-2, #1472ff);
+  background: #ffffff;
   box-shadow: 0 0 0 4px rgba(20, 114, 255, 0.1);
   transform: translateY(-2px);
 }
 
-.primary-btn {
-  display: inline-flex;
-  justify-content: center;
+.error-banner {
+  display: flex;
   align-items: center;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 14px 16px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--accent, #111);
-  color: #fff;
-  font-weight: 800;
-  font-size: 15px;
-  cursor: pointer;
-  transition: opacity 0.2s;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
 }
 
+.primary-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
 .primary-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
-.error-text {
-  text-align: center;
-  color: #dc2626 !important;
-  font-size: 14px;
-  margin: 0 0 16px !important;
+.loader-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .switch-text {
-  margin: 24px 0 0 !important;
-  font-size: 14px;
+  font-size: 15px;
+  color: var(--muted);
   text-align: center;
 }
 
@@ -240,15 +266,16 @@ const handleResendOtp = () => {
   background: none;
   border: none;
   color: var(--accent-2, #1472ff);
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   padding: 0;
   font: inherit;
-  transition: opacity 0.2s;
+  transition: color 0.2s;
 }
 
 .text-btn:hover:not(:disabled) {
   text-decoration: underline;
+  color: var(--accent);
 }
 
 .text-btn:disabled {
@@ -256,14 +283,18 @@ const handleResendOtp = () => {
 }
 
 .disabled-text {
-  color: var(--muted, #6b7280) !important;
+  color: #9ca3af !important;
 }
 
 .resend-msg {
   text-align: center;
-  color: #059669 !important;
-  font-size: 13px;
-  margin-top: 8px !important;
+  color: #10b981 !important;
+  font-size: 14px;
+  margin-top: 12px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .back-link {
@@ -272,7 +303,7 @@ const handleResendOtp = () => {
 }
 .back-btn-text {
   color: var(--muted, #6b7280) !important;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 .back-btn-text:hover {

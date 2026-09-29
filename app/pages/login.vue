@@ -270,203 +270,379 @@ function cancelOtp() {
 </script>
 
 <template>
-  <main class="auth-page">
-    <section class="auth-card">
-      <button class="back-btn" type="button" @click="$router.push('/')">← Kembali ke Beranda</button>
-      
-      <div class="auth-heading">
-        <span class="eyebrow">IC MARKET</span>
-        <h1>Login</h1>
-        <p>Masuk ke akun IC Market kamu.</p>
+  <main class="auth-wrapper">
+    <!-- Banner Side -->
+    <div class="auth-banner">
+      <div class="banner-overlay"></div>
+      <div class="banner-content">
+        <div class="logo-area">
+          <i class="fa-solid fa-store"></i>
+          <span class="logo-text">IC MARKET</span>
+        </div>
+        <h2 class="banner-title">Mulai Petualangan Digitalmu</h2>
+        <p class="banner-desc">Temukan jutaan produk digital berkualitas, atau mulai berjualan dan raih keuntungan tanpa batas bersama komunitas IC Market.</p>
+        <div class="banner-features">
+          <div class="feature-item"><i class="fa-solid fa-check-circle"></i> <span>Transaksi Aman</span></div>
+          <div class="feature-item"><i class="fa-solid fa-check-circle"></i> <span>Instan Delivery</span></div>
+          <div class="feature-item"><i class="fa-solid fa-check-circle"></i> <span>Support 24/7</span></div>
+        </div>
       </div>
+    </div>
 
-      <div v-if="route.query.reason === 'auth'" class="info-box">
-        Login diperlukan untuk membuka halaman tersebut.
-      </div>
-
-      <OtpForm
-        v-if="showOtpForm"
-        :email="form.email"
-        :is-verifying="isVerifyingOtp"
-        :error="error"
-        @submit="submitOtp"
-        @resend="handleResendOtp"
-        @back="cancelOtp"
-      />
-
-      <form v-else @submit.prevent="submitLogin">
-        <label>
-          Email
-          <input
-            v-model="form.email"
-            type="email"
-            autocomplete="email"
-            placeholder="nama@email.com"
-          />
-        </label>
-
-        <label>
-          Password
-          <input
-            v-model="form.password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Password"
-          />
-        </label>
-
-        <p v-if="error" class="error-text">
-          {{ error }}
-        </p>
-
-        <button class="primary-btn" type="submit" :disabled="isSubmitting">
-          {{ isSubmitting ? 'Memproses...' : 'Masuk' }}
+    <!-- Form Side -->
+    <div class="auth-content">
+      <section class="auth-card">
+        <button class="back-btn" type="button" @click="$router.push('/')">
+          <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
-      </form>
+        
+        <div class="auth-heading">
+          <h1>Selamat Datang Kembali</h1>
+          <p>Masuk ke akun IC Market kamu untuk melanjutkan.</p>
+        </div>
 
-      <p v-if="!showOtpForm" class="switch-text">
-        Belum punya akun?
-        <NuxtLink to="/register">Daftar di sini</NuxtLink>
-      </p>
-    </section>
+        <div v-if="route.query.reason === 'auth'" class="info-box">
+          <i class="fa-solid fa-circle-exclamation"></i> Login diperlukan untuk membuka halaman tersebut.
+        </div>
+
+        <Transition name="fade" mode="out-in">
+          <OtpForm
+            v-if="showOtpForm"
+            :email="form.email"
+            :is-verifying="isVerifyingOtp"
+            :error="error"
+            @submit="submitOtp"
+            @resend="handleResendOtp"
+            @back="cancelOtp"
+          />
+
+          <form v-else @submit.prevent="submitLogin" class="modern-form">
+            <div class="input-group">
+              <label>Email</label>
+              <div class="input-wrapper">
+                <i class="fa-regular fa-envelope input-icon"></i>
+                <input
+                  v-model="form.email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="Masukkan alamat email"
+                />
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label>Password</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-lock input-icon"></i>
+                <input
+                  v-model="form.password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Masukkan password"
+                />
+              </div>
+            </div>
+
+            <div v-if="error" class="error-banner">
+              <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+            </div>
+
+            <button class="primary-btn" type="submit" :disabled="isSubmitting">
+              <span v-if="!isSubmitting">Masuk Sekarang</span>
+              <span v-else class="loader-spinner"></span>
+            </button>
+          </form>
+        </Transition>
+
+        <p v-if="!showOtpForm" class="switch-text">
+          Belum punya akun?
+          <NuxtLink to="/register" class="switch-link">Daftar sekarang</NuxtLink>
+        </p>
+      </section>
+    </div>
   </main>
 </template>
 
 <style scoped>
-.auth-page {
-  min-height: calc(100vh - 68px);
-  display: grid;
-  place-items: center;
-  padding: 32px 16px;
-  background: var(--bg, #f6f7fb);
+.auth-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background: #ffffff;
 }
 
-.auth-card {
-  width: min(100%, 500px);
-  padding: 32px;
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 20px;
-  background: var(--surface, #fff);
-  box-shadow: 0 12px 35px #0000000d;
+/* Banner Side */
+.auth-banner {
+  display: none;
+  width: 45%;
+  position: relative;
+  background: linear-gradient(135deg, #1472ff 0%, #0d4bb3 100%);
+  overflow: hidden;
+  color: white;
 }
 
-.auth-heading {
-  margin-bottom: 24px;
-  text-align: center;
+@media (min-width: 992px) {
+  .auth-banner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
 }
 
-.back-btn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin-bottom: 24px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--muted, #6b7280);
-  cursor: pointer;
-  display: inline-flex;
+.banner-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" stroke-width="2" fill="none"/></svg>');
+  background-size: 150px 150px;
+  opacity: 0.6;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
+  padding: 60px;
+  max-width: 500px;
+}
+
+.logo-area {
+  display: flex;
   align-items: center;
-}
-.back-btn:hover {
-  color: var(--accent, #111);
-}
-
-.eyebrow {
-  color: var(--accent-2, #1472ff);
-  font-size: 12px;
+  gap: 12px;
+  font-size: 28px;
   font-weight: 800;
-  letter-spacing: 2px;
+  margin-bottom: 60px;
+  letter-spacing: -0.5px;
 }
 
-h1 {
-  margin: 8px 0;
-  font-size: 30px;
+.banner-title {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 20px;
 }
 
-p {
-  color: var(--muted, #6b7280);
+.banner-desc {
+  font-size: 16px;
   line-height: 1.6;
+  opacity: 0.9;
+  margin-bottom: 40px;
 }
 
-form {
-  display: grid;
+.banner-features {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-label {
-  display: grid;
-  gap: 7px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 12px 13px;
-  border: 1px solid var(--border, #d1d5db);
-  border-radius: 10px;
-  font: inherit;
-  outline: none;
-}
-
-input:focus {
-  border-color: var(--accent-2, #1472ff);
-  box-shadow: 0 0 0 3px rgba(20, 114, 255, .1);
-}
-
-.primary-btn {
-  display: inline-flex;
-  justify-content: center;
+.feature-item {
+  display: flex;
   align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+.feature-item i {
+  color: #4ade80;
+  font-size: 20px;
+}
+
+
+/* Content Side */
+.auth-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg);
+}
+
+.auth-card {
   width: 100%;
-  box-sizing: border-box;
-  padding: 13px 16px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--accent, #111);
-  color: #fff;
-  font-weight: 800;
+  max-width: 440px;
+  padding: 40px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  margin-bottom: 32px;
+  transition: color 0.2s;
+}
+.back-btn:hover {
+  color: var(--text);
+}
+
+.auth-heading {
+  margin-bottom: 32px;
+}
+.auth-heading h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+.auth-heading p {
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0;
 }
 
 .info-box {
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--subtle, #f0f0ec);
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff8e6;
+  color: #b77900;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
 }
 
-.error-text {
-  margin: 0;
-  color: #dc2626;
+.modern-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.input-group label {
   font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-icon {
+  position: absolute;
+  left: 16px;
+  color: #9ca3af;
+  font-size: 16px;
+  transition: color 0.2s;
+}
+.input-wrapper input {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  font-size: 15px;
+  color: var(--text);
+  background: #f9fafb;
+  transition: all 0.2s ease;
+  outline: none;
+}
+.input-wrapper input:focus {
+  border-color: var(--accent-2);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(20, 114, 255, 0.1);
+}
+.input-wrapper input:focus + .input-icon,
+.input-wrapper input:not(:placeholder-shown) + .input-icon {
+  color: var(--accent-2);
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.primary-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+}
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+.primary-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loader-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .switch-text {
-  margin: 22px 0 0;
   text-align: center;
-  font-size: 14px;
+  margin-top: 32px;
+  font-size: 15px;
+  color: var(--muted);
 }
-
-.switch-text a {
-  color: var(--accent-2, #1472ff);
-  font-weight: 800;
+.switch-link {
+  color: var(--accent-2);
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: color 0.2s;
 }
-
-.text-btn {
-  background: none;
-  border: none;
-  color: var(--accent-2, #1472ff);
-  font-weight: 800;
-  cursor: pointer;
-  padding: 0;
-  font: inherit;
-}
-.text-btn:hover {
+.switch-link:hover {
+  color: var(--accent);
   text-decoration: underline;
 }
 
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
 
+@media (max-width: 600px) {
+  .auth-card {
+    padding: 30px 24px;
+    border-radius: 20px;
+  }
+}
 </style>
