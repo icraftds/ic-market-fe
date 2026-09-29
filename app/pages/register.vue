@@ -7,6 +7,7 @@ definePageMeta({ layout: 'blank' })
 const form = reactive({
   name: '',
   email: '',
+  phone: '',
   password: '',
   confirmPassword: ''
 })
@@ -34,7 +35,7 @@ async function submitRegister() {
   success.value = false
   resendMessage.value = ''
 
-  if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+  if (!form.name || !form.email || !form.phone || !form.password || !form.confirmPassword) {
     error.value = 'Semua field wajib diisi.'
     return
   }
@@ -53,6 +54,7 @@ async function submitRegister() {
   const res = await register(
     form.name.trim(), 
     form.email.trim().toLowerCase(), 
+    form.phone.trim(),
     form.password, 
     form.confirmPassword
   )
@@ -186,6 +188,18 @@ function handleGoHome() {
                   type="email"
                   autocomplete="email"
                   placeholder="Masukkan alamat email"
+                />
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label>Nomor Telepon</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-phone input-icon"></i>
+                <input
+                  v-model="form.phone"
+                  type="tel"
+                  placeholder="08xxxxxxxxxx"
                 />
               </div>
             </div>

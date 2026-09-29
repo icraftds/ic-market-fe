@@ -8,6 +8,7 @@ const { session, syncSession } = useDemoAuth()
 const form = ref({
   name: '',
   email: '',
+  phone: '',
   role: '',
   coins: 0
 })
@@ -24,6 +25,7 @@ onMounted(() => {
   form.value = {
     name: session.value.name || '',
     email: session.value.email || '',
+    phone: session.value.phone || '',
     role: session.value.role || '',
     coins: session.value.coins || 0
   }
@@ -96,7 +98,13 @@ const saveProfile = async () => {
           <div class="form-group">
             <label>Email</label>
             <input v-model="form.email" type="email" disabled title="Email tidak dapat diubah" />
-            <span class="help-text">Email yang digunakan saat pendaftaran tidak dapat diubah.</span>
+            <span class="help-text">Email tidak dapat diubah.</span>
+          </div>
+
+          <div class="form-group">
+            <label>Nomor Telepon</label>
+            <input v-model="form.phone" type="tel" disabled title="Nomor telepon tidak dapat diubah" placeholder="Belum diatur" />
+            <span class="help-text">Nomor telepon tidak dapat diubah.</span>
           </div>
 
           <div class="form-group">
