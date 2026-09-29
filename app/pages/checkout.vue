@@ -16,6 +16,7 @@ const agreeTerms = ref(false)
 const checkoutCart = ref([])
 const checkoutGroups = ref([])
 const isSubmitting = ref(false)
+const isLoading = ref(true)
 const checkoutError = ref('')
 
 // ── Voucher ──────────────────────────────────────────────────────────────────
@@ -267,6 +268,7 @@ const placeOrder = async () => {
 }
 
 onMounted(async () => {
+  isLoading.value = true
   await syncSession()
 
   if (!session.value) {
@@ -284,6 +286,7 @@ onMounted(async () => {
   if (session.value) {
     buyerName.value = session.value.name || ''
     buyerEmail.value = session.value.email || ''
+    buyerPhone.value = session.value.phone || ''
   } else {
     const savedBuyer = readJson('icmarket_buyer', null)
     if (savedBuyer) {
@@ -305,15 +308,42 @@ onMounted(async () => {
   // Reset discount on fresh checkout
   localStorage.setItem('icmarket_discount', '0')
   updateTotals(null)
+  
+  isLoading.value = false
 })
 </script>
+
+<style scoped>
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 16px;
+}
+.icoinz-spin {
+  width: 48px;
+  height: 48px;
+  animation: spin 1s linear infinite;
+  filter: drop-shadow(0 0 10px rgba(var(--primary-rgb), 0.5));
+}
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+</style>
 
 <template>
   <div>
     <FlowHeader backLink="/cart" backText="Kembali ke Keranjang" />
     <ProgressSteps :activeStep="2" />
     
-    <div class="flow-body">
+    <div v-if="isLoading" class="loader-container">
+      <img src="/icoinz.svg" alt="Loading" class="icoinz-spin" />
+      <span style="color:var(--muted);font-weight:500;">Menyiapkan pesanan Anda...</span>
+    </div>
+
+    <div v-else class="flow-body">
       <!-- LEFT: Forms -->
       <div style="display:flex;flex-direction:column;gap:20px;">
         
@@ -325,17 +355,17 @@ onMounted(async () => {
           <div class="flow-box-body">
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Nama Lengkap <span class="req">*</span></label>
-                <input v-model="buyerName" class="form-input" type="text" placeholder="cth. Budi Santoso" autocomplete="name">
+                <label class="form-label">Nama Lengkap</label>
+                <input v-model="buyerName" class="form-input" type="text" placeholder="cth. Budi Santoso" autocomplete="name" disabled title="Berdasarkan data akun Anda">
               </div>
               <div class="form-group">
-                <label class="form-label">No. WhatsApp <span class="req">*</span></label>
-                <input v-model="buyerPhone" class="form-input" type="tel" placeholder="cth. 08123456789" autocomplete="tel">
+                <label class="form-label">No. WhatsApp</label>
+                <input v-model="buyerPhone" class="form-input" type="tel" placeholder="Belum diatur" autocomplete="tel" disabled title="Berdasarkan data akun Anda">
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Alamat Email <span class="req">*</span></label>
-              <input v-model="buyerEmail" class="form-input" type="email" placeholder="cth. budi@email.com" autocomplete="email">
+              <label class="form-label">Alamat Email</label>
+              <input v-model="buyerEmail" class="form-input" type="email" placeholder="cth. budi@email.com" autocomplete="email" disabled title="Berdasarkan data akun Anda">
               <span style="font-size:0.75rem;color:var(--muted);margin-top:3px;">
                 <i class="fa-solid fa-circle-info" style="color:var(--accent-2);"></i>
                 Link download produk akan dikirim ke email ini.
