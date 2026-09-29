@@ -41,6 +41,26 @@ import { computed } from 'vue'
 const subtotal = computed(() => props.overrideSubtotal >= 0 ? props.overrideSubtotal : localSubtotal.value)
 const discount = computed(() => props.overrideDiscount >= 0 ? props.overrideDiscount : localDiscount.value)
 const total = computed(() => props.overrideTotal >= 0 ? props.overrideTotal : localTotal.value)
+
+const resolveImage = (item) => {
+  if (item.img) return item.img
+  if (item.thumbnailUrl) return item.thumbnailUrl
+  
+  let imgs = item.images
+  if (typeof imgs === 'string') {
+    try {
+      imgs = JSON.parse(imgs)
+    } catch (e) {
+      imgs = []
+    }
+  }
+  
+  if (Array.isArray(imgs) && imgs.length > 0) {
+    return imgs[0]
+  }
+  
+  return '/logo-market.png'
+}
 </script>
 
 <template>
@@ -51,7 +71,7 @@ const total = computed(() => props.overrideTotal >= 0 ? props.overrideTotal : lo
     <div class="flow-box-body">
       <div v-if="props.showItems" style="display:flex;flex-direction:column;gap:8px;">
         <div v-for="item in cart" :key="item.id" style="display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
-          <img :src="item.img || item.thumbnailUrl || (Array.isArray(item.images) ? item.images[0] : item.images) || '/logo-market.png'" style="width:44px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;">
+          <img :src="resolveImage(item)" style="width:44px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;" :alt="item.name">
           <div style="flex:1;min-width:0;">
             <div style="font-size:0.83rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.name }}</div>
             <div style="font-size:0.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ item.category }}<span v-if="item.store || item.storeName"> · {{ item.store || item.storeName }}</span></div>
