@@ -41,12 +41,12 @@ const filteredHistories = computed(() => {
 })
 
 const amounts = [
-  { value: 20000, price: 20000, discount: '' },
-  { value: 50000, price: 45000, discount: 'Hemat Rp 5rb' },
-  { value: 100000, price: 90000, discount: 'Hemat Rp 10rb' },
-  { value: 250000, price: 215000, discount: 'Hemat Rp 35rb' },
-  { value: 500000, price: 400000, discount: 'Hemat Rp 100rb' },
-  { value: 1000000, price: 750000, discount: 'SUPER HEMAT 🔥' }
+  { value: 20000, price: 21000, discount: '' },
+  { value: 50000, price: 51000, discount: '' },
+  { value: 100000, price: 100000, discount: 'Bebas Admin' },
+  { value: 250000, price: 250000, discount: '+ Voucher 5%' },
+  { value: 500000, price: 500000, discount: '+ Voucher Rp 25rb' },
+  { value: 1000000, price: 1000000, discount: '+ Voucher Rp 75rb & Badge Sultan 🔥' }
 ]
 
 const selectedAmount = ref(amounts[0])
