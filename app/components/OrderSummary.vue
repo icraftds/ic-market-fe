@@ -25,7 +25,7 @@ const refresh = async () => {
   subtotal.value = newSubtotal
   
   discount.value = Number(localStorage.getItem('icmarket_discount')) || 0
-  total.value = subtotal.value - (subtotal.value * (discount.value / 100))
+  total.value = subtotal.value - discount.value
 }
 
 onMounted(() => {
