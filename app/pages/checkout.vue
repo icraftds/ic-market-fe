@@ -19,11 +19,12 @@ const isSubmitting = ref(false)
 const checkoutError = ref('')
 
 // ── Voucher ──────────────────────────────────────────────────────────────────
-const promoCode = ref('')
-const promoMsg = ref('')
-const promoSuccess = ref(false)
+const promoCode      = ref('')
+const promoMsg       = ref('')
+const promoSuccess   = ref(false)
 const appliedVoucher = ref(null)   // { code, type, amount }
 const orderSummaryRef = ref(null)
+const myVouchers     = ref([])     // user's available vouchers from API
 
 // ── Voucher helpers (localStorage no longer needed) ──────────────────────────
 
@@ -40,8 +41,10 @@ const applyPromo = async () => {
       0
     )
 
+    const token = useCookie('icmarket_auth_token').value
     const res = await $fetch(`${config.public.apiBase}/vouchers/validate`, {
       method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
       body: { code, subtotal }
     })
 
@@ -68,6 +71,29 @@ const removePromo = () => {
   promoSuccess.value = false
   appliedVoucher.value = null
   updateTotals(null)
+}
+
+// ── Voucher card helpers ───────────────────────────────────────────────────
+const useVoucherCard = (v) => {
+  promoCode.value = v.code
+  applyPromo()
+}
+
+const voucherLabel = (v) => {
+  if (v.type === 'percent') return `Diskon ${v.amount}%`
+  return `Diskon Rp ${Number(v.amount).toLocaleString('id-ID')}`
+}
+
+const voucherSubLabel = (v) => {
+  const parts = []
+  if (v.user_id) parts.push('Voucher Pribadi')
+  else parts.push('Voucher Publik')
+  if (v.max_usage) parts.push(`Sisa ${Math.max(0, v.max_usage - (v.used_count || 0))}x pakai`)
+  if (v.expires_at) {
+    const d = new Date(v.expires_at)
+    parts.push(`s/d ${d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}`)
+  }
+  return parts.join(' · ')
 }
 
 const updateTotals = (voucher) => {
@@ -259,6 +285,15 @@ onMounted(async () => {
     }
   }
 
+  // Load user's available vouchers
+  try {
+    const token = useCookie('icmarket_auth_token').value
+    const res = await $fetch(`${config.public.apiBase}/my-vouchers`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    myVouchers.value = res.data || []
+  } catch { myVouchers.value = [] }
+
   // Reset discount on fresh checkout
   localStorage.setItem('icmarket_discount', '0')
   updateTotals(null)
@@ -367,6 +402,25 @@ onMounted(async () => {
               <i class="fa-solid fa-circle-info"></i>
               Punya kode voucher? Masukkan di sini sebelum konfirmasi pesanan.
             </div>
+
+            <!-- Voucher Cards from API -->
+            <div v-if="!appliedVoucher && myVouchers.length > 0" class="my-voucher-list">
+              <div class="my-voucher-list-title"><i class="fa-solid fa-gift"></i> Voucher Tersedia Untukmu</div>
+              <div v-for="v in myVouchers" :key="v.id" class="voucher-card" @click="useVoucherCard(v)">
+                <div class="vc-left">
+                  <div class="vc-deco"></div>
+                  <div class="vc-body">
+                    <div class="vc-label">{{ voucherLabel(v) }}</div>
+                    <div class="vc-code">{{ v.code }}</div>
+                    <div class="vc-sub">{{ voucherSubLabel(v) }}</div>
+                  </div>
+                </div>
+                <div class="vc-right">
+                  <span v-if="v.user_id" class="vc-badge-private"><i class="fa-solid fa-lock"></i> Milikmu</span>
+                  <button class="vc-use-btn" @click.stop="useVoucherCard(v)">Pakai</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -456,4 +510,119 @@ onMounted(async () => {
   border-color: #ef4444;
   color: #ef4444;
 }
+
+/* ── My Voucher Cards ─────────────────────────────────────────────────────── */
+.my-voucher-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.my-voucher-list-title {
+  font-size: 0.78rem; font-weight: 700; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+  letter-spacing: 0.8px; display: flex; align-items: center; gap: 6px;
+  padding-bottom: 4px;
+}
+.my-voucher-list-title i { color: var(--accent-2); }
+
+.voucher-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--surface);
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.voucher-card:hover {
+  border-color: var(--accent-2);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.12);
+  transform: translateY(-1px);
+}
+
+.vc-left {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+}
+
+.vc-deco {
+  width: 5px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-2) 100%);
+  flex-shrink: 0;
+  border-radius: 0;
+}
+
+.vc-body {
+  padding: 14px 14px 14px 14px;
+  min-width: 0;
+}
+
+.vc-label {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
+
+.vc-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 14px 16px 14px 0;
+  flex-shrink: 0;
+}
+
+.vc-badge-private {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 700;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 99px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+.vc-use-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.vc-use-btn:hover { opacity: 0.88; transform: scale(1.03); }
 </style>
