@@ -29,10 +29,29 @@ const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart();
 
 const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80';
 
-const catalogImage = (product) =>
-    product?.thumbnailUrl ||
-    product?.images?.[0]?.imageUrl ||
-    FALLBACK_PRODUCT_IMAGE;
+const catalogImage = (product) => {
+    const imgs = catalogImages(product);
+    return imgs[0] || FALLBACK_PRODUCT_IMAGE;
+};
+
+const catalogImages = (product) => {
+    let imgs = [];
+    if (product?.images && Array.isArray(product.images)) {
+        imgs = product.images.map(img => typeof img === 'string' ? img : (img?.imageUrl || img));
+    } else if (typeof product?.images === 'string') {
+        try {
+            const parsed = JSON.parse(product.images);
+            imgs = parsed.map(img => typeof img === 'string' ? img : (img?.imageUrl || img));
+        } catch (e) {}
+    }
+    if (product?.thumbnailUrl && !imgs.includes(product.thumbnailUrl)) {
+        imgs.unshift(product.thumbnailUrl);
+    }
+    if (imgs.length === 0) {
+        imgs = [FALLBACK_PRODUCT_IMAGE];
+    }
+    return imgs;
+};
 
 const catalogTags = (product) => {
     if (Array.isArray(product?.tags) && product.tags.length) return product.tags;
@@ -65,6 +84,7 @@ const catalogRating = (product) => Number(product?.rating || 0);
 const catalogReviews = (product) => Number(product?.reviews || 0);
 
 const selectedProduct = ref(null);
+const activeImageIndex = ref(0);
 
 
 
@@ -139,6 +159,7 @@ const animateToCart = (btn) => {
 
 const openPreview = (product) => {
     selectedProduct.value = product;
+    activeImageIndex.value = 0;
     if (import.meta.client) {
         document.getElementById('preview-modal')?.showModal();
         document.body.style.overflow = 'hidden';
@@ -783,7 +804,16 @@ onMounted(async () => {
         <div class="modal-inner" v-if="selectedProduct">
             <!-- Gallery -->
             <div class="modal-gallery">
-                <img :src="catalogImage(selectedProduct)" :alt="selectedProduct.name" id="modal-img">
+                <div class="gallery-main">
+                    <img :src="catalogImages(selectedProduct)[activeImageIndex]" :alt="selectedProduct.name" id="modal-img">
+                </div>
+                <div class="gallery-thumbs" v-if="catalogImages(selectedProduct).length > 1">
+                    <button v-for="(img, idx) in catalogImages(selectedProduct)" :key="idx" 
+                            class="thumb-btn" :class="{ active: idx === activeImageIndex }" 
+                            @click="activeImageIndex = idx">
+                        <img :src="img" alt="Thumbnail">
+                    </button>
+                </div>
             </div>
             <!-- Detail -->
             <div class="modal-detail">
