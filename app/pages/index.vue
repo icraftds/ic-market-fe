@@ -75,8 +75,13 @@ const isInCart = (productId) => {
 
 const handleDirectBuy = async (product, e) => {
     if (product.price === 0) return;
+    useState('global_loader').value = true;
     const success = await apiAddToCart(product.id || product.catalogId, 1);
-    if (success) window.location.href = '/checkout';
+    if (success) {
+        useRouter().push('/checkout');
+    } else {
+        useState('global_loader').value = false;
+    }
 };
 
 const handleAddCart = async (product, e) => {

@@ -1,15 +1,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useState } from '#app'
 
-const isLoading = ref(false)
+const isLoading = useState('global_loader', () => false)
 const router = useRouter()
 
 router.beforeEach(async (to, from) => {
     if (to.path !== from.path) {
         isLoading.value = true
-        // Allow the loading screen to become fully visible before changing the route
-        await new Promise(resolve => setTimeout(resolve, 300))
     }
 })
 
@@ -80,7 +79,9 @@ router.afterEach(() => {
     100% { opacity: 1; }
 }
 
-.page-loader-enter-active,
+.page-loader-enter-active {
+    transition: opacity 0s;
+}
 .page-loader-leave-active {
     transition: opacity 0.3s ease;
 }
