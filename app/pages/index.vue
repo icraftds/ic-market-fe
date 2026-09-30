@@ -888,7 +888,7 @@ onMounted(async () => {
             <div class="modal-detail">
                 <div class="modal-detail-header">
                     <div class="modal-tags" id="modal-tags">
-                        <span class="card-badge premium" v-for="tag in catalogTags(selectedProduct)" :key="tag">{{ tag }}</span>
+                        <span class="modal-tag" v-for="tag in catalogTags(selectedProduct)" :key="tag">{{ tag }}</span>
                     </div>
                     <h2 class="modal-title" id="modal-title">{{ selectedProduct.name }}</h2>
                     <NuxtLink :to="'/store/' + selectedProduct.storeSlug" id="modal-seller-link" class="card-store" style="margin-top:0; margin-bottom:2px; width:max-content;">
