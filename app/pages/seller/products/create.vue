@@ -37,7 +37,8 @@ const createEmptyForm = () => ({
     license: 'Personal'
   },
   images: [],
-  digitalFiles: []
+  digitalFiles: [],
+  previewUrl: ''
 })
 
 const isEditing = computed(() => Boolean(route.query.id))
@@ -71,7 +72,8 @@ const normalizeProduct = (product) => {
       ...(product?.specifications || {})
     },
     images: Array.isArray(product?.images) ? product.images : [],
-    digitalFiles: Array.isArray(product?.digitalFiles) ? product.digitalFiles : []
+    digitalFiles: Array.isArray(product?.digitalFiles) ? product.digitalFiles : [],
+    previewUrl: product?.preview_url || product?.previewUrl || ''
   }
 }
 
@@ -132,7 +134,8 @@ const loadProduct = async () => {
               license: data.specifications?.license || 'Personal'
           },
           // digital_files dari backend → digitalFiles di form
-          digitalFiles: Array.isArray(data.digital_files) ? data.digital_files : []
+          digitalFiles: Array.isArray(data.digital_files) ? data.digital_files : [],
+          previewUrl: data.preview_url || ''
       }
       return
     }
@@ -416,7 +419,8 @@ const saveProduct = async () => {
       images: imageUrls,
       features: cleanedFeatures,
       specifications: cleanedSpecs,
-      digital_files: cleanedDigitalFiles
+      digital_files: cleanedDigitalFiles,
+      preview_url: form.value.previewUrl
     }
 
     if (isEditing.value) {
@@ -608,6 +612,19 @@ onMounted(initializePage)
               </button>
             </div>
           </div>
+        </div>
+
+        <div class="detail-subsection">
+          <div class="subsection-heading">
+            <div>
+              <h3>Demo / Preview URL</h3>
+              <p>Tambahkan tautan demo atau live preview (opsional).</p>
+            </div>
+          </div>
+          <label>
+            URL
+            <input v-model="form.previewUrl" placeholder="https://example.com/demo" />
+          </label>
         </div>
 
         <div class="detail-subsection">

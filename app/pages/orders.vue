@@ -162,6 +162,44 @@ const isDownloadable = (item) => {
   const files = item.product?.digital_files || item.digital_files || []
   return files.some(f => f.downloadUrl)
 }
+
+const showReviewModal = ref(false)
+const reviewForm = ref({
+  orderId: null,
+  productId: null,
+  rating: 5,
+  comment: ''
+})
+
+const openReviewModal = (orderId, item) => {
+  reviewForm.value = {
+    orderId: orderId,
+    productId: item.productId || item.product?.id || item.catalogId || item.id,
+    rating: 5,
+    comment: ''
+  }
+  showReviewModal.value = true
+}
+
+const submitReview = async () => {
+  try {
+    const config = useRuntimeConfig()
+    const token = useCookie('icmarket_auth_token').value
+    await $fetch(`${config.public.apiBase}/orders/${reviewForm.value.orderId}/reviews`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: {
+        product_id: reviewForm.value.productId,
+        rating: reviewForm.value.rating,
+        comment: reviewForm.value.comment
+      }
+    })
+    alert('Terima kasih! Ulasan berhasil disimpan.')
+    showReviewModal.value = false
+  } catch (err) {
+    alert(err.data?.message || 'Gagal menyimpan ulasan.')
+  }
+}
 </script>
 
 <template>
@@ -229,6 +267,14 @@ const isDownloadable = (item) => {
                   <i class="fa-solid" :class="isDownloadable(item) ? 'fa-download' : 'fa-clock'"></i>
                   {{ isDownloadable(item) ? 'Download' : 'Menunggu File' }}
                 </button>
+                <button
+                  v-if="['selesai','completed','paid','success'].includes(String(order.status).toLowerCase())"
+                  class="download-btn"
+                  style="background: #f59e0b; margin-left: 8px;"
+                  @click="openReviewModal(order.orderId, item)"
+                >
+                  <i class="fa-solid fa-star"></i> Beri Ulasan
+                </button>
               </div>
             </div>
           </div>
@@ -264,6 +310,29 @@ const isDownloadable = (item) => {
       <p>Produk yang Anda checkout akan muncul di halaman ini.</p>
       <NuxtLink to="/" class="primary-button">Mulai Belanja</NuxtLink>
     </section>
+
+    <!-- Review Modal -->
+    <div v-if="showReviewModal" class="welcome-overlay" style="display:flex; align-items:center; justify-content:center; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5);">
+      <div class="welcome-card" style="background:var(--surface); padding:24px; border-radius:12px; width:400px; max-width:90%;">
+        <h3 style="margin-bottom: 16px;">Beri Ulasan Produk</h3>
+        <div style="margin-bottom: 16px;">
+          <label style="display:block; margin-bottom:8px; font-weight:600;">Rating</label>
+          <div style="display:flex; gap:8px; font-size:1.5rem; color:#f59e0b; cursor:pointer;">
+            <i v-for="n in 5" :key="n" 
+               :class="n <= reviewForm.rating ? 'fa-solid fa-star' : 'fa-regular fa-star'" 
+               @click="reviewForm.rating = n"></i>
+          </div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="display:block; margin-bottom:8px; font-weight:600;">Komentar (Opsional)</label>
+          <textarea v-model="reviewForm.comment" rows="4" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--text);"></textarea>
+        </div>
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+          <button @click="showReviewModal = false" style="padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer;">Batal</button>
+          <button @click="submitReview" style="padding:8px 16px; border-radius:8px; border:none; background:var(--primary); color:#fff; cursor:pointer;">Kirim Ulasan</button>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
