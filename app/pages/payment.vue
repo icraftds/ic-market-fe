@@ -66,13 +66,23 @@ const completePayment = async () => {
   paymentError.value = ''
 
   try {
-    // Deduct coins via backend/syncSession
+    const config = useRuntimeConfig()
+    const token = useCookie('icmarket_auth_token').value
+
+    const response = await $fetch(`${config.public.apiBase}/orders/${orderId.value}/pay`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+    if (!response.success) {
+      throw new Error(response.message || 'Pembayaran gagal.')
+    }
+
     await syncSession()
-    await new Promise((resolve) => setTimeout(resolve, 900))
     await router.push('/success')
   } catch (error) {
     console.error('Gagal memproses pembayaran:', error)
-    paymentError.value = 'Pembayaran belum dapat dikonfirmasi. Silakan coba lagi.'
+    paymentError.value = error.message || 'Pembayaran belum dapat dikonfirmasi. Silakan coba lagi.'
   } finally {
     isVerifying.value = false
   }
@@ -81,13 +91,6 @@ const completePayment = async () => {
 const onMethodChange = () => {
   paymentError.value = ''
   ccProgress.value = 0
-  clearTimeout(autoPaymentTimer)
-  clearTimeout(autoRedirectTimer)
-
-  if (selectedMethod.value === 'coin') {
-    autoPaymentTimer = setTimeout(() => { ccProgress.value = 100 }, 100)
-    autoRedirectTimer = setTimeout(() => { completePayment() }, 3200)
-  }
 }
 
 onMounted(async () => {
@@ -109,10 +112,6 @@ onMounted(async () => {
 
   uniqueSuffix.value  = Math.floor(Math.random() * 900) + 100
   transferTotal.value = total.value + uniqueSuffix.value
-
-  // Auto-pay if coin selected by default
-  autoPaymentTimer = setTimeout(() => { ccProgress.value = 100 }, 100)
-  autoRedirectTimer = setTimeout(() => { completePayment() }, 3200)
 
   let seconds = 24 * 60 - 1
   timerInterval = setInterval(() => {
@@ -203,29 +202,27 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Progress bar -->
-            <div v-if="coinSufficient" class="auto-confirm">
-              <div class="spin-ring"></div>
-              <div class="auto-confirm-title">Memotong Saldo iCoin-Z…</div>
-              <div class="auto-confirm-sub">Halaman akan otomatis berlanjut setelah berhasil.</div>
-              <div style="width:100%;height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
-                <div :style="{ width: ccProgress + '%' }" style="height:100%;background:var(--accent-2);border-radius:99px;transition:width 3s linear;"></div>
-              </div>
+            <!-- Manual confirm button -->
+            <div v-if="coinSufficient" style="margin-top: 16px;">
+              <button class="flow-cta" :disabled="isVerifying" @click="completePayment">
+                <span v-if="isVerifying">Memproses Pembayaran…</span>
+                <span v-else>Bayar Sekarang <i class="fa-solid fa-arrow-right"></i></span>
+              </button>
             </div>
+
+            <div v-if="paymentError" class="flow-alert warn" style="margin-top: 12px;">
+              <i class="fa-solid fa-triangle-exclamation"></i> {{ paymentError }}
+            </div>
+
+            <!-- Manual confirm button only shown if insufficient -->
+            <div v-if="selectedMethod === 'coin' && !coinSufficient" style="margin-top: 16px;">
+              <button class="flow-cta" disabled style="opacity:0.4;cursor:not-allowed;">
+                <i class="fa-solid fa-lock"></i> Saldo Tidak Mencukupi
+              </button>
+            </div>
+
           </div>
         </div>
-
-        <div v-if="paymentError" class="flow-alert warn">
-          <i class="fa-solid fa-triangle-exclamation"></i> {{ paymentError }}
-        </div>
-
-        <!-- Manual confirm button only shown if insufficient -->
-        <div v-if="selectedMethod === 'coin' && !coinSufficient">
-          <button class="flow-cta" disabled style="opacity:0.4;cursor:not-allowed;">
-            <i class="fa-solid fa-lock"></i> Saldo Tidak Mencukupi
-          </button>
-        </div>
-
       </div>
 
       <!-- RIGHT: Summary -->
