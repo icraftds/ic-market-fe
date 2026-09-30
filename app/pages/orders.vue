@@ -163,6 +163,13 @@ const isDownloadable = (item) => {
   return files.some(f => f.downloadUrl)
 }
 
+const hasReviewed = (order, item) => {
+  if (!order.reviews) return false;
+  let pid = item.product_id || item.productId || item.product?.id || item.id;
+  if (typeof pid === 'string' && pid.startsWith('api:')) pid = pid.split(':')[1];
+  return order.reviews.some(r => String(r.product_id) === String(pid));
+}
+
 const showReviewModal = ref(false)
 const reviewForm = ref({
   orderId: null,
@@ -199,6 +206,7 @@ const submitReview = async () => {
     })
     alert('Terima kasih! Ulasan berhasil disimpan.')
     showReviewModal.value = false
+    await fetchOrders() // Refresh orders to get the new reviews state
   } catch (err) {
     alert(err.data?.message || 'Gagal menyimpan ulasan.')
   }
@@ -273,10 +281,11 @@ const submitReview = async () => {
                 <button
                   v-if="['selesai','completed','paid','success'].includes(String(order.status).toLowerCase())"
                   class="download-btn"
-                  style="background: #f59e0b; margin-left: 8px;"
-                  @click="openReviewModal(order.id || order.orderId, item)"
+                  :style="{ background: hasReviewed(order, item) ? '#d1d5db' : '#f59e0b', color: hasReviewed(order, item) ? '#6b7280' : '#fff', cursor: hasReviewed(order, item) ? 'not-allowed' : 'pointer', marginLeft: '8px' }"
+                  :disabled="hasReviewed(order, item)"
+                  @click="!hasReviewed(order, item) && openReviewModal(order.id || order.orderId, item)"
                 >
-                  <i class="fa-solid fa-star"></i> Beri Ulasan
+                  <i class="fa-solid fa-star"></i> {{ hasReviewed(order, item) ? 'Sudah Diulas' : 'Beri Ulasan' }}
                 </button>
               </div>
             </div>
@@ -331,8 +340,8 @@ const submitReview = async () => {
           <textarea v-model="reviewForm.comment" rows="4" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--text);"></textarea>
         </div>
         <div style="display:flex; gap:12px; justify-content:flex-end;">
-          <button @click="showReviewModal = false" style="padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer;">Batal</button>
-          <button @click="submitReview" style="padding:8px 16px; border-radius:8px; border:none; background:var(--primary); color:#fff; cursor:pointer;">Kirim Ulasan</button>
+          <button @click="showReviewModal = false" style="padding:10px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; font-weight:600;">Batal</button>
+          <button @click="submitReview" style="padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-weight:600;">Kirim Ulasan</button>
         </div>
       </div>
     </div>
