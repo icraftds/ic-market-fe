@@ -223,7 +223,8 @@ const placeOrder = async () => {
       headers: { Authorization: `Bearer ${token}` },
       body: {
         items,
-        payment_method: 'icmarket_coins'
+        payment_method: 'icmarket_coins',
+        voucher_code: appliedVoucher.value ? appliedVoucher.value.code : null
       }
     })
 
@@ -240,17 +241,6 @@ const placeOrder = async () => {
 
     localStorage.removeItem('icmarket_cart')
     localStorage.removeItem('icmarket_checkout_groups')
-
-    // Increment voucher usage via API
-    if (appliedVoucher.value) {
-      try {
-        await $fetch(`${config.public.apiBase}/vouchers/use`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: { code: appliedVoucher.value.code }
-        })
-      } catch (e) { /* non-critical */ }
-    }
 
     await syncSession()
 
