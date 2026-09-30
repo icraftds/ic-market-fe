@@ -184,10 +184,9 @@ const handleModalClick = (e) => {
     }
 };
 
+let isDragging = false;
 let touchStartY = 0;
 let touchCurrentY = 0;
-
-let isDragging = false;
 
 const handleDragStart = (y) => {
     isDragging = true;
@@ -195,6 +194,10 @@ const handleDragStart = (y) => {
     touchCurrentY = y;
     const modal = document.getElementById('preview-modal');
     if (modal) modal.style.transition = 'none';
+    
+    // Attach global events for mouse dragging
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
 };
 
 const handleDragMove = (y) => {
@@ -211,6 +214,11 @@ const handleDragMove = (y) => {
 const handleDragEnd = () => {
     if (!isDragging) return;
     isDragging = false;
+    
+    // Detach global events
+    window.removeEventListener('mousemove', handleGlobalMouseMove);
+    window.removeEventListener('mouseup', handleGlobalMouseUp);
+
     const modal = document.getElementById('preview-modal');
     if (!modal) return;
     modal.style.transition = '';
@@ -228,9 +236,8 @@ const handleTouchMove = (e) => handleDragMove(e.touches[0].clientY);
 const handleTouchEnd = (e) => handleDragEnd();
 
 const handleMouseDown = (e) => handleDragStart(e.clientY);
-const handleMouseMove = (e) => handleDragMove(e.clientY);
-const handleMouseUp = (e) => handleDragEnd();
-const handleMouseLeave = (e) => handleDragEnd();
+const handleGlobalMouseMove = (e) => handleDragMove(e.clientY);
+const handleGlobalMouseUp = (e) => handleDragEnd();
 
 
 
@@ -860,7 +867,7 @@ onMounted(async () => {
         </button>
         <div class="modal-drag-bar" 
              @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd"
-             @mousedown="handleMouseDown" @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseLeave">
+             @mousedown.prevent="handleMouseDown">
             <div class="drag-handle"></div>
         </div>
         <div class="modal-inner" v-if="selectedProduct">
