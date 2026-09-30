@@ -193,7 +193,7 @@ onUnmounted(() => {
               </div>
               <div v-if="coinSufficient" class="flow-alert success" style="margin-top:12px;">
                 <i class="fa-solid fa-circle-check"></i>
-                Saldo mencukupi. Pembayaran sedang diproses otomatis…
+                Saldo mencukupi. Silakan klik tombol <strong>Bayar Sekarang</strong> di bawah untuk mengonfirmasi.
               </div>
               <div v-else class="flow-alert warn" style="margin-top:12px;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
