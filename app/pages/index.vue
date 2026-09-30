@@ -970,7 +970,7 @@ onMounted(async () => {
                 <div v-if="selectedProduct && selectedProduct.reviews && selectedProduct.reviews.length" class="modal-reviews" style="padding: 0 24px 24px;">
                     <h3 style="font-size: 1rem; margin-bottom: 12px;">Ulasan Pembeli</h3>
                     <div class="review-scroll" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; scroll-snap-type: x mandatory;">
-                        <div v-for="review in selectedProduct.reviews" :key="review.id" style="flex: 0 0 280px; scroll-snap-align: start; background: var(--subtle); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                        <div v-for="review in selectedProduct.reviews" :key="review.id" style="flex: 0 0 280px; scroll-snap-align: start; background: var(--subtle); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);">
                             <div style="display: flex; gap: 4px; color: #f59e0b; font-size: 0.8rem; margin-bottom: 8px;">
                                 <i v-for="n in 5" :key="n" :class="n <= review.rating ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
                             </div>
