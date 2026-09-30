@@ -219,7 +219,10 @@ onBeforeUnmount(() => {
                       <i class="fa-solid fa-clipboard-check"></i><span>Onboarding</span>
                     </NuxtLink>
                     <NuxtLink to="/admin/stores" class="dd-item" @click="isMenuOpen = false">
-                      <i class="fa-solid fa-store"></i><span>Toko Admin</span>
+                      <i class="fa-solid fa-store"></i><span>Toko</span>
+                    </NuxtLink>
+                    <NuxtLink to="/admin/products" class="dd-item" @click="isMenuOpen = false">
+                      <i class="fa-solid fa-box"></i><span>Produk</span>
                     </NuxtLink>
                     <NuxtLink to="/admin/orders" class="dd-item" @click="isMenuOpen = false">
                       <i class="fa-solid fa-receipt"></i><span>Pesanan</span>
@@ -283,6 +286,7 @@ onBeforeUnmount(() => {
           <span class="nb-sep">|</span>
           <NuxtLink to="/admin/onboardings" class="nb-link">Onboarding</NuxtLink>
           <NuxtLink to="/admin/stores" class="nb-link">Toko</NuxtLink>
+          <NuxtLink to="/admin/products" class="nb-link">Produk</NuxtLink>
           <NuxtLink to="/admin/orders" class="nb-link">Pesanan</NuxtLink>
           <NuxtLink to="/admin/vouchers" class="nb-link">Voucher</NuxtLink>
           <NuxtLink to="/admin/settings" class="nb-link">Settings</NuxtLink>

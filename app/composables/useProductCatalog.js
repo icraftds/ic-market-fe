@@ -401,7 +401,7 @@ export const useProductCatalog = () => {
         if (!import.meta.client) return []
         try {
             const config = useRuntimeConfig()
-            const response = await $fetch(`${config.public.apiBase}/products?limit=3&sort=rating`)
+            const response = await $fetch(`${config.public.apiBase}/products?limit=3&is_hot=true`)
             if (response.success) {
                 hotProducts.value = response.data.map(p => {
                     let rawImages = []

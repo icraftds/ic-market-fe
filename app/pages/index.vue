@@ -168,10 +168,53 @@ const openPreview = (product) => {
 
 const closePreview = () => {
     if (import.meta.client) {
-        document.getElementById('preview-modal')?.close();
+        const modal = document.getElementById('preview-modal');
+        if (modal) {
+            modal.style.transform = '';
+            modal.close();
+        }
         document.body.style.overflow = '';
     }
     setTimeout(() => { selectedProduct.value = null; }, 300);
+};
+
+const handleModalClick = (e) => {
+    if (e.target.id === 'preview-modal') {
+        closePreview();
+    }
+};
+
+let touchStartY = 0;
+let touchCurrentY = 0;
+
+const handleTouchStart = (e) => {
+    touchStartY = e.touches[0].clientY;
+    touchCurrentY = touchStartY;
+    const modal = document.getElementById('preview-modal');
+    if (modal) modal.style.transition = 'none';
+};
+
+const handleTouchMove = (e) => {
+    const modal = document.getElementById('preview-modal');
+    if (!modal) return;
+    touchCurrentY = e.touches[0].clientY;
+    const diff = touchCurrentY - touchStartY;
+    if (diff > 0) {
+        modal.style.transform = `translateY(${diff}px)`;
+    }
+};
+
+const handleTouchEnd = (e) => {
+    const modal = document.getElementById('preview-modal');
+    if (!modal) return;
+    modal.style.transition = '';
+    const diff = touchCurrentY - touchStartY;
+    if (diff > 100) {
+        modal.style.transform = '';
+        closePreview();
+    } else {
+        modal.style.transform = 'translateY(0)';
+    }
 };
 
 
@@ -796,11 +839,13 @@ onMounted(async () => {
     </div>
 
         <!-- ======= PREVIEW MODAL ======= -->
-    <dialog id="preview-modal" class="preview-modal">
+    <dialog id="preview-modal" class="preview-modal" @click="handleModalClick">
         <button class="modal-close-btn" id="close-preview" aria-label="Tutup" @click="closePreview">
             <i class="fa-solid fa-xmark"></i>
         </button>
-        <div class="modal-drag-bar"><div class="drag-handle"></div></div>
+        <div class="modal-drag-bar" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
+            <div class="drag-handle"></div>
+        </div>
         <div class="modal-inner" v-if="selectedProduct">
             <!-- Gallery -->
             <div class="modal-gallery">
