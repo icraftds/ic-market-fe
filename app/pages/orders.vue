@@ -172,9 +172,12 @@ const reviewForm = ref({
 })
 
 const openReviewModal = (orderId, item) => {
+  let pid = item.product_id || item.productId || item.product?.id || item.id;
+  if (typeof pid === 'string' && pid.startsWith('api:')) pid = pid.split(':')[1];
+  
   reviewForm.value = {
     orderId: orderId,
-    productId: item.productId || item.product?.id || item.catalogId || item.id,
+    productId: pid,
     rating: 5,
     comment: ''
   }
@@ -271,7 +274,7 @@ const submitReview = async () => {
                   v-if="['selesai','completed','paid','success'].includes(String(order.status).toLowerCase())"
                   class="download-btn"
                   style="background: #f59e0b; margin-left: 8px;"
-                  @click="openReviewModal(order.orderId, item)"
+                  @click="openReviewModal(order.id || order.orderId, item)"
                 >
                   <i class="fa-solid fa-star"></i> Beri Ulasan
                 </button>

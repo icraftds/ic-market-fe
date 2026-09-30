@@ -81,7 +81,7 @@ const catalogSpecifications = (product) => ({
 });
 
 const catalogRating = (product) => Number(product?.rating || 0);
-const catalogReviews = (product) => Number(product?.reviews || 0);
+const catalogReviews = (product) => Number(product?.review_count || 0);
 
 const selectedProduct = ref(null);
 const activeImageIndex = ref(0);
@@ -187,24 +187,30 @@ const handleModalClick = (e) => {
 let touchStartY = 0;
 let touchCurrentY = 0;
 
-const handleTouchStart = (e) => {
-    touchStartY = e.touches[0].clientY;
-    touchCurrentY = touchStartY;
+let isDragging = false;
+
+const handleDragStart = (y) => {
+    isDragging = true;
+    touchStartY = y;
+    touchCurrentY = y;
     const modal = document.getElementById('preview-modal');
     if (modal) modal.style.transition = 'none';
 };
 
-const handleTouchMove = (e) => {
+const handleDragMove = (y) => {
+    if (!isDragging) return;
     const modal = document.getElementById('preview-modal');
     if (!modal) return;
-    touchCurrentY = e.touches[0].clientY;
+    touchCurrentY = y;
     const diff = touchCurrentY - touchStartY;
     if (diff > 0) {
         modal.style.transform = `translateY(${diff}px)`;
     }
 };
 
-const handleTouchEnd = (e) => {
+const handleDragEnd = () => {
+    if (!isDragging) return;
+    isDragging = false;
     const modal = document.getElementById('preview-modal');
     if (!modal) return;
     modal.style.transition = '';
@@ -216,6 +222,15 @@ const handleTouchEnd = (e) => {
         modal.style.transform = 'translateY(0)';
     }
 };
+
+const handleTouchStart = (e) => handleDragStart(e.touches[0].clientY);
+const handleTouchMove = (e) => handleDragMove(e.touches[0].clientY);
+const handleTouchEnd = (e) => handleDragEnd();
+
+const handleMouseDown = (e) => handleDragStart(e.clientY);
+const handleMouseMove = (e) => handleDragMove(e.clientY);
+const handleMouseUp = (e) => handleDragEnd();
+const handleMouseLeave = (e) => handleDragEnd();
 
 
 
@@ -843,7 +858,9 @@ onMounted(async () => {
         <button class="modal-close-btn" id="close-preview" aria-label="Tutup" @click="closePreview">
             <i class="fa-solid fa-xmark"></i>
         </button>
-        <div class="modal-drag-bar" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
+        <div class="modal-drag-bar" 
+             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd"
+             @mousedown="handleMouseDown" @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseLeave">
             <div class="drag-handle"></div>
         </div>
         <div class="modal-inner" v-if="selectedProduct">

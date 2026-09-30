@@ -1115,6 +1115,7 @@ a { text-decoration: none; color: inherit; }
     flex-shrink: 0;
     z-index: 10;
     cursor: grab;
+    touch-action: none;
 }
 .drag-handle {
     width: 40px; height: 4px;
@@ -1604,10 +1605,12 @@ a { text-decoration: none; color: inherit; }
     .product-grid.list-view .product-card { flex-direction: column; }
     .product-grid.list-view .card-thumb { width: 100%; aspect-ratio: 4/3; height: auto; }
 
-    .modal-inner { flex-direction: column; overflow-y: auto; overflow-x: clip; }
+    .modal-inner { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
     .modal-gallery { width: 100%; height: auto; flex-shrink: 0; padding: 24px 20px 0; border-right: none; border-bottom: 1px solid var(--border); }
     .modal-detail { overflow-y: visible; }
-    .modal-detail-header { padding: 32px 20px 20px; }
+    .modal-detail-header { padding: 12px 20px 20px; }
+    .modal-tags { margin-top: 12px; }
+    .modal-close-btn { top: 12px; right: 12px; z-index: 50; }
     .modal-detail-body { padding: 20px; }
     .modal-cta { padding: 0 20px 24px; }
     .site-footer { grid-template-columns: 1fr 1fr; gap: 28px; }
