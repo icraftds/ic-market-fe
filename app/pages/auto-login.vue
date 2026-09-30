@@ -18,40 +18,43 @@ onMounted(async () => {
 
     if (!token) {
         errorMsg.value = 'Token tidak ditemukan.'
-        setTimeout(() => {
-            router.push('/login')
-        }, 2000)
+        setTimeout(() => router.push('/login'), 2000)
         return
     }
 
-    // Set the token to cookie
-    sessionCookie.value = token
-
-    // Fetch user profile to sync session
     try {
-        const user = await syncSession()
-        if (user) {
-            // Check role and redirect
-            if (user.role === 'seller') {
-                router.push('/seller/dashboard')
-            } else if (user.role === 'admin') {
-                router.push('/admin/stores')
+        const config = useRuntimeConfig()
+        // Exchange SSO token for local IC Market token
+        const res = await $fetch(`${config.public.apiBase}/sso/sync`, {
+            method: 'POST',
+            body: { token }
+        })
+
+        if (res.success && res.data?.token) {
+            // Set the LOCAL token to cookie
+            sessionCookie.value = res.data.token
+
+            // Fetch user profile to sync session state in frontend
+            const user = await syncSession()
+            if (user) {
+                // Check role and redirect
+                if (user.role === 'seller') {
+                    router.push('/seller/dashboard')
+                } else if (user.role === 'admin') {
+                    router.push('/admin/stores')
+                } else {
+                    router.push('/')
+                }
             } else {
-                router.push('/')
+                throw new Error('Gagal memuat profil pengguna.')
             }
         } else {
-            errorMsg.value = 'Token tidak valid atau sesi telah berakhir.'
-            sessionCookie.value = null
-            setTimeout(() => {
-                router.push('/login')
-            }, 2000)
+            throw new Error('Gagal sinkronisasi token SSO.')
         }
     } catch (error) {
-        errorMsg.value = 'Terjadi kesalahan saat memverifikasi token.'
+        errorMsg.value = error.message || 'Terjadi kesalahan saat memverifikasi token.'
         sessionCookie.value = null
-        setTimeout(() => {
-            router.push('/login')
-        }, 2000)
+        setTimeout(() => router.push('/login'), 2000)
     }
 })
 </script>
