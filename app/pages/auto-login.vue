@@ -33,6 +33,10 @@ onMounted(async () => {
         if (res.success && res.data?.token) {
             // Set the LOCAL token to cookie
             sessionCookie.value = res.data.token
+            
+            // Simpan juga token aslinya dari AuthSSO untuk dipakai menyeberang ke aplikasi lain (seperti Gamez)
+            const ssoTokenCookie = useCookie('auth_sso_token', { sameSite: 'lax', default: () => null })
+            ssoTokenCookie.value = token
 
             // Fetch user profile to sync session state in frontend
             const user = await syncSession()
