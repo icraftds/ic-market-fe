@@ -171,6 +171,7 @@ const hasReviewed = (order, item) => {
 }
 
 const showReviewModal = ref(false)
+const isSubmitting = ref(false)
 const reviewForm = ref({
   orderId: null,
   productId: null,
@@ -192,6 +193,8 @@ const openReviewModal = (orderId, item) => {
 }
 
 const submitReview = async () => {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
   try {
     const config = useRuntimeConfig()
     const token = useCookie('icmarket_auth_token').value
@@ -209,6 +212,8 @@ const submitReview = async () => {
     await fetchOrders() // Refresh orders to get the new reviews state
   } catch (err) {
     alert(err.data?.message || 'Gagal menyimpan ulasan.')
+  } finally {
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -340,8 +345,8 @@ const submitReview = async () => {
           <textarea v-model="reviewForm.comment" rows="4" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--text);"></textarea>
         </div>
         <div style="display:flex; gap:12px; justify-content:flex-end;">
-          <button @click="showReviewModal = false" style="padding:10px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; font-weight:600;">Batal</button>
-          <button @click="submitReview" style="padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-weight:600;">Kirim Ulasan</button>
+          <button @click="showReviewModal = false" :disabled="isSubmitting" style="padding:10px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; font-weight:600;">Batal</button>
+          <button @click="submitReview" :disabled="isSubmitting" :style="{ padding:'10px 16px', borderRadius:'8px', border:'none', background: isSubmitting ? '#9ca3af' : 'var(--accent)', color:'#fff', cursor: isSubmitting ? 'not-allowed' : 'pointer', fontWeight:'600' }">{{ isSubmitting ? 'Mengirim...' : 'Kirim Ulasan' }}</button>
         </div>
       </div>
     </div>

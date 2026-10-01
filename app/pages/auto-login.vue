@@ -55,6 +55,7 @@ onMounted(async () => {
         } else {
             throw new Error('Gagal sinkronisasi token SSO.')
         }
+
     } catch (error) {
         errorMsg.value = error.message || 'Terjadi kesalahan saat memverifikasi token.'
         sessionCookie.value = null
