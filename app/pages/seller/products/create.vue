@@ -38,7 +38,8 @@ const createEmptyForm = () => ({
   },
   images: [],
   digitalFiles: [],
-  previewUrl: ''
+  previewUrl: '',
+  tagsInput: ''
 })
 
 const isEditing = computed(() => Boolean(route.query.id))
@@ -73,7 +74,8 @@ const normalizeProduct = (product) => {
     },
     images: Array.isArray(product?.images) ? product.images : [],
     digitalFiles: Array.isArray(product?.digitalFiles) ? product.digitalFiles : [],
-    previewUrl: product?.preview_url || product?.previewUrl || ''
+    previewUrl: product?.preview_url || product?.previewUrl || '',
+    tagsInput: Array.isArray(product?.tags) ? product.tags.join(', ') : ''
   }
 }
 
@@ -135,7 +137,8 @@ const loadProduct = async () => {
           },
           // digital_files dari backend → digitalFiles di form
           digitalFiles: Array.isArray(data.digital_files) ? data.digital_files : [],
-          previewUrl: data.preview_url || ''
+          previewUrl: data.preview_url || '',
+          tagsInput: Array.isArray(data.tags) ? data.tags.join(', ') : ''
       }
       return
     }
@@ -409,6 +412,10 @@ const saveProduct = async () => {
       downloadUrl: f.downloadUrl || ''
     }))
 
+    const cleanedTags = form.value.tagsInput.split(',')
+      .map(t => t.trim())
+      .filter(Boolean)
+
     const payload = {
       name: form.value.name.trim(),
       category: form.value.category,
@@ -420,7 +427,8 @@ const saveProduct = async () => {
       features: cleanedFeatures,
       specifications: cleanedSpecs,
       digital_files: cleanedDigitalFiles,
-      preview_url: form.value.previewUrl
+      preview_url: form.value.previewUrl,
+      tags: cleanedTags
     }
 
     if (isEditing.value) {
@@ -556,6 +564,12 @@ onMounted(initializePage)
             <option value="published">Dipublikasikan</option>
             <option value="inactive">Nonaktif</option>
           </select>
+        </label>
+
+        <label>
+          Tag (Opsional)
+          <input v-model="form.tagsInput" placeholder="Contoh: Digital, HTML, CSS" />
+          <small class="helper-text">Pisahkan dengan koma jika lebih dari satu.</small>
         </label>
 
         <label>
@@ -901,7 +915,12 @@ onMounted(initializePage)
   font-size: 11px;
   font-weight: 900;
 }
-
+.helper-text {
+  font-size: 0.85rem;
+  color: var(--muted, #64748b);
+  display: block;
+  margin-top: 4px;
+}
 .product-form label {
   display: grid;
   gap: 8px;
