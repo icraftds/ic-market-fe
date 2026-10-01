@@ -209,7 +209,7 @@ const submitReview = async () => {
     })
     alert('Terima kasih! Ulasan berhasil disimpan.')
     showReviewModal.value = false
-    await fetchOrders() // Refresh orders to get the new reviews state
+    await loadOrders() // Refresh orders to get the new reviews state
   } catch (err) {
     alert(err.data?.message || 'Gagal menyimpan ulasan.')
   } finally {
