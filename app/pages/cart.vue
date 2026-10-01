@@ -28,6 +28,15 @@ const normalizeCartItem = (item = {}) => {
   const storeSlug = slugAliases[rawStoreSlug] || rawStoreSlug
   const productId = item.productId || item.id || ''
   const catalogId = item.catalogId || `${storeSlug}:${productId}`
+  let imgUrl = item.img || item.thumbnailUrl || '';
+  if (!imgUrl && item.images) {
+    try {
+      const imgs = typeof item.images === 'string' ? JSON.parse(item.images) : item.images;
+      if (Array.isArray(imgs) && imgs.length > 0) imgUrl = imgs[0];
+    } catch (e) {
+      console.error('Failed to parse images', e);
+    }
+  }
 
   return {
     ...item,
@@ -47,7 +56,7 @@ const normalizeCartItem = (item = {}) => {
     storeId: item.storeId || '',
     storeApplicationId: item.storeApplicationId || '',
     tenantSchema: item.tenantSchema || '',
-    img: item.img || item.thumbnailUrl || '',
+    img: imgUrl,
     isFree: Boolean(item.isFree) || Number(item.price || 0) === 0
   }
 }
