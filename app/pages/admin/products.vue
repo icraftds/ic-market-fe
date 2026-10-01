@@ -77,6 +77,8 @@ onMounted(() => {
           <th>Kategori</th>
           <th>Penjual</th>
           <th>Harga</th>
+          <th>Dilihat</th>
+          <th>Keranjang</th>
           <th>Hot Product</th>
           <th>Aksi</th>
         </tr>
@@ -87,6 +89,8 @@ onMounted(() => {
           <td>{{ product.category }}</td>
           <td>{{ product.seller?.name || '-' }}</td>
           <td>Rp {{ Number(product.price).toLocaleString('id-ID') }}</td>
+          <td>{{ product.views || 0 }} x</td>
+          <td>{{ product.carts || 0 }} x</td>
           <td>
             <span class="badge" :class="product.is_hot ? 'active' : 'pending'">{{ product.is_hot ? 'Ya (Hot)' : 'Bukan' }}</span>
           </td>

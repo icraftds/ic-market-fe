@@ -163,6 +163,12 @@ const openPreview = (product) => {
     if (import.meta.client) {
         document.getElementById('preview-modal')?.showModal();
         document.body.style.overflow = 'hidden';
+        
+        // Record view asynchronously
+        const config = useRuntimeConfig();
+        $fetch(`${config.public.apiBase}/products/${product.id}/view`, {
+            method: 'POST'
+        }).catch(err => console.error('Failed to record view:', err));
     }
 };
 

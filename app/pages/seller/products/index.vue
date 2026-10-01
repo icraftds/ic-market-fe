@@ -130,6 +130,8 @@ onMounted(() => {
               <th>Kategori</th>
               <th>Harga</th>
               <th>Stok</th>
+              <th>Dilihat</th>
+              <th>Keranjang</th>
               <th>Status</th>
               <th>Aksi</th>
             </tr>
@@ -149,6 +151,8 @@ onMounted(() => {
               <td>{{ product.category }}</td>
               <td>{{ formatPrice(product.price) }}</td>
               <td>{{ product.stock }}</td>
+              <td>{{ product.views || 0 }} x</td>
+              <td>{{ product.carts || 0 }} x</td>
               <td>
                 <span class="status-badge" :class="product.status">
                   {{ product.status === 'published' ? 'Dipublikasikan' : 'Nonaktif' }}
