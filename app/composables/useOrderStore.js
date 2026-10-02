@@ -52,7 +52,7 @@ export const useOrderStore = () => {
                 'unpaid'
             ].includes(value)
         ) {
-            return 'pending_payment'
+            return 'pending'
         }
 
         if (
@@ -92,11 +92,11 @@ export const useOrderStore = () => {
             return 'cancelled'
         }
 
-        return value || 'pending_payment'
+        return value || 'pending'
     }
 
     const statusLabel = (status) => ({
-        pending_payment: 'Menunggu Pembayaran',
+        pending: 'Menunggu Pembayaran',
         paid: 'Sudah Dibayar',
         processing: 'Diproses',
         completed: 'Selesai',
@@ -797,7 +797,7 @@ export const useOrderStore = () => {
                         sellerNet,
 
                         status:
-                            'pending_payment',
+                            'pending',
 
                         paymentStatus:
                             'pending',
@@ -862,7 +862,7 @@ export const useOrderStore = () => {
             },
 
             status:
-                'pending_payment',
+                'pending',
 
             paymentStatus:
                 'pending',
@@ -1233,7 +1233,7 @@ export const useOrderStore = () => {
 
                             status:
                                 raw.status ===
-                                    'pending_payment'
+                                    'pending'
                                     ? 'paid'
                                     : raw.status,
 

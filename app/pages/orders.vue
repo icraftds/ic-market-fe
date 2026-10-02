@@ -40,6 +40,7 @@ const statusClass = (status) => {
   if (value === 'processing') return 'processing'
   if (['paid', 'lunas'].includes(value)) return 'paid'
   if (value === 'cancelled') return 'cancelled'
+  if (value === 'pending') return 'pending'
   return 'pending'
 }
 
@@ -49,6 +50,7 @@ const statusText = (status) => {
   if (value === 'processing') return 'Diproses'
   if (['paid', 'lunas'].includes(value)) return 'Dibayar'
   if (value === 'cancelled') return 'Dibatalkan'
+  if (value === 'pending') return 'Menunggu Pembayaran'
   return 'Menunggu'
 }
 
@@ -127,6 +129,11 @@ const loadOrders = async () => {
 
 const continuePayment = async (order) => {
   setCurrentOrder(order.orderId)
+  if (import.meta.client) {
+    localStorage.setItem('icmarket_subtotal', order.totals?.total || 0)
+    localStorage.setItem('icmarket_discount', 0)
+    localStorage.setItem('icmarket_item_count', order.items?.length || 0)
+  }
   await navigateTo('/payment')
 }
 
@@ -233,7 +240,7 @@ const submitReview = async () => {
       <input v-model="search" type="search" placeholder="Cari Order ID, produk, atau toko...">
       <select v-model="statusFilter">
         <option value="all">Semua Status</option>
-        <option value="pending_payment">Menunggu Pembayaran</option>
+        <option value="pending">Menunggu Pembayaran</option>
         <option value="paid">Sudah Dibayar</option>
         <option value="processing">Diproses</option>
         <option value="completed">Selesai</option>
@@ -304,7 +311,7 @@ const submitReview = async () => {
           </div>
 
           <button
-            v-if="order.status === 'pending_payment'"
+            v-if="order.status === 'pending'"
             class="primary-button"
             type="button"
             @click="continuePayment(order)"

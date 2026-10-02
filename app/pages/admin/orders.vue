@@ -12,7 +12,7 @@ const statusFilter = ref('all')
 
 const statusLabel = (status) => {
   const labels = {
-    pending_payment: 'Menunggu Pembayaran',
+    pending: 'Menunggu Pembayaran',
     paid: 'Sudah Dibayar',
     processing: 'Diproses',
     completed: 'Selesai',
@@ -136,7 +136,7 @@ onBeforeUnmount(() => {
       <input v-model="search" type="search" placeholder="Cari order, buyer, toko, schema, atau produk...">
       <select v-model="statusFilter">
         <option value="all">Semua Status</option>
-        <option value="pending_payment">Menunggu Pembayaran</option>
+        <option value="pending">Menunggu Pembayaran</option>
         <option value="paid">Sudah Dibayar</option>
         <option value="processing">Diproses</option>
         <option value="completed">Selesai</option>
