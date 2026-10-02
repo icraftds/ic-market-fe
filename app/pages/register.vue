@@ -236,7 +236,9 @@ function handleGoHome() {
 
             <button class="primary-btn" type="submit" :disabled="isSubmitting">
               <span v-if="!isSubmitting">Daftar Sekarang</span>
-              <span v-else class="loader-spinner"></span>
+              <span v-else class="btn-icoinz-loader">
+                <img src="/icoinz.svg" alt="Loading" class="btn-icoinz-spin" />
+              </span>
             </button>
           </form>
         </Transition>
@@ -476,12 +478,25 @@ function handleGoHome() {
 }
 
 .loader-spinner {
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255,255,255,0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
+  display: none;
+}
+
+.btn-icoinz-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icoinz-spin {
+  width: 24px;
+  height: 24px;
+  animation: icoinzBtnFlip 1s linear infinite;
+  filter: brightness(0) invert(1);
+}
+
+@keyframes icoinzBtnFlip {
+  0%   { transform: perspective(200px) rotateY(0deg); }
+  100% { transform: perspective(200px) rotateY(360deg); }
 }
 
 @keyframes spin {

@@ -382,16 +382,10 @@ onMounted(async () => {
             <div class="hero-card-stack" id="hero-card-stack">
 
                 <template v-if="isLoading">
-                    <article v-for="i in 3" :key="i"
-                        class="stack-card product-card skeleton-card"
-                        :class="[`stack-card--${4 - i}`, i === 1 ? 'stack-active' : '']">
-                        <div class="card-thumb skeleton-box" style="height: 120px;"></div>
-                        <div class="card-body">
-                            <div class="skeleton-box skeleton-text small" style="width: 40%; margin-bottom: 8px;"></div>
-                            <div class="skeleton-box skeleton-text medium" style="width: 70%; margin-bottom: 8px;"></div>
-                            <div class="skeleton-box skeleton-text large" style="width: 90%; margin-bottom: 16px;"></div>
-                        </div>
-                    </article>
+                    <div class="icoinz-loader-wrap">
+                        <img src="/icoinz.svg" alt="Loading" class="icoinz-spin" />
+                        <span class="icoinz-loader-text">Memuat Produk...</span>
+                    </div>
                 </template>
 
                 <template v-else>
@@ -527,16 +521,10 @@ onMounted(async () => {
             <div class="product-grid" id="product-grid">
                 
                 <template v-if="isLoading">
-                    <!-- Skeleton Cards -->
-                    <article v-for="i in 6" :key="i" class="product-card skeleton-card">
-                        <div class="card-thumb skeleton-box" style="height: 180px;"></div>
-                        <div class="card-body">
-                            <div class="skeleton-box skeleton-text small" style="width: 40%; margin-bottom: 8px;"></div>
-                            <div class="skeleton-box skeleton-text medium" style="width: 70%; margin-bottom: 8px;"></div>
-                            <div class="skeleton-box skeleton-text large" style="width: 90%; margin-bottom: 16px;"></div>
-                            <div class="skeleton-box skeleton-btn" style="height: 38px; border-radius: 8px;"></div>
-                        </div>
-                    </article>
+                    <div class="icoinz-loader-wrap grid-loader">
+                        <img src="/icoinz.svg" alt="Loading" class="icoinz-spin" />
+                        <span class="icoinz-loader-text">Memuat Katalog...</span>
+                    </div>
                 </template>
 
                 <template v-else>
@@ -626,6 +614,14 @@ onMounted(async () => {
                 </template>
 
             </div><!-- /product-grid -->
+
+            <!-- Load More Trigger + Spinner -->
+            <div ref="loadMoreTrigger" style="height: 1px;"></div>
+            <div v-if="isLoadingMore" class="icoinz-loader-wrap" style="padding: 24px;">
+                <img src="/icoinz.svg" alt="Loading" class="icoinz-spin" style="width:40px;height:40px;" />
+                <span class="icoinz-loader-text" style="font-size:0.85rem;">Memuat lebih banyak...</span>
+            </div>
+
         </main>
 
     </div><!-- /main-layout -->
@@ -1090,6 +1086,43 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* ===== iCoinz Loader ===== */
+.icoinz-loader-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 48px 24px;
+    width: 100%;
+}
+.icoinz-loader-wrap.grid-loader {
+    grid-column: 1 / -1;
+    min-height: 300px;
+}
+.icoinz-spin {
+    width: 64px;
+    height: 64px;
+    animation: icoinzFlip 1.2s linear infinite;
+    filter: drop-shadow(0 0 12px rgba(20, 114, 255, 0.5));
+}
+.icoinz-loader-text {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+    animation: icoinzPulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes icoinzFlip {
+    0%   { transform: perspective(400px) rotateY(0deg); }
+    100% { transform: perspective(400px) rotateY(360deg); }
+}
+@keyframes icoinzPulse {
+    from { opacity: 0.5; }
+    to   { opacity: 1; }
+}
+
 /* Welcome Popup */
 .welcome-overlay {
     position: fixed;
