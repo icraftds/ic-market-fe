@@ -1082,13 +1082,12 @@ a { text-decoration: none; color: inherit; }
     margin: auto auto 0 auto;
     background: var(--surface);
     overflow: hidden;
-    display: flex;
     flex-direction: column;
     transform: translateY(100%);
     opacity: 0;
-    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.55s ease;
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.55s ease, display 0.55s allow-discrete, overlay 0.55s allow-discrete;
 }
-.preview-modal[open] { transform: translateY(0); opacity: 1; }
+.preview-modal[open] { display: flex; transform: translateY(0); opacity: 1; }
 .preview-modal.closing { transform: translateY(100%); opacity: 0; }
 @starting-style {
     .preview-modal[open] { transform: translateY(100%); opacity: 0; }
@@ -1096,7 +1095,7 @@ a { text-decoration: none; color: inherit; }
 .preview-modal::backdrop {
     background: rgba(0,0,0,0);
     backdrop-filter: blur(0px);
-    transition: all 0.55s ease;
+    transition: all 0.55s ease, display 0.55s allow-discrete, overlay 0.55s allow-discrete;
 }
 .preview-modal[open]::backdrop {
     background: rgba(0,0,0,0.35);
@@ -1425,9 +1424,21 @@ a { text-decoration: none; color: inherit; }
     background: var(--surface);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
-    transition: opacity 0.3s ease;
+    opacity: 0;
+    transition: opacity 0.3s ease, display 0.3s allow-discrete, overlay 0.3s allow-discrete;
 }
-.checkout-modal::backdrop { background: rgba(0,0,0,0.3); backdrop-filter: blur(6px); }
+.checkout-modal[open] {
+    display: block;
+    opacity: 1;
+}
+@starting-style {
+    .checkout-modal[open] { opacity: 0; }
+}
+.checkout-modal::backdrop { background: rgba(0,0,0,0); backdrop-filter: blur(0px); transition: all 0.3s ease, display 0.3s allow-discrete, overlay 0.3s allow-discrete; }
+.checkout-modal[open]::backdrop { background: rgba(0,0,0,0.3); backdrop-filter: blur(6px); }
+@starting-style {
+    .checkout-modal[open]::backdrop { background: rgba(0,0,0,0); backdrop-filter: blur(0px); }
+}
 
 .checkout-content { padding: 32px; display: flex; flex-direction: column; gap: 24px; }
 .checkout-close {
