@@ -383,8 +383,7 @@ onMounted(async () => {
 
                 <template v-if="isLoading">
                     <div class="icoinz-loader-wrap">
-                        <img src="/icoinz.svg" alt="Loading" class="icoinz-spin" />
-                        <span class="icoinz-loader-text">Memuat Produk...</span>
+                        <IcoinzLoader text="Memuat Produk..." size="md" />
                     </div>
                 </template>
 
@@ -522,8 +521,7 @@ onMounted(async () => {
                 
                 <template v-if="isLoading">
                     <div class="icoinz-loader-wrap grid-loader">
-                        <img src="/icoinz.svg" alt="Loading" class="icoinz-spin" />
-                        <span class="icoinz-loader-text">Memuat Katalog...</span>
+                        <IcoinzLoader text="Memuat Katalog..." size="lg" />
                     </div>
                 </template>
 
@@ -618,8 +616,7 @@ onMounted(async () => {
             <!-- Load More Trigger + Spinner -->
             <div ref="loadMoreTrigger" style="height: 1px;"></div>
             <div v-if="isLoadingMore" class="icoinz-loader-wrap" style="padding: 24px;">
-                <img src="/icoinz.svg" alt="Loading" class="icoinz-spin" style="width:40px;height:40px;" />
-                <span class="icoinz-loader-text" style="font-size:0.85rem;">Memuat lebih banyak...</span>
+                <IcoinzLoader text="Memuat lebih banyak..." size="sm" />
             </div>
 
         </main>

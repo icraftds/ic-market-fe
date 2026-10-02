@@ -349,9 +349,7 @@ function cancelOtp() {
 
             <button class="primary-btn" type="submit" :disabled="isSubmitting">
               <span v-if="!isSubmitting">Masuk Sekarang</span>
-              <span v-else class="btn-icoinz-loader">
-                <img src="/icoinz.svg" alt="Loading" class="btn-icoinz-spin" />
-              </span>
+              <IcoinzLoader v-else size="sm" :text="''" />
             </button>
           </form>
         </Transition>
@@ -600,32 +598,6 @@ function cancelOtp() {
 .primary-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-}
-
-.loader-spinner {
-  display: none;
-}
-
-.btn-icoinz-loader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-icoinz-spin {
-  width: 24px;
-  height: 24px;
-  animation: icoinzBtnFlip 1s linear infinite;
-  filter: brightness(0) invert(1);
-}
-
-@keyframes icoinzBtnFlip {
-  0%   { transform: perspective(200px) rotateY(0deg); }
-  100% { transform: perspective(200px) rotateY(360deg); }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 .switch-text {

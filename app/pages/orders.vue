@@ -316,9 +316,7 @@ const submitReview = async () => {
     </section>
 
     <section v-else-if="dataLoading" class="empty-state" style="padding: 100px 20px;">
-      <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent); font-size: 40px; margin-bottom: 16px;"></i>
-      <h2 style="margin-bottom: 8px;">Memuat data pesanan...</h2>
-      <p>Mohon tunggu sebentar.</p>
+      <IcoinzLoader text="Memuat data pesanan..." size="lg" />
     </section>
 
     <section v-else class="empty-state">

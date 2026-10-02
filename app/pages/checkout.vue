@@ -311,16 +311,6 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   min-height: 50vh;
-  gap: 16px;
-}
-.icoinz-spin {
-  width: 48px;
-  height: 48px;
-  animation: spin 1s linear infinite;
-  filter: drop-shadow(0 0 10px rgba(var(--primary-rgb), 0.5));
-}
-@keyframes spin {
-  100% { transform: rotate(360deg); }
 }
 </style>
 
@@ -330,8 +320,7 @@ onMounted(async () => {
     <ProgressSteps :activeStep="2" />
     
     <div v-if="isLoading" class="loader-container">
-      <img src="/icoinz.svg" alt="Loading" class="icoinz-spin" />
-      <span style="color:var(--muted);font-weight:500;">Menyiapkan pesanan Anda...</span>
+      <IcoinzLoader text="Menyiapkan pesanan Anda..." size="md" />
     </div>
 
     <div v-else class="flow-body">

@@ -181,9 +181,7 @@ onMounted(async () => {
           <div class="flow-box-body">
             
             <div v-if="dataLoading" class="empty-cart" style="padding: 60px 20px;">
-              <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent); font-size: 32px; margin-bottom: 12px;"></i>
-              <div class="empty-cart-title">Memuat keranjang...</div>
-              <div class="empty-cart-sub">Mohon tunggu sebentar.</div>
+              <IcoinzLoader text="Memuat keranjang..." size="md" />
             </div>
 
             <div v-else-if="cart.length === 0" class="empty-cart">
@@ -207,8 +205,8 @@ onMounted(async () => {
                   </span>
                 </div>
                 <div v-for="item in group.items" :key="item.id" class="cart-item" style="position: relative;">
-                  <div v-if="removingIndex === item.cartIndex" style="position:absolute; inset:0; background:rgba(20,25,40,0.8); display:flex; align-items:center; justify-content:center; z-index:10; border-radius:12px; gap:8px; color:#ef4444; font-weight:600; backdrop-filter:blur(2px);">
-                    <i class="fa-solid fa-circle-notch fa-spin"></i> Sedang menghapus...
+                  <div v-if="removingIndex === item.cartIndex" style="position:absolute; inset:0; background:rgba(20,25,40,0.8); display:flex; align-items:center; justify-content:center; z-index:10; border-radius:12px; gap:8px; backdrop-filter:blur(2px);">
+                    <IcoinzLoader text="Menghapus..." size="sm" />
                   </div>
                   <img class="cart-item-thumb" :src="item.img" :alt="item.name">
                   <div class="cart-item-info">
