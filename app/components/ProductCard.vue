@@ -106,8 +106,11 @@ const handlePreview = () => {
           <template v-if="product.price === 0">
             <i class="fa-solid fa-download"></i> Download
           </template>
+          <template v-else-if="isInCart(product.id || product.catalogId || product.productId)">
+            <i class="fa-solid fa-check"></i>
+          </template>
           <template v-else>
-            <i class="fa-solid fa-cart-plus"></i> <span v-if="isInCart(product.id || product.catalogId || product.productId)">Di Keranjang</span><span v-else>Keranjang</span>
+            <i class="fa-solid fa-cart-plus"></i>
           </template>
         </button>
       </div>
