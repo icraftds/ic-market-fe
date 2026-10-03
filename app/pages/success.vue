@@ -214,30 +214,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- What's next -->
-        <div class="next-steps">
-          <div class="next-step-item">
-            <div class="next-step-num">1</div>
-            <div class="next-step-text">
-              <div class="next-step-title">Cek Email Anda</div>
-              <div class="next-step-desc">Email konfirmasi beserta link download dikirim ke alamat email yang Anda daftarkan. Cek folder Spam jika tidak ada di Inbox.</div>
-            </div>
-          </div>
-          <div class="next-step-item">
-            <div class="next-step-num">2</div>
-            <div class="next-step-text">
-              <div class="next-step-title">Akses Produk / Pantau Pesanan</div>
-              <div class="next-step-desc">Produk digital dapat diakses setelah pembayaran. Untuk produk fisik, pantau proses seller melalui Riwayat Pesanan.</div>
-            </div>
-          </div>
-          <div class="next-step-item">
-            <div class="next-step-num">3</div>
-            <div class="next-step-text">
-              <div class="next-step-title">Butuh Bantuan?</div>
-              <div class="next-step-desc">Tim support kami siap membantu selama 30 hari setelah pembelian. Hubungi kami via WhatsApp atau email support@icmarket.id.</div>
-            </div>
-          </div>
-        </div>
+
 
         <!-- Actions -->
         <div class="success-actions" style="margin-top:32px;">
