@@ -23,6 +23,8 @@ const loadMoreTrigger = ref(null);
 const showWelcome = ref(false);
 const welcomeUser = ref('');
 const welcomeType = ref('login');
+const featuredReviews = ref([]);
+
 
 
 const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart();
@@ -314,6 +316,18 @@ const applyRouteQuery = async () => {
 watch(() => route.query, () => {
     applyRouteQuery();
 });
+
+const fetchFeaturedReviews = async () => {
+    try {
+        const config = useRuntimeConfig();
+        const res = await $fetch(`${config.public.apiBase}/reviews/featured`);
+        if (res.success) {
+            featuredReviews.value = res.data;
+        }
+    } catch (e) {
+        console.error('Failed to fetch reviews', e);
+    }
+};
 
 onMounted(async () => {
     if (import.meta.client && sessionStorage.getItem('icmarket_show_welcome')) {

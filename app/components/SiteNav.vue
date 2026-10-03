@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-const { session, syncSession, logout } = useDemoAuth()
+const { session, syncSession, logout, isSultan } = useDemoAuth()
 
 const role = computed(() => session.value?.role || null)
 const isLoggedIn = computed(() => Boolean(session.value))
@@ -177,23 +177,27 @@ onBeforeUnmount(() => {
 
             <!-- User -->
             <div class="nav-user-wrap" ref="dropdownRef">
-              <button class="nav-user-btn" @click="isMenuOpen = !isMenuOpen" aria-label="Menu akun">
+              <button class="nav-user-btn" :class="{ 'is-sultan': isSultan }" @click="isMenuOpen = !isMenuOpen" aria-label="Menu akun">
                 <div class="nav-avatar">
                   {{ session.name ? session.name.charAt(0).toUpperCase() : 'U' }}
                 </div>
                 <div class="nav-user-info">
                   <span class="nav-user-name">{{ session.name ? session.name.split(' ')[0] : 'Akun' }}</span>
-                  <span class="nav-user-sub">{{ roleLabel }}</span>
+                  <span v-if="isSultan" class="sultan-badge"><i class="fa-solid fa-crown" style="font-size: 10px;"></i> Sultan</span>
+                  <span v-else class="nav-user-sub">{{ roleLabel }}</span>
                 </div>
                 <i class="fa-solid fa-chevron-down nav-caret" :class="{ rotated: isMenuOpen }"></i>
               </button>
 
               <!-- Dropdown -->
               <div v-if="isMenuOpen" class="nav-dropdown">
-                <div class="nav-dropdown-header">
+                <div class="nav-dropdown-header" :class="{ 'is-sultan-bg': isSultan }">
                   <div class="nav-dd-avatar">{{ session.name ? session.name.charAt(0).toUpperCase() : 'U' }}</div>
                   <div>
-                    <div class="nav-dd-name">{{ session.name }}</div>
+                    <div class="nav-dd-name" style="display: flex; align-items: center; gap: 8px;">
+                      {{ session.name }}
+                      <span v-if="isSultan" class="sultan-badge"><i class="fa-solid fa-crown" style="font-size: 10px;"></i> Sultan</span>
+                    </div>
                     <div class="nav-dd-email">{{ session.email || roleLabel }}</div>
                   </div>
                 </div>
@@ -684,6 +688,37 @@ onBeforeUnmount(() => {
 .nav-user-btn:hover {
   background: #f5f5f7;
   border-color: #e8e8e8;
+}
+
+.nav-user-btn.is-sultan {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.2) 100%);
+  border-color: #f59e0b;
+}
+.nav-user-btn.is-sultan .nav-avatar {
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.sultan-badge {
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+  color: #78350f;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.nav-dropdown-header.is-sultan-bg {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.15) 100%);
+  border-bottom: 1px solid #fcd34d;
+}
+.nav-dropdown-header.is-sultan-bg .nav-dd-avatar {
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  color: #fff;
 }
 .nav-avatar {
   width: 34px; height: 34px;

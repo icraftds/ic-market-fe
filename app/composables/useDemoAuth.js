@@ -152,11 +152,14 @@ export const useDemoAuth = () => {
             window.dispatchEvent(
                 new CustomEvent('icmarket-auth-updated')
             )
-        }
-    }
+    const isSultan = computed(() => {
+        if (!session.value || !session.value.sultan_expires_at) return false
+        return new Date(session.value.sultan_expires_at) > new Date()
+    })
 
     return {
         session,
+        isSultan,
         syncSession,
         register,
         verifyOtp,
