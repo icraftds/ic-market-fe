@@ -13,6 +13,7 @@ const buyerEmail = ref('')
 const cart = ref([])
 const method = ref('bank_transfer')
 const paymentStatus = ref('paid')
+const isLoading = ref(true)
 
 const rated = ref(false)
 const litStars = ref(0)
@@ -110,6 +111,8 @@ onMounted(async () => {
     }
   } catch (err) {
     console.error('Gagal fetch order details', err)
+  } finally {
+    isLoading.value = false
   }
 
   const savedRating = Number(localStorage.getItem(`icmarket_rating_${tId}`) || 0)
@@ -184,17 +187,32 @@ onMounted(async () => {
 
         <!-- Purchased Items -->
         <div class="purchased-items">
-          <div v-for="(item, idx) in cart" :key="idx" class="purchased-item">
-            <img class="purchased-thumb" :src="item.img" :alt="item.name">
-            <div class="purchased-info">
-              <div class="purchased-name">{{ item.name }}</div>
-              <div class="purchased-cat">{{ item.category }}</div>
+          <template v-if="isLoading">
+            <div class="purchased-item" style="opacity: 0.7; pointer-events: none;">
+              <div class="purchased-thumb skeleton-box"></div>
+              <div class="purchased-info">
+                <div class="skeleton-box" style="height: 14px; width: 60%; margin-bottom: 6px;"></div>
+                <div class="skeleton-box" style="height: 10px; width: 40%;"></div>
+              </div>
+              <div class="skeleton-box" style="height: 32px; width: 90px; border-radius: 8px;"></div>
             </div>
-            <button class="download-btn-small" :class="{ paid: !canDownload(item), downloaded: item.downloaded }" @click="downloadItem(item)" :disabled="!canDownload(item)">
-              <i class="fa-solid" :class="item.downloaded ? 'fa-circle-check' : (canDownload(item) ? 'fa-download' : 'fa-clock')"></i>
-              {{ item.downloaded ? 'Selesai' : (canDownload(item) ? 'Download' : 'Menunggu') }}
-            </button>
-          </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.85rem; color: var(--muted); font-weight: 600;">
+              <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 4px;"></i> Memuat produk..
+            </div>
+          </template>
+          <template v-else>
+            <div v-for="(item, idx) in cart" :key="idx" class="purchased-item">
+              <img class="purchased-thumb" :src="item.img" :alt="item.name">
+              <div class="purchased-info">
+                <div class="purchased-name">{{ item.name }}</div>
+                <div class="purchased-cat">{{ item.category }}</div>
+              </div>
+              <button class="download-btn-small" :class="{ paid: !canDownload(item), downloaded: item.downloaded }" @click="downloadItem(item)" :disabled="!canDownload(item)">
+                <i class="fa-solid" :class="item.downloaded ? 'fa-circle-check' : (canDownload(item) ? 'fa-download' : 'fa-clock')"></i>
+                {{ item.downloaded ? 'Selesai' : (canDownload(item) ? 'Download' : 'Menunggu') }}
+              </button>
+            </div>
+          </template>
         </div>
 
         <!-- Rating Prompt -->
