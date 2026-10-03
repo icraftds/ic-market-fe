@@ -397,9 +397,20 @@ onMounted(async () => {
             <div class="hero-card-stack" id="hero-card-stack">
 
                 <template v-if="isLoading">
-                    <div class="icoinz-loader-wrap">
-                        <IcoinzLoader text="Memuat Produk..." size="md" />
-                    </div>
+                    <article class="stack-card product-card stack-active" style="pointer-events: none; opacity: 0.8; height: 420px; display: flex; flex-direction: column;">
+                        <div class="card-thumb skeleton-box" style="flex: 1; border-radius: 0;"></div>
+                        <div class="card-body">
+                            <div class="skeleton-box" style="height: 14px; width: 40%; margin-bottom: 8px;"></div>
+                            <div class="skeleton-box" style="height: 18px; width: 70%; margin-bottom: 12px;"></div>
+                            <div class="card-footer" style="border: none; padding-top: 0; margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
+                                <div class="skeleton-box" style="height: 24px; width: 40%;"></div>
+                                <div class="skeleton-box" style="height: 16px; width: 25%;"></div>
+                            </div>
+                            <div style="text-align: center; padding-top: 12px; font-size: 0.85rem; font-weight: 600; color: var(--muted); border-top: 1px solid var(--border); margin-top: 12px;">
+                                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 4px;"></i> Memuat produk..
+                            </div>
+                        </div>
+                    </article>
                 </template>
 
                 <template v-else>
