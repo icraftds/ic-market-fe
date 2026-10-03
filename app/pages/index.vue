@@ -555,31 +555,33 @@ onMounted(async () => {
 
     <!-- ======= REVIEWS CAROUSEL ======= -->
     <section class="reviews-section">
-        <div class="section-label">Ulasan Pembeli</div>
-        <div class="section-title">Apa Kata Mereka</div>
-        
-        <div v-if="featuredReviews.length === 0" style="text-align: center; padding: 40px; color: var(--muted);">
-            <i class="fa-regular fa-comment-dots" style="font-size: 2rem; margin-bottom: 12px; color: #cbd5e1;"></i>
-            <p>Data belum tersedia.</p>
-        </div>
-        
-        <div v-else class="reviews-track-wrap">
-            <div class="reviews-track" id="reviews-track">
-                <div v-for="review in featuredReviews" :key="review.id" class="review-card">
-                    <div class="review-stars">
-                        <i v-for="i in 5" :key="i" class="fa-solid fa-star" :style="{ color: i <= review.rating ? '#f59e0b' : '#e5e7eb' }"></i>
-                    </div>
-                    <p class="review-text">"{{ review.comment }}"</p>
-                    <div class="review-author" :class="{ 'is-sultan-author': review.is_sultan }">
-                        <div class="author-avatar" :style="{ background: review.is_sultan ? 'linear-gradient(135deg, #fcd34d, #f59e0b)' : 'linear-gradient(135deg, #1472FF, #00f0ff)' }">
-                            {{ review.user_name.charAt(0).toUpperCase() }}
+        <div class="reviews-inner">
+            <div class="section-label">Ulasan Pembeli</div>
+            <div class="section-title">Apa Kata Mereka</div>
+            
+            <div v-if="featuredReviews.length === 0" style="text-align: center; padding: 40px; color: var(--muted);">
+                <i class="fa-regular fa-comment-dots" style="font-size: 2rem; margin-bottom: 12px; color: #cbd5e1;"></i>
+                <p>Data belum tersedia.</p>
+            </div>
+            
+            <div v-else class="reviews-track-wrap">
+                <div class="reviews-track" id="reviews-track">
+                    <div v-for="review in featuredReviews" :key="review.id" class="review-card">
+                        <div class="review-stars">
+                            <i v-for="i in 5" :key="i" class="fa-solid fa-star" :style="{ color: i <= review.rating ? '#f59e0b' : '#e5e7eb' }"></i>
                         </div>
-                        <div>
-                            <div class="author-name">
-                                {{ review.user_name }}
-                                <span v-if="review.is_sultan" class="sultan-badge"><i class="fa-solid fa-crown" style="font-size: 10px;"></i> Sultan</span>
+                        <p class="review-text">"{{ review.comment }}"</p>
+                        <div class="review-author" :class="{ 'is-sultan-author': review.is_sultan }">
+                            <div class="author-avatar" :style="{ background: review.is_sultan ? 'linear-gradient(135deg, #fcd34d, #f59e0b)' : 'linear-gradient(135deg, #1472FF, #00f0ff)' }">
+                                {{ review.user_name.charAt(0).toUpperCase() }}
                             </div>
-                            <div class="author-role">{{ review.product_name }}</div>
+                            <div>
+                                <div class="author-name">
+                                    {{ review.user_name }}
+                                    <span v-if="review.is_sultan" class="sultan-badge"><i class="fa-solid fa-crown" style="font-size: 10px;"></i> Sultan</span>
+                                </div>
+                                <div class="author-role">{{ review.product_name }}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -589,41 +591,45 @@ onMounted(async () => {
 
     <!-- ======= FOOTER ======= -->
     <footer class="site-footer">
-        <div class="footer-brand">
-            <span class="logo"><span>IC</span> Market</span>
-            <p class="footer-tagline">Platform aset digital premium untuk developer dan desainer Indonesia.</p>
-        </div>
-        <div>
-            <div class="footer-col-title">Produk</div>
-            <ul class="footer-links">
-                <li><a href="#">Web Template</a></li>
-                <li><a href="#">UI Kit</a></li>
-                <li><a href="#">Source Code</a></li>
-                <li><a href="#">Gratis</a></li>
-            </ul>
-        </div>
-        <div>
-            <div class="footer-col-title">Bantuan</div>
-            <ul class="footer-links">
-                <li><a href="#">FAQ</a></li>
-                <li><a href="#">Panduan Pembelian</a></li>
-                <li><a href="#">Kebijakan Layanan</a></li>
-                <li><a href="#">Hubungi Kami</a></li>
-            </ul>
-        </div>
-        <div>
-            <div class="footer-col-title">Lainnya</div>
-            <ul class="footer-links">
-                <li><a href="/">iCraft Studio</a></li>
-                <li><a href="#">Tentang Kami</a></li>
-                <li><a href="#">Jadi Seller</a></li>
-                <li><a href="#">Blog</a></li>
-            </ul>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="logo"><span>IC</span> Market</span>
+                <p class="footer-tagline">Platform aset digital premium untuk developer dan desainer Indonesia.</p>
+            </div>
+            <div>
+                <div class="footer-col-title">Produk</div>
+                <ul class="footer-links">
+                    <li><a href="#">Web Template</a></li>
+                    <li><a href="#">UI Kit</a></li>
+                    <li><a href="#">Source Code</a></li>
+                    <li><a href="#">Gratis</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="footer-col-title">Bantuan</div>
+                <ul class="footer-links">
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Panduan Pembelian</a></li>
+                    <li><a href="#">Kebijakan Layanan</a></li>
+                    <li><a href="#">Hubungi Kami</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="footer-col-title">Lainnya</div>
+                <ul class="footer-links">
+                    <li><a href="/">iCraft Studio</a></li>
+                    <li><a href="#">Tentang Kami</a></li>
+                    <li><a href="#">Jadi Seller</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </div>
         </div>
     </footer>
     <div class="footer-bottom">
-        <span class="footer-bottom-text">© 2026 IC Market · iCraft Studio. All rights reserved.</span>
-        <span class="footer-bottom-text">Made with ♥ in Indonesia</span>
+        <div class="footer-bottom-inner">
+            <span class="footer-bottom-text">© 2026 IC Market · iCraft Studio. All rights reserved.</span>
+            <span class="footer-bottom-text">Made with ♥ in Indonesia</span>
+        </div>
     </div>
 
         <!-- ======= PREVIEW MODAL ======= -->

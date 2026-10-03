@@ -822,9 +822,14 @@ a { text-decoration: none; color: inherit; }
     background: var(--surface);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    padding: 56px 32px;
+    padding: 56px 0;
     margin-top: 48px;
     overflow: hidden;
+}
+.reviews-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 28px;
 }
 
 .section-label {
@@ -1383,11 +1388,16 @@ a { text-decoration: none; color: inherit; }
    ======================== */
 .site-footer {
     border-top: 1px solid var(--border);
-    padding: 48px 32px;
+    padding: 48px 0;
+    background: var(--surface);
+}
+.footer-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 28px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 40px;
-    background: var(--surface);
 }
 .footer-brand .logo { font-size: 1.4rem; margin-bottom: 10px; display: block; }
 .footer-tagline { font-size: 0.85rem; color: var(--muted); line-height: 1.6; max-width: 200px; }
@@ -1408,11 +1418,16 @@ a { text-decoration: none; color: inherit; }
 
 .footer-bottom {
     border-top: 1px solid var(--border);
-    padding: 20px 32px;
+    padding: 20px 0;
+    background: var(--surface);
+}
+.footer-bottom-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--surface);
 }
 .footer-bottom-text {
     font-family: 'JetBrains Mono', monospace;
@@ -1457,7 +1472,7 @@ a { text-decoration: none; color: inherit; }
     .modal-close-btn { top: 12px; right: 12px; z-index: 50; }
     .modal-detail-body { padding: 20px; }
     .modal-cta { padding: 0 20px 24px; }
-    .site-footer { grid-template-columns: 1fr 1fr; gap: 28px; }
+    .footer-inner { grid-template-columns: 1fr 1fr; gap: 28px; }
     .footer-brand { grid-column: 1 / -1; }
 }
 
