@@ -8,6 +8,11 @@ const { session, syncSession } = useDemoAuth()
 const isProcessing = ref(false)
 const successMsg = ref('')
 const showTnC = ref(false)
+const showQrisModal = ref(false)
+const showSuccessModal = ref(false)
+const qrisUrl = ref('')
+const topupAmount = ref(0)
+const pollingInterval = ref(null)
 
 const paymentMethods = [
   { id: 'qris', name: 'QRIS (Otomatis)', sub: 'GoPay, OVO, DANA, LinkAja, ShopeePay', icon: 'fa-solid fa-qrcode' }
@@ -54,6 +59,16 @@ onMounted(() => {
   if (!session.value) {
     router.push('/login')
   }
+
+  // Restore pending QRIS if any
+  const pendingQris = sessionStorage.getItem('icmarket_pending_qris')
+  const pendingAmount = sessionStorage.getItem('icmarket_pending_qris_amount')
+  if (pendingQris) {
+    qrisUrl.value = pendingQris
+    topupAmount.value = Number(pendingAmount) || 0
+    showQrisModal.value = true
+    startPolling()
+  }
 })
 
 const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
@@ -82,9 +97,14 @@ const processTopup = async () => {
     })
     
     if (response.success && response.data?.payment_url) {
-      successMsg.value = 'Mengarahkan ke halaman pembayaran...'
-      // Redirect ke payment gateway Pakasir
-      window.location.href = response.data.payment_url
+      qrisUrl.value = response.data.payment_url
+      topupAmount.value = selectedAmount.value.value
+      
+      sessionStorage.setItem('icmarket_pending_qris', qrisUrl.value)
+      sessionStorage.setItem('icmarket_pending_qris_amount', topupAmount.value)
+      
+      showQrisModal.value = true
+      startPolling()
     } else {
       alert(response.message || 'Gagal memproses Top Up')
     }
@@ -93,6 +113,45 @@ const processTopup = async () => {
     alert('Terjadi kesalahan saat memproses top up. Pastikan server backend berjalan.')
   } finally {
     isProcessing.value = false
+  }
+}
+
+const startPolling = () => {
+  if (pollingInterval.value) clearInterval(pollingInterval.value)
+  const initialCoins = Number(session.value?.coins || 0)
+  
+  pollingInterval.value = setInterval(async () => {
+    await syncSession()
+    const currentCoins = Number(session.value?.coins || 0)
+    
+    if (currentCoins > initialCoins) {
+      clearInterval(pollingInterval.value)
+      pollingInterval.value = null
+      showQrisModal.value = false
+      qrisUrl.value = ''
+      sessionStorage.removeItem('icmarket_pending_qris')
+      sessionStorage.removeItem('icmarket_pending_qris_amount')
+      showSuccessModal.value = true
+      
+      setTimeout(() => { showSuccessModal.value = false }, 5000)
+    }
+  }, 3000) // Poll every 3 seconds
+}
+
+const closeQrisModal = () => {
+  showQrisModal.value = false
+  qrisUrl.value = ''
+  sessionStorage.removeItem('icmarket_pending_qris')
+  sessionStorage.removeItem('icmarket_pending_qris_amount')
+  if (pollingInterval.value) {
+    clearInterval(pollingInterval.value)
+    pollingInterval.value = null
+  }
+}
+
+const openInNewTab = () => {
+  if (qrisUrl.value) {
+    window.open(qrisUrl.value, '_blank')
   }
 }
 </script>
@@ -321,6 +380,62 @@ const processTopup = async () => {
         <i class="fa-solid fa-circle-check"></i> {{ successMsg }}
       </div>
     </div>
+
+    <!-- QRIS Payment Modal -->
+    <Teleport to="body">
+      <Transition name="tnc-modal">
+        <div v-if="showQrisModal" class="tnc-overlay" @click.self="closeQrisModal">
+          <div class="tnc-modal" style="max-width: 500px; height: 90vh;">
+            <div class="tnc-header" style="justify-content: space-between;">
+              <div class="tnc-title-area" style="display: flex; align-items: center; gap: 12px;">
+                <img src="/icoinz.svg" alt="iCoinz" style="width: 24px; height: 24px;" />
+                <h3 style="margin: 0; font-size: 18px;">Pembayaran QRIS</h3>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="tnc-close-btn" @click="openInNewTab" title="Buka di Tab Baru">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </button>
+                <button class="tnc-close-btn" @click="closeQrisModal" title="Tutup">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="tnc-body" style="padding: 0; overflow: hidden; position: relative;">
+              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 1;">
+                <div style="text-align: center; color: var(--muted);">
+                  <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; margin-bottom: 16px;"></i>
+                  <p>Memuat QRIS...</p>
+                </div>
+              </div>
+              <iframe :src="qrisUrl" style="width: 100%; height: 100%; border: none; position: relative; z-index: 2; background: white;"></iframe>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Success Modal -->
+    <Teleport to="body">
+      <Transition name="tnc-modal">
+        <div v-if="showSuccessModal" class="tnc-overlay" @click.self="showSuccessModal = false">
+          <div class="tnc-modal" style="max-width: 400px; text-align: center; padding: 40px 32px;">
+            <div style="font-size: 64px; color: #10b981; margin-bottom: 24px;">
+              <i class="fa-regular fa-circle-check"></i>
+            </div>
+            <h2 style="margin: 0 0 12px; font-size: 24px; color: var(--text);">Top Up Berhasil!</h2>
+            <p style="color: var(--muted); margin: 0 0 24px; line-height: 1.6;">
+              Selamat! Saldo iCoin-Z Anda telah berhasil ditambahkan sebesar 
+              <strong style="color: var(--text);">
+                <img src="/icoinz.svg" alt="iCoinz" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em;" /> 
+                {{ Number(topupAmount).toLocaleString('id-ID') }}
+              </strong>.
+            </p>
+            <button class="primary-button" style="width: 100%;" @click="showSuccessModal = false">Tutup</button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </main>
 </template>
 
