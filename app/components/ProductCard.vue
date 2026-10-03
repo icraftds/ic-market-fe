@@ -117,3 +117,11 @@ const handlePreview = () => {
     </div>
   </article>
 </template>
+
+<style scoped>
+.in-cart {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+}
+</style>
