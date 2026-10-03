@@ -11,6 +11,7 @@ const showTnC = ref(false)
 const showQrisModal = ref(false)
 const showSuccessModal = ref(false)
 const qrisUrl = ref('')
+const qrisString = ref('')
 const topupAmount = ref(0)
 const pollingInterval = ref(null)
 
@@ -62,9 +63,11 @@ onMounted(() => {
 
   // Restore pending QRIS if any
   const pendingQris = sessionStorage.getItem('icmarket_pending_qris')
+  const pendingQrisString = sessionStorage.getItem('icmarket_pending_qris_string')
   const pendingAmount = sessionStorage.getItem('icmarket_pending_qris_amount')
-  if (pendingQris) {
-    qrisUrl.value = pendingQris
+  if (pendingQris || pendingQrisString) {
+    qrisUrl.value = pendingQris || ''
+    qrisString.value = pendingQrisString || ''
     topupAmount.value = Number(pendingAmount) || 0
     showQrisModal.value = true
     startPolling()
@@ -96,11 +99,13 @@ const processTopup = async () => {
       }
     })
     
-    if (response.success && response.data?.payment_url) {
-      qrisUrl.value = response.data.payment_url
+    if (response.success && (response.data?.payment_url || response.data?.qr_string)) {
+      qrisUrl.value = response.data.payment_url || ''
+      qrisString.value = response.data.qr_string || ''
       topupAmount.value = selectedAmount.value.value
       
       sessionStorage.setItem('icmarket_pending_qris', qrisUrl.value)
+      sessionStorage.setItem('icmarket_pending_qris_string', qrisString.value)
       sessionStorage.setItem('icmarket_pending_qris_amount', topupAmount.value)
       
       showQrisModal.value = true
@@ -129,7 +134,9 @@ const startPolling = () => {
       pollingInterval.value = null
       showQrisModal.value = false
       qrisUrl.value = ''
+      qrisString.value = ''
       sessionStorage.removeItem('icmarket_pending_qris')
+      sessionStorage.removeItem('icmarket_pending_qris_string')
       sessionStorage.removeItem('icmarket_pending_qris_amount')
       showSuccessModal.value = true
       
@@ -141,7 +148,9 @@ const startPolling = () => {
 const closeQrisModal = () => {
   showQrisModal.value = false
   qrisUrl.value = ''
+  qrisString.value = ''
   sessionStorage.removeItem('icmarket_pending_qris')
+  sessionStorage.removeItem('icmarket_pending_qris_string')
   sessionStorage.removeItem('icmarket_pending_qris_amount')
   if (pollingInterval.value) {
     clearInterval(pollingInterval.value)
@@ -392,7 +401,7 @@ const openInNewTab = () => {
                 <h3 style="margin: 0; font-size: 18px;">Pembayaran QRIS</h3>
               </div>
               <div style="display: flex; gap: 8px;">
-                <button class="tnc-close-btn" @click="openInNewTab" title="Buka di Tab Baru">
+                <button v-if="qrisUrl" class="tnc-close-btn" @click="openInNewTab" title="Buka di Tab Baru">
                   <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>
                 <button class="tnc-close-btn" @click="closeQrisModal" title="Tutup">
@@ -408,7 +417,12 @@ const openInNewTab = () => {
                   <p>Memuat QRIS...</p>
                 </div>
               </div>
-              <iframe :src="qrisUrl" style="width: 100%; height: 100%; border: none; position: relative; z-index: 2; background: white;"></iframe>
+              <iframe v-if="qrisUrl" :src="qrisUrl" style="width: 100%; height: 100%; border: none; position: relative; z-index: 2; background: white;"></iframe>
+              <div v-else-if="qrisString" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 2; background: white; padding: 20px;">
+                <p style="margin-bottom: 24px; color: var(--text); font-weight: 600; font-size: 16px;">Scan QR Code di bawah untuk membayar</p>
+                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrisString)" alt="QRIS Code" style="width: 250px; height: 250px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);" />
+                <p style="margin-top: 24px; color: var(--muted); font-size: 14px; max-width: 80%; text-align: center;">Mendukung GoPay, OVO, DANA, ShopeePay, LinkAja, dan Mobile Banking lainnya.</p>
+              </div>
             </div>
           </div>
         </div>
