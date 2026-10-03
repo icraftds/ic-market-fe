@@ -535,8 +535,19 @@ onMounted(async () => {
             <div class="product-grid" id="product-grid">
                 
                 <template v-if="isLoading">
-                    <div class="icoinz-loader-wrap grid-loader">
-                        <IcoinzLoader text="Memuat Katalog..." size="lg" />
+                    <div v-for="i in 8" :key="'skel-'+i" class="product-card" style="pointer-events: none; opacity: 0.8;">
+                        <div class="card-thumb skeleton-box" style="aspect-ratio: 4/3; border-radius: 0;"></div>
+                        <div class="card-body" style="display: flex; flex-direction: column;">
+                            <div class="skeleton-box" style="height: 12px; width: 30%; margin-bottom: 8px;"></div>
+                            <div class="skeleton-box" style="height: 16px; width: 70%; margin-bottom: 12px;"></div>
+                            <div class="card-footer" style="border: none; padding-top: 0; margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
+                                <div class="skeleton-box" style="height: 20px; width: 40%;"></div>
+                                <div class="skeleton-box" style="height: 14px; width: 25%;"></div>
+                            </div>
+                            <div style="text-align: center; padding-top: 12px; font-size: 0.8rem; font-weight: 600; color: var(--muted); border-top: 1px solid var(--border); margin-top: 12px;">
+                                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 4px;"></i> Memuat produk..
+                            </div>
+                        </div>
                     </div>
                 </template>
 
