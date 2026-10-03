@@ -151,8 +151,6 @@ const startPolling = () => {
       sessionStorage.removeItem('icmarket_pending_qris_expires_at')
       if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
       showSuccessModal.value = true
-      
-      setTimeout(() => { showSuccessModal.value = false }, 5000)
     }
   }, 3000) // Poll every 3 seconds
 }
@@ -498,21 +496,26 @@ const openInNewTab = () => {
 
     <!-- Success Modal -->
     <Teleport to="body">
-      <Transition name="tnc-modal">
-        <div v-if="showSuccessModal" class="tnc-overlay" @click.self="showSuccessModal = false">
-          <div class="tnc-modal" style="max-width: 400px; text-align: center; padding: 40px 32px;">
-            <div style="font-size: 64px; color: #10b981; margin-bottom: 24px;">
-              <i class="fa-regular fa-circle-check"></i>
+      <Transition name="celebration-modal">
+        <div v-if="showSuccessModal" class="celebration-overlay" @click.self="showSuccessModal = false">
+          <div class="celebration-content">
+            <!-- Glowing background effect -->
+            <div class="glow-bg"></div>
+            
+            <h2 class="celebration-title">TOP UP BERHASIL!</h2>
+            
+            <div class="coin-container">
+              <img src="/icoinz.svg" alt="iCoinz" class="spinning-coin" />
             </div>
-            <h2 style="margin: 0 0 12px; font-size: 24px; color: var(--text);">Top Up Berhasil!</h2>
-            <p style="color: var(--muted); margin: 0 0 24px; line-height: 1.6;">
-              Selamat! Saldo iCoin-Z Anda telah berhasil ditambahkan sebesar 
-              <strong style="color: var(--text);">
-                <img src="/icoinz.svg" alt="iCoinz" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em;" /> 
-                {{ Number(topupAmount).toLocaleString('id-ID') }}
-              </strong>.
-            </p>
-            <button class="primary-button" style="width: 100%;" @click="showSuccessModal = false">Tutup</button>
+            
+            <div class="celebration-amount">
+              +{{ Number(topupAmount).toLocaleString('id-ID') }}
+            </div>
+            <p class="celebration-desc">Saldo iCoin-Z Anda telah bertambah.</p>
+            
+            <button class="celebration-close" @click="showSuccessModal = false">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </button>
           </div>
         </div>
       </Transition>
@@ -521,6 +524,118 @@ const openInNewTab = () => {
 </template>
 
 <style scoped>
+/* Festive Celebration Modal */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 15, 0.9);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.celebration-content {
+  position: relative;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.glow-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, rgba(245, 158, 11, 0.1) 40%, transparent 70%);
+  z-index: -1;
+  animation: pulseGlow 2s infinite alternate;
+}
+
+.celebration-title {
+  color: #fbbf24;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin: 0 0 32px;
+  text-shadow: 0 4px 20px rgba(245, 158, 11, 0.6);
+  background: linear-gradient(to bottom, #fde68a, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.coin-container {
+  perspective: 1000px;
+  margin-bottom: 24px;
+}
+
+.spinning-coin {
+  width: 140px;
+  height: 140px;
+  filter: drop-shadow(0 10px 20px rgba(245, 158, 11, 0.5));
+  animation: spinCoinY 3s linear infinite;
+  transform-style: preserve-3d;
+}
+
+.celebration-amount {
+  font-size: 48px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 4px 24px rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.celebration-desc {
+  color: #d1d5db;
+  font-size: 16px;
+  margin: 0 0 48px;
+}
+
+.celebration-close {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 48px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.3));
+}
+
+.celebration-close:hover {
+  transform: scale(1.15) rotate(90deg);
+  filter: drop-shadow(0 4px 16px rgba(239, 68, 68, 0.6));
+}
+
+/* Transitions & Keyframes */
+.celebration-modal-enter-active,
+.celebration-modal-leave-active {
+  transition: opacity 0.4s ease;
+}
+.celebration-modal-enter-from,
+.celebration-modal-leave-to {
+  opacity: 0;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spinCoinY {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+@keyframes pulseGlow {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+
 .topup-page {
   max-width: 800px;
   margin: 0 auto;
