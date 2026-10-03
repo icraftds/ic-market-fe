@@ -63,7 +63,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-definePageMeta({ layout: 'admin' })
+definePageMeta({ 
+  layout: 'default',
+  middleware: ['auth'] 
+})
 
 const reviews = ref([])
 const isLoading = ref(true)
