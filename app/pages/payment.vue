@@ -259,11 +259,8 @@ onUnmounted(() => {
         <div class="flow-box">
           <div class="flow-box-body" style="gap:8px;">
             <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Butuh Bantuan?</div>
-            <a href="#" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--accent-2);font-weight:600;text-decoration:none;">
+            <a href="https://wa.me/6285174264123?text=Halo%20minCraft!%2C%20aku%20mau%20nanya%20nih..%20%5Bmasukkan%20pertanyaan%20mu%5D" target="_blank" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--accent-2);font-weight:600;text-decoration:none;">
               <i class="fa-brands fa-whatsapp" style="font-size:1.1rem;"></i> Chat via WhatsApp
-            </a>
-            <a href="#" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--accent-2);font-weight:600;text-decoration:none;">
-              <i class="fa-regular fa-envelope" style="font-size:1rem;"></i> support@icmarket.id
             </a>
           </div>
         </div>

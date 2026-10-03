@@ -611,7 +611,7 @@ onMounted(async () => {
                     <li><a href="#">FAQ</a></li>
                     <li><a href="#">Panduan Pembelian</a></li>
                     <li><a href="#">Kebijakan Layanan</a></li>
-                    <li><a href="#">Hubungi Kami</a></li>
+                    <li><a href="https://wa.me/6285174264123?text=Halo%20minCraft!%2C%20aku%20mau%20nanya%20nih..%20%5Bmasukkan%20pertanyaan%20mu%5D" target="_blank">Hubungi Kami</a></li>
                 </ul>
             </div>
             <div>
