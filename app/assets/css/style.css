@@ -1714,7 +1714,54 @@ a { text-decoration: none; color: inherit; }
     animation: shimmer 1.5s infinite;
 }
 @keyframes shimmer {
-    100% {
-        transform: translateX(100%);
-    }
 }
+
+/* ========================
+   SULTAN BADGE & ROYAL THEME
+   ======================== */
+.sultan-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fcd34d, #f59e0b);
+    color: #451a03;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+    vertical-align: middle;
+    margin-left: 6px;
+}
+.sultan-badge i {
+    font-size: 0.6rem !important;
+}
+
+.is-sultan-author {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7) !important;
+    border: 1px solid #fde68a !important;
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+
+/* For dropdown header & nav button */
+.is-sultan-bg,
+.nav-user-btn.is-sultan {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7) !important;
+    border-bottom: 1px solid #fde68a !important;
+}
+.nav-user-btn.is-sultan {
+    border: 1px solid #fde68a !important;
+    border-radius: 8px; /* Assuming nav btn has radius */
+}
+
+/* Dark mode compatibility for Royal blocks */
+.dark-mode .is-sultan-author, 
+.dark-mode .is-sultan-bg,
+.dark-mode .nav-user-btn.is-sultan {
+    background: linear-gradient(135deg, rgba(252, 211, 77, 0.1), rgba(245, 158, 11, 0.05)) !important;
+    border: 1px solid rgba(252, 211, 77, 0.2) !important;
+}
+
