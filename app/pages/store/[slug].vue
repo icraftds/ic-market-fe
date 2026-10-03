@@ -181,22 +181,76 @@ const store = computed(() => {
 
 const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
 
-const { addToCart: apiAddToCart } = useCart()
+const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart()
 
-const addToCart = async (product) => {
-  if (!session.value) {
-    router.push('/login')
-    return
-  }
-  if (!store.value) return
+const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80';
 
-  const productId = product.productId || product.id
-  if (productId) {
-    await apiAddToCart(productId, 1)
-  }
+const catalogImage = (product) => {
+    return product.image || FALLBACK_PRODUCT_IMAGE;
+};
+const catalogRating = (product) => Number(product?.rating || 0);
+const catalogReviews = (product) => Number(product?.review_count || 0);
 
-  router.push('/cart')
-}
+const isInCart = (productId) => {
+    return apiCart.value?.some(item => item.product_id === productId || item.id === productId);
+};
+
+const handleDirectBuy = async (product, e) => {
+    if (product.price === 0) return;
+    useState('global_loader').value = true;
+    const success = await apiAddToCart(product.id || product.catalogId || product.productId, 1);
+    if (success) {
+        router.push('/checkout');
+    } else {
+        useState('global_loader').value = false;
+    }
+};
+
+const animateToCart = (btn) => {
+    if (!import.meta.client || !btn) return;
+    const rect = btn.getBoundingClientRect();
+    const cartBtn = document.querySelector('#cart-btn');
+    if (!cartBtn) return;
+    const cartBtnRect = cartBtn.getBoundingClientRect();
+    const dot = document.createElement('div');
+    dot.style.position = 'fixed';
+    dot.style.left = (rect.left + rect.width / 2) + 'px';
+    dot.style.top = (rect.top + rect.height / 2) + 'px';
+    dot.style.width = '20px';
+    dot.style.height = '20px';
+    dot.style.borderRadius = '50%';
+    dot.style.background = 'var(--primary, #1472ff)';
+    dot.style.boxShadow = '0 0 10px var(--primary, #1472ff)';
+    dot.style.zIndex = '999999';
+    dot.style.transition = 'all 0.7s cubic-bezier(0.25, 1, 0.5, 1)';
+    document.body.appendChild(dot);
+    setTimeout(() => {
+        dot.style.left = (cartBtnRect.left + cartBtnRect.width / 2) + 'px';
+        dot.style.top = (cartBtnRect.top + cartBtnRect.height / 2) + 'px';
+        dot.style.transform = 'scale(0.2)';
+        dot.style.opacity = '0';
+    }, 50);
+    setTimeout(() => {
+        dot.remove();
+        cartBtn.style.transform = 'scale(1.2)';
+        setTimeout(() => cartBtn.style.transform = '', 200);
+    }, 700);
+};
+
+const handleAddCart = async (product, e) => {
+    if (product.price === 0) {
+        alert('Mulai mengunduh...');
+        return;
+    }
+    const productId = product.id || product.catalogId || product.productId;
+    if (isInCart(productId)) return;
+    
+    const btn = e.currentTarget;
+    animateToCart(btn);
+    await apiAddToCart(productId, 1);
+};
+
+
 
 const fetchStoreData = async () => {
   isLoading.value = true
@@ -249,31 +303,59 @@ onMounted(() => {
           <span>{{ store.products.length }} produk</span>
         </div>
 
-        <div v-if="store.products.length" class="store-product-grid">
+        <div v-if="store.products.length" class="product-grid list-view" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; align-items: start;">
           <article
             v-for="product in store.products"
-            :key="product.id || product.name"
-            class="store-product-card"
+            :key="product.id || product.catalogId"
+            class="product-card"
           >
-            <img :src="product.image" :alt="product.name" />
-            <div class="product-content">
-              <p class="product-category">{{ product.category }}</p>
-              <h3>{{ product.name }}</h3>
-
-              <a class="seller-link" :href="`/store/${slug}`">
-                Oleh: {{ store.name }}
-              </a>
-
-              <div class="tag-row">
-                <span v-for="tag in product.tags" :key="tag">{{ tag }}</span>
-              </div>
-
-              <div class="product-bottom">
-                <strong><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(product.price) }}</strong>
-                <button type="button" @click="addToCart(product)">
-                  {{ Number(product.price) === 0 ? 'Download' : 'Tambah' }}
-                </button>
-              </div>
+            <div class="card-thumb">
+                <img :src="catalogImage(product)" :alt="product.name" loading="lazy">
+                <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
+                    {{ product.price === 0 ? 'Gratis' : 'Seller' }}
+                </span>
+            </div>
+            <div class="card-body">
+                <span class="card-category">{{ product.category }}</span>
+                <a class="card-store" :href="`/store/${slug}`">
+                    Oleh: {{ store.name }}
+                </a>
+                <h3 class="card-title">{{ product.name }}</h3>
+                <div class="card-footer">
+                    <span class="card-price" :class="{ 'free-price': product.price === 0 }">
+                        <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
+                    </span>
+                    <div class="card-rating">
+                        <i class="fa-solid fa-star"></i>
+                        {{ catalogReviews(product) > 0 ? `${catalogRating(product).toFixed(1)} (${catalogReviews(product)})` : 'Baru' }}
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button
+                        v-if="product.price > 0"
+                        class="btn-primary card-buy-direct"
+                        :style="isInCart(product.id || product.catalogId) ? 'opacity: 0.5; cursor: not-allowed;' : ''"
+                        :disabled="isInCart(product.id || product.catalogId)"
+                        aria-label="Beli Langsung"
+                        @click.stop="!isInCart(product.id || product.catalogId) && handleDirectBuy(product, $event)"
+                    >
+                        <i class="fa-solid fa-bolt"></i> Beli
+                    </button>
+                    <button
+                        class="btn-icon card-add-cart"
+                        :class="{ 'btn-primary download': product.price === 0, 'in-cart': product.price > 0 && isInCart(product.id || product.catalogId) }"
+                        :style="product.price === 0 ? 'width:100%;' : ''"
+                        :aria-label="product.price === 0 ? 'Download gratis' : 'Tambahkan Keranjang'"
+                        @click.stop="handleAddCart(product, $event)"
+                    >
+                        <template v-if="product.price === 0">
+                            <i class="fa-solid fa-download"></i> Download
+                        </template>
+                        <template v-else>
+                            <i class="fa-solid fa-cart-plus"></i> <span v-if="isInCart(product.id || product.catalogId)">Di Keranjang</span><span v-else>Keranjang</span>
+                        </template>
+                    </button>
+                </div>
             </div>
           </article>
         </div>
@@ -312,18 +394,7 @@ onMounted(() => {
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 20px; }
 .section-heading h2 { font-size: 26px; }
 .section-heading > span { color: #777; }
-.store-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
-.store-product-card { overflow: hidden; background: #fff; border: 1px solid #e8e8e4; border-radius: 18px; }
-.store-product-card > img { width: 100%; height: 190px; object-fit: cover; display: block; }
-.product-content { padding: 20px; }
-.product-content h3 { margin: 0 0 8px; font-size: 20px; }
-.seller-link { display: inline-block; margin-bottom: 14px; color: #777; font-size: 12px; font-weight: 700; text-decoration: none; }
-.seller-link:hover { color: #1463ff; }
-.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag-row span { border: 1px solid #bdd3ff; color: #1463ff; background: #f4f7ff; border-radius: 6px; padding: 5px 8px; font-size: 12px; }
-.product-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 22px; }
-.product-bottom strong { font-size: 18px; }
-.product-bottom button, .store-not-found button { border: 0; border-radius: 10px; background: #16a34a; color: white; padding: 10px 15px; font-weight: 800; cursor: pointer; }
+
 .store-not-found { max-width: 700px; margin: 100px auto; text-align: center; }
 .store-not-found h1 { font-size: 36px; }
 .store-not-found p, .empty-products p { color: #777; margin-bottom: 24px; }
