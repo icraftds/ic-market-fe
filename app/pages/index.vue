@@ -579,7 +579,7 @@ onMounted(async () => {
             <div class="reviews-track" id="reviews-track">
                 <div v-for="review in featuredReviews" :key="review.id" class="review-card">
                     <div class="review-stars">
-                        <i v-for="i in 5" :key="i" class="fa-solid fa-star" :style="{ color: i <= review.rating ? 'var(--warning)' : '#e5e7eb' }"></i>
+                        <i v-for="i in 5" :key="i" class="fa-solid fa-star" :style="{ color: i <= review.rating ? '#f59e0b' : '#e5e7eb' }"></i>
                     </div>
                     <p class="review-text">"{{ review.comment }}"</p>
                     <div class="review-author" :class="{ 'is-sultan-author': review.is_sultan }">

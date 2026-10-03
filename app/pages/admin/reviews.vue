@@ -38,7 +38,7 @@
                 <td>{{ review.user?.name }}</td>
                 <td>
                   <div class="rating-stars">
-                    <i v-for="i in 5" :key="i" class="fa-solid fa-star" :style="{ color: i <= review.rating ? 'var(--warning)' : '#e5e7eb' }"></i>
+                    <i v-for="i in 5" :key="i" class="fa-solid fa-star" :style="{ color: i <= review.rating ? '#f59e0b' : '#e5e7eb' }"></i>
                   </div>
                 </td>
                 <td style="max-width: 300px; white-space: normal; line-height: 1.4;">{{ review.comment }}</td>
@@ -153,8 +153,8 @@ td small { margin-top: 3px; color: var(--muted); font-size: 10px; }
   transition: all 0.2s ease;
 }
 .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-add { background: var(--primary); color: #fff; }
-.btn-add:hover { opacity: 0.9; }
+.btn-add { background: #dbeafe; color: #1d4ed8; }
+.btn-add:hover { background: #bfdbfe; }
 .btn-remove { background: #fee2e2; color: #991b1b; }
 .btn-remove:hover { background: #fecaca; }
 
