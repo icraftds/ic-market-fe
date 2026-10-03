@@ -64,9 +64,11 @@
 import { ref, onMounted } from 'vue'
 
 definePageMeta({ 
-  layout: 'default',
-  middleware: ['auth'] 
+  layout: 'default'
 })
+
+const config = useRuntimeConfig()
+const authToken = useCookie('icmarket_auth_token')
 
 const reviews = ref([])
 const isLoading = ref(true)
@@ -74,12 +76,9 @@ const toggling = ref({})
 
 const fetchReviews = async () => {
   try {
-    const config = useRuntimeConfig()
-    const { sessionCookie } = useAuthSession() // Use cookie/token directly if needed or use session logic
-    const session = useCookie('icmarket_auth_token')
     const res = await $fetch(`${config.public.apiBase}/admin/reviews`, {
       headers: {
-        Authorization: `Bearer ${session.value}`
+        Authorization: `Bearer ${authToken.value}`
       }
     })
     if (res.success) {
@@ -95,12 +94,10 @@ const fetchReviews = async () => {
 const toggleFeatured = async (review) => {
   toggling.value[review.id] = true
   try {
-    const config = useRuntimeConfig()
-    const session = useCookie('icmarket_auth_token')
     const res = await $fetch(`${config.public.apiBase}/admin/reviews/${review.id}/toggle-featured`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${session.value}`
+        Authorization: `Bearer ${authToken.value}`
       }
     })
     if (res.success) {
