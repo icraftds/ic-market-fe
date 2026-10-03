@@ -14,6 +14,8 @@ const qrisUrl = ref('')
 const qrisString = ref('')
 const topupAmount = ref(0)
 const pollingInterval = ref(null)
+const qrisTimerInterval = ref(null)
+const qrisTimeLeft = ref('15:00')
 
 const paymentMethods = [
   { id: 'qris', name: 'QRIS (Otomatis)', sub: 'GoPay, OVO, DANA, LinkAja, ShopeePay', icon: 'fa-solid fa-qrcode' }
@@ -65,12 +67,14 @@ onMounted(() => {
   const pendingQris = sessionStorage.getItem('icmarket_pending_qris')
   const pendingQrisString = sessionStorage.getItem('icmarket_pending_qris_string')
   const pendingAmount = sessionStorage.getItem('icmarket_pending_qris_amount')
+  
   if (pendingQris || pendingQrisString) {
     qrisUrl.value = pendingQris || ''
     qrisString.value = pendingQrisString || ''
     topupAmount.value = Number(pendingAmount) || 0
     showQrisModal.value = true
     startPolling()
+    startQrisTimer()
   }
 })
 
@@ -108,8 +112,14 @@ const processTopup = async () => {
       sessionStorage.setItem('icmarket_pending_qris_string', qrisString.value)
       sessionStorage.setItem('icmarket_pending_qris_amount', topupAmount.value)
       
+      // Initialize expiration time if not present
+      if (!sessionStorage.getItem('icmarket_pending_qris_expires_at')) {
+        sessionStorage.setItem('icmarket_pending_qris_expires_at', Date.now() + (15 * 60 * 1000))
+      }
+      
       showQrisModal.value = true
       startPolling()
+      startQrisTimer()
     } else {
       alert(response.message || 'Gagal memproses Top Up')
     }
@@ -138,6 +148,8 @@ const startPolling = () => {
       sessionStorage.removeItem('icmarket_pending_qris')
       sessionStorage.removeItem('icmarket_pending_qris_string')
       sessionStorage.removeItem('icmarket_pending_qris_amount')
+      sessionStorage.removeItem('icmarket_pending_qris_expires_at')
+      if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
       showSuccessModal.value = true
       
       setTimeout(() => { showSuccessModal.value = false }, 5000)
@@ -152,10 +164,41 @@ const closeQrisModal = () => {
   sessionStorage.removeItem('icmarket_pending_qris')
   sessionStorage.removeItem('icmarket_pending_qris_string')
   sessionStorage.removeItem('icmarket_pending_qris_amount')
+  sessionStorage.removeItem('icmarket_pending_qris_expires_at')
   if (pollingInterval.value) {
     clearInterval(pollingInterval.value)
     pollingInterval.value = null
   }
+  if (qrisTimerInterval.value) {
+    clearInterval(qrisTimerInterval.value)
+    qrisTimerInterval.value = null
+  }
+}
+
+const startQrisTimer = () => {
+  if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
+  
+  const updateTimer = () => {
+    const expiresAt = Number(sessionStorage.getItem('icmarket_pending_qris_expires_at'))
+    if (!expiresAt) return
+    
+    const now = Date.now()
+    const diff = Math.floor((expiresAt - now) / 1000)
+    
+    if (diff <= 0) {
+      qrisTimeLeft.value = '00:00'
+      closeQrisModal()
+      alert('Waktu pembayaran telah habis. Silakan buat transaksi baru.')
+      return
+    }
+    
+    const m = String(Math.floor(diff / 60)).padStart(2, '0')
+    const s = String(diff % 60).padStart(2, '0')
+    qrisTimeLeft.value = `${m}:${s}`
+  }
+  
+  updateTimer()
+  qrisTimerInterval.value = setInterval(updateTimer, 1000)
 }
 
 const openInNewTab = () => {
@@ -411,17 +454,41 @@ const openInNewTab = () => {
             </div>
             
             <div class="tnc-body" style="padding: 0; overflow: hidden; position: relative;">
-              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 1;">
-                <div style="text-align: center; color: var(--muted);">
-                  <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; margin-bottom: 16px;"></i>
-                  <p>Memuat QRIS...</p>
+              <iframe v-if="qrisUrl && !qrisString" :src="qrisUrl" style="width: 100%; height: 100%; border: none; position: relative; z-index: 2; background: white;"></iframe>
+              
+              <div v-else style="width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; z-index: 2; background: white; overflow-y: auto;">
+                <!-- Payment Info Bar -->
+                <div style="background: var(--surface); padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <p style="margin: 0; font-size: 13px; color: var(--muted);">Total Pembayaran</p>
+                    <h3 style="margin: 4px 0 0; color: #10b981; font-size: 20px;">Rp {{ Number(topupAmount).toLocaleString('id-ID') }}</h3>
+                  </div>
+                  <div style="text-align: right;">
+                    <p style="margin: 0; font-size: 13px; color: var(--muted);">Item</p>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                      <img src="/icoinz.svg" alt="iCoinz" style="width: 16px; height: 16px;" />
+                      <span style="font-weight: 600;">{{ Number(topupAmount).toLocaleString('id-ID') }} iCoinZ</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <iframe v-if="qrisUrl" :src="qrisUrl" style="width: 100%; height: 100%; border: none; position: relative; z-index: 2; background: white;"></iframe>
-              <div v-else-if="qrisString" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 2; background: white; padding: 20px;">
-                <p style="margin-bottom: 24px; color: var(--text); font-weight: 600; font-size: 16px;">Scan QR Code di bawah untuk membayar</p>
-                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrisString)" alt="QRIS Code" style="width: 250px; height: 250px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);" />
-                <p style="margin-top: 24px; color: var(--muted); font-size: 14px; max-width: 80%; text-align: center;">Mendukung GoPay, OVO, DANA, ShopeePay, LinkAja, dan Mobile Banking lainnya.</p>
+
+                <div style="padding: 24px; display: flex; flex-direction: column; align-items: center;">
+                  <!-- Timer -->
+                  <div style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-regular fa-clock"></i> Selesaikan pembayaran dalam {{ qrisTimeLeft }}
+                  </div>
+
+                  <p style="margin: 0 0 16px; color: var(--text); font-weight: 600; font-size: 16px;">Scan QR Code di bawah untuk membayar</p>
+                  
+                  <div style="padding: 16px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--border);">
+                    <img v-if="qrisString" :src="'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrisString)" alt="QRIS Code" style="width: 220px; height: 220px;" />
+                    <iframe v-else-if="qrisUrl" :src="qrisUrl" style="width: 220px; height: 220px; border: none;"></iframe>
+                  </div>
+
+                  <p style="margin: 24px 0 0; color: var(--muted); font-size: 14px; max-width: 85%; text-align: center; line-height: 1.5;">
+                    Mendukung <strong style="color:var(--text)">GoPay, OVO, DANA, ShopeePay, LinkAja</strong>, dan Mobile Banking lainnya yang memiliki fitur QRIS.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
