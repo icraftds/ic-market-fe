@@ -24,13 +24,7 @@ const allDigital = computed(() =>
   )
 )
 
-const successDescription = computed(() => {
-  if (allDigital.value) {
-    return `Produk digital Anda sudah siap. Informasi pesanan tersimpan untuk ${buyerEmail.value || 'email pembeli'}.`
-  }
 
-  return `Pembayaran sudah dikonfirmasi. Seller akan memproses pesanan Anda dan pembaruan status dapat dilihat di Riwayat Pesanan.`
-})
 
 const setRating = (star) => {
   if (rated.value) return
@@ -171,7 +165,13 @@ onMounted(async () => {
 
         <h1 class="success-title">Pembayaran Berhasil!</h1>
         <p class="success-sub">
-          Terima kasih atas pembelian Anda! {{ successDescription }}
+          Terima kasih atas pembelian Anda! 
+          <template v-if="allDigital">
+            Produk digital Anda sudah siap. Informasi pesanan tersimpan dan bisa dilihat pada <NuxtLink to="/orders" style="color: var(--accent); font-weight: 600; text-decoration: none;">Pesanan Saya</NuxtLink>.
+          </template>
+          <template v-else>
+            Pembayaran sudah dikonfirmasi. Seller akan memproses pesanan Anda dan pembaruan status dapat dilihat di <NuxtLink to="/orders" style="color: var(--accent); font-weight: 600; text-decoration: none;">Pesanan Saya</NuxtLink>.
+          </template>
         </p>
 
         <div class="order-id-badge">
