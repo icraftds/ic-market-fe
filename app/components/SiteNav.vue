@@ -234,6 +234,9 @@ onBeforeUnmount(() => {
                     <NuxtLink to="/admin/orders" class="dd-item" @click="isMenuOpen = false">
                       <i class="fa-solid fa-receipt"></i><span>Pesanan</span>
                     </NuxtLink>
+                    <NuxtLink to="/admin/reviews" class="dd-item" @click="isMenuOpen = false">
+                      <i class="fa-solid fa-star"></i><span>Ulasan</span>
+                    </NuxtLink>
                     <NuxtLink to="/admin/payouts" class="dd-item" @click="isMenuOpen = false">
                       <i class="fa-solid fa-wallet"></i><span>Payouts</span>
                     </NuxtLink>
