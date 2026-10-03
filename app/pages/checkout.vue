@@ -326,7 +326,7 @@ onMounted(async () => {
 
     <div v-else class="flow-body">
       <!-- LEFT: Forms -->
-      <div style="display:flex;flex-direction:column;gap:20px;">
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0;">
         
         <!-- Personal Info -->
         <div class="flow-box">
@@ -491,11 +491,12 @@ onMounted(async () => {
 .checkout-store-list { gap: 12px; }
 .checkout-store-card { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
 .checkout-store-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; background:var(--subtle); }
-.checkout-store-head > div { display:grid; gap:2px; }
+.checkout-store-head > div { display:grid; gap:2px; min-width: 0; }
+.checkout-store-head > div > strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .checkout-store-head span { color:var(--muted); font-size:.72rem; }
 .checkout-store-items { display:grid; gap:8px; padding:12px 14px; }
-.checkout-store-item { display:flex; justify-content:space-between; gap:14px; color:var(--muted); font-size:.78rem; }
-.checkout-store-item span:first-child { color:var(--text); font-weight:600; }
+.checkout-store-item { display:flex; justify-content:space-between; gap:14px; color:var(--muted); font-size:.78rem; min-width: 0; }
+.checkout-store-item span:first-child { color:var(--text); font-weight:600; white-space: normal; word-break: break-word; }
 .checkout-store-total { display:flex; justify-content:space-between; gap:12px; padding-top:2px; font-size:.82rem; }
 
 .applied-voucher-row {
