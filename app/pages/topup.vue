@@ -81,31 +81,12 @@ const processTopup = async () => {
       }
     })
     
-    if (response.success) {
-      const newCoins = response.data.newCoins
-      
-      // Update local session
-      const updatedSession = { ...session.value, coins: newCoins }
-      localStorage.setItem('icmarket_auth_session', JSON.stringify(updatedSession))
-      
-      // Update registered user database if it's the same email
-      try {
-        const demoUser = JSON.parse(localStorage.getItem('icmarket_demo_user') || 'null')
-        if (demoUser && demoUser.email === updatedSession.email) {
-          localStorage.setItem('icmarket_demo_user', JSON.stringify({
-            ...demoUser,
-            coins: newCoins
-          }))
-        }
-      } catch (e) {}
-
-      syncSession()
-      window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
-      
-      successMsg.value = `${response.message} ${Number(response.data.amount).toLocaleString('id-ID')} iCoin-Z! (TxID: ${response.data.transactionId})`
-      
-      // Clear message after 4s
-      setTimeout(() => { successMsg.value = '' }, 4000)
+    if (response.success && response.data?.payment_url) {
+      successMsg.value = 'Mengarahkan ke halaman pembayaran...'
+      // Redirect ke payment gateway Pakasir
+      window.location.href = response.data.payment_url
+    } else {
+      alert(response.message || 'Gagal memproses Top Up')
     }
   } catch (error) {
     console.error('Topup failed:', error)
@@ -228,10 +209,11 @@ const processTopup = async () => {
           </p>
           <button 
             class="primary-button" 
-            disabled
-            @click.prevent
+            :disabled="isProcessing"
+            @click="processTopup"
           >
-            <span>Top Up Sedang Dinonaktifkan</span>
+            <span v-if="isProcessing"><i class="fa-solid fa-spinner fa-spin"></i> Memproses...</span>
+            <span v-else>Lanjutkan Pembayaran</span>
           </button>
         </div>
       </div>
