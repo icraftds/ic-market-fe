@@ -10,9 +10,7 @@ const successMsg = ref('')
 const showTnC = ref(false)
 
 const paymentMethods = [
-  { id: 'qris', name: 'QRIS', sub: 'GoPay, OVO, DANA, dll', icon: 'fa-solid fa-qrcode' },
-  { id: 'bank_transfer', name: 'Transfer Bank', sub: 'BCA, BNI, Mandiri', icon: 'fa-solid fa-building-columns' },
-  { id: 'credit_card', name: 'Kartu Kredit/Debit', sub: 'Visa, Mastercard', icon: 'fa-brands fa-cc-visa' }
+  { id: 'qris', name: 'QRIS (Otomatis)', sub: 'GoPay, OVO, DANA, LinkAja, ShopeePay', icon: 'fa-solid fa-qrcode' }
 ]
 const selectedMethod = ref('qris')
 const activeTab = ref('topup')
@@ -130,10 +128,11 @@ const processTopup = async () => {
 
     <div class="topup-container">
       <div class="current-balance">
-        <div>
-          <span>Saldo iCoin-Z Anda Saat Ini:</span>
-          <h2><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="width: 1.4em; height: 1.4em; vertical-align: -0.2em; margin-right: 8px;" /> {{ Number(session?.coins || 0).toLocaleString('id-ID') }}</h2>
+        <div class="balance-content">
+          <span>Saldo iCoin-Z Anda Saat Ini</span>
+          <h2><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="width: 1.4em; height: 1.4em; vertical-align: -0.2em; margin-right: 8px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));" /> {{ Number(session?.coins || 0).toLocaleString('id-ID') }}</h2>
         </div>
+        <div class="balance-decoration"></div>
       </div>
       
       <div class="topup-tabs">
@@ -377,29 +376,46 @@ h1 {
 }
 
 .current-balance {
-  background: var(--surface-2);
-  padding: 24px;
-  border-radius: 12px;
-  margin-bottom: 32px;
+  background: linear-gradient(135deg, #1463ff, #1e3a8a);
+  padding: 32px;
+  border-radius: 20px;
+  margin-bottom: 40px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 24px -8px rgba(20, 99, 255, 0.4);
+  color: white;
+}
+
+.balance-content {
+  position: relative;
+  z-index: 2;
+}
+
+.balance-decoration {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  z-index: 1;
 }
 
 .current-balance span {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 8px;
+  display: block;
 }
 
 .current-balance h2 {
   margin: 0;
-  font-size: 32px;
-  color: var(--accent-2);
+  font-size: 38px;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 h3 {
@@ -409,45 +425,48 @@ h3 {
 
 .amount-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 32px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
 }
 
 .amount-card {
   border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 24px 20px;
+  border-radius: 16px;
+  padding: 28px 20px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  background: var(--surface);
 }
 
 .amount-card:hover {
   border-color: #93c5fd;
-  background: #eff6ff;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px rgba(0,0,0,0.1);
 }
 
 .amount-card.selected {
   border-color: var(--accent-2);
-  background: #eff6ff;
-  box-shadow: 0 4px 12px rgba(20, 114, 255, 0.15);
+  background: linear-gradient(to bottom right, #f4f7ff, #ffffff);
+  box-shadow: 0 16px 32px -12px rgba(20, 114, 255, 0.2);
+  transform: translateY(-4px);
 }
 
 .discount-badge {
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--red);
+  left: 0;
+  right: 0;
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  padding: 3px 10px;
-  border-radius: 0 0 8px 8px;
+  padding: 6px 10px;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
 }
 
 .coin-val {
