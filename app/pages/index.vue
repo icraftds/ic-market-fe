@@ -607,7 +607,7 @@ onMounted(async () => {
             <ul class="footer-links">
                 <li><a href="#">FAQ</a></li>
                 <li><a href="#">Panduan Pembelian</a></li>
-                <li><a href="#">Kebijakan Refund</a></li>
+                <li><a href="#">Kebijakan Layanan</a></li>
                 <li><a href="#">Hubungi Kami</a></li>
             </ul>
         </div>

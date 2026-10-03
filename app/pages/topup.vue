@@ -352,7 +352,7 @@ const openInNewTab = () => {
                     <i class="fa-solid fa-triangle-exclamation"></i>
                   </div>
                   <div class="tnc-alert-content">
-                    <strong>Penting:</strong> Saldo iCoin-Z yang telah dibeli tidak dapat diuangkan kembali (non-refundable).
+                    <strong>Penting:</strong> Saldo iCoin-Z yang telah dibeli tidak dapat diuangkan kembali.
                   </div>
                 </div>
 

@@ -171,7 +171,7 @@ const typeLabel = (type) => {
     ORDER_ESCROW_HOLD: 'Escrow Masuk',
     ESCROW_RELEASE: 'Escrow Dirilis',
     PAYOUT_DEDUCT: 'Payout',
-    REFUND_DEBIT: 'Refund'
+    REFUND_DEBIT: 'Pengembalian'
   }
 
   return labels[type] || type

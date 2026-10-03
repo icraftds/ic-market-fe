@@ -244,7 +244,7 @@ onMounted(async () => {
             <div class="security-row">
               <div class="security-badge"><i class="fa-solid fa-lock"></i> SSL Secure</div>
               <div class="security-badge"><i class="fa-solid fa-shield-halved"></i> Data Aman</div>
-              <div class="security-badge"><i class="fa-solid fa-rotate-left"></i> Garansi Refund</div>
+              <div class="security-badge"><i class="fa-solid fa-clock"></i> Akses Selamanya</div>
             </div>
           </template>
         </OrderSummary>
@@ -259,7 +259,7 @@ onMounted(async () => {
               <i class="fa-solid fa-file-zipper" style="color:var(--accent-2);width:16px;"></i> File langsung bisa diunduh
             </div>
             <div style="display:flex;align-items:center;gap:10px;font-size:0.82rem;color:var(--muted);">
-              <i class="fa-solid fa-rotate-left" style="color:var(--accent-2);width:16px;"></i> Refund jika produk tidak sesuai
+              <i class="fa-solid fa-shield" style="color:var(--accent-2);width:16px;"></i> Kualitas Produk Terjamin
             </div>
           </div>
         </div>
