@@ -11,7 +11,9 @@ defineProps({
       <i class="fa-solid fa-arrow-left"></i> 
       <span class="hide-mobile">{{ backText }}</span>
     </NuxtLink>
-    <div class="flow-logo" style="margin-left: auto;"><span>IC</span> Market</div>
+    <NuxtLink to="/" class="flow-logo" style="margin-left: auto; display: flex; align-items: center; text-decoration: none;">
+      <img src="/logo-market.png" alt="IC Market" style="height: 24px; width: auto; display: block;" />
+    </NuxtLink>
   </header>
 </template>
 

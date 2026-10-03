@@ -593,7 +593,7 @@ onMounted(async () => {
     <footer class="site-footer">
         <div class="footer-inner">
             <div class="footer-brand">
-                <span class="logo"><span>IC</span> Market</span>
+                <img src="/logo-market.png" alt="IC Market" style="height: 32px; width: auto; margin-bottom: 12px; display: block;" />
                 <p class="footer-tagline">Platform aset digital premium untuk developer dan desainer Indonesia.</p>
             </div>
             <div>
