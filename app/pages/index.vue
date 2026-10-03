@@ -748,13 +748,15 @@ onMounted(async () => {
                 <div v-if="selectedProduct && selectedProduct.reviews && selectedProduct.reviews.length" class="modal-reviews" style="padding: 0 24px 24px;">
                     <h3 style="font-size: 1rem; margin-bottom: 12px;">Ulasan Pembeli</h3>
                     <div class="review-scroll" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; scroll-snap-type: x mandatory;">
-                        <div v-for="review in selectedProduct.reviews" :key="review.id" style="flex: 0 0 280px; scroll-snap-align: start; background: var(--subtle); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);">
+                        <div v-for="review in selectedProduct.reviews" :key="review.id" style="flex: 0 0 280px; scroll-snap-align: start; background: var(--subtle); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);" :class="{ 'is-sultan-bg': review.user?.sultan_expires_at && new Date(review.user.sultan_expires_at) > new Date() }">
                             <div style="display: flex; gap: 4px; color: #f59e0b; font-size: 0.8rem; margin-bottom: 8px;">
                                 <i v-for="n in 5" :key="n" :class="n <= review.rating ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
                             </div>
                             <p style="font-size: 0.9rem; line-height: 1.4; color: var(--text); margin-bottom: 12px;">"{{ review.comment }}"</p>
-                            <div style="font-size: 0.8rem; color: var(--muted);">
-                                Oleh: {{ review.user ? review.user.name : 'Pembeli' }} <span v-if="review.is_auto_generated" style="opacity: 0.5;">(Sistem)</span>
+                            <div style="font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; flex-wrap: wrap;">
+                                <span style="margin-right: 4px;">Oleh: {{ review.user ? review.user.name : 'Pembeli' }}</span>
+                                <span v-if="review.user?.sultan_expires_at && new Date(review.user.sultan_expires_at) > new Date()" class="sultan-badge"><i class="fa-solid fa-crown" style="font-size: 10px;"></i> Sultan</span>
+                                <span v-if="review.is_auto_generated" style="opacity: 0.5; margin-left: 4px;">(Sistem)</span>
                             </div>
                         </div>
                     </div>
