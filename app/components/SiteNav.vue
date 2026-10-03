@@ -202,6 +202,9 @@ onBeforeUnmount(() => {
                     <NuxtLink to="/orders" class="dd-item" @click="isMenuOpen = false">
                       <i class="fa-solid fa-box"></i><span>Pesanan Saya</span>
                     </NuxtLink>
+                    <NuxtLink to="/vouchers" class="dd-item" @click="isMenuOpen = false">
+                      <i class="fa-solid fa-ticket"></i><span>Voucher Saya</span>
+                    </NuxtLink>
                   </template>
                   <template v-if="role === 'seller'">
                     <NuxtLink to="/seller/dashboard" class="dd-item" @click="isMenuOpen = false">
@@ -271,6 +274,10 @@ onBeforeUnmount(() => {
           v-if="isLoggedIn && (role === 'buyer' || role === 'seller')"
           to="/orders" class="nb-link"
         >Pesanan Saya</NuxtLink>
+        <NuxtLink
+          v-if="isLoggedIn && (role === 'buyer' || role === 'seller')"
+          to="/vouchers" class="nb-link"
+        >Voucher Saya</NuxtLink>
 
         <!-- Seller links -->
         <template v-if="role === 'seller'">
