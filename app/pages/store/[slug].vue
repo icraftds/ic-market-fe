@@ -9,10 +9,11 @@ const router = useRouter()
 const { session } = useDemoAuth()
 
 const {
-  refreshCatalog,
-  getStoreBySlug,
-  getProductsByStoreSlug
+  refreshCatalog
 } = useProductCatalog()
+
+const config = useRuntimeConfig()
+const isLoading = ref(true)
 
 const dynamicStore = ref(null)
 const dynamicProducts = ref([])
@@ -137,13 +138,16 @@ const normalizeDynamicProduct = (product) => ({
   category: product.category || 'Digital Product',
   price: Number(product.price || 0),
   image:
+    product.image_url ||
     product.thumbnailUrl ||
     product.images?.[0]?.imageUrl ||
     'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=600&q=80',
   tags:
-    Array.isArray(product.tags) && product.tags.length
-      ? product.tags
-      : [product.category, product.type].filter(Boolean),
+    typeof product.tags === 'string' 
+      ? product.tags.split(',').map(t => t.trim()).filter(Boolean)
+      : (Array.isArray(product.tags) && product.tags.length
+          ? product.tags
+          : [product.category, product.type].filter(Boolean)),
   storeId: product.storeId || '',
   storeApplicationId: product.storeApplicationId || '',
   tenantSchema: product.tenantSchema || '',
@@ -194,11 +198,28 @@ const addToCart = async (product) => {
   router.push('/cart')
 }
 
+const fetchStoreData = async () => {
+  isLoading.value = true
+  try {
+    const storeRes = await $fetch(`${config.public.apiBase}/stores/${slug.value}`).catch(() => null)
+    if (storeRes && storeRes.success) {
+      dynamicStore.value = storeRes.data
+    }
+
+    const prodRes = await $fetch(`${config.public.apiBase}/products?store_slug=${slug.value}`).catch(() => null)
+    if (prodRes && prodRes.success) {
+      dynamicProducts.value = prodRes.data
+    }
+  } catch (error) {
+    console.error('Failed to load store data:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
 onMounted(() => {
   refreshCatalog()
-
-  dynamicStore.value = getStoreBySlug(slug.value)
-  dynamicProducts.value = getProductsByStoreSlug(slug.value)
+  fetchStoreData()
 })
 </script>
 
@@ -262,6 +283,11 @@ onMounted(() => {
           <p>Seller belum mempublikasikan produk untuk toko ini.</p>
         </div>
       </section>
+    </div>
+
+    <div v-else-if="isLoading" class="store-not-found">
+      <h1>Memuat Toko...</h1>
+      <p>Sedang mengambil data toko.</p>
     </div>
 
     <div v-else class="store-not-found">
