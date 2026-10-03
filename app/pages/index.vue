@@ -568,192 +568,29 @@ onMounted(async () => {
     <section class="reviews-section">
         <div class="section-label">Ulasan Pembeli</div>
         <div class="section-title">Apa Kata Mereka</div>
-        <div class="reviews-track-wrap">
+        
+        <div v-if="featuredReviews.length === 0" style="text-align: center; padding: 40px; color: var(--muted);">
+            <i class="fa-regular fa-comment-dots" style="font-size: 2rem; margin-bottom: 12px; color: #cbd5e1;"></i>
+            <p>Data belum tersedia.</p>
+        </div>
+        
+        <div v-else class="reviews-track-wrap">
             <div class="reviews-track" id="reviews-track">
-                <!-- Review 1 -->
-                <div class="review-card">
+                <div v-for="review in featuredReviews" :key="review.id" class="review-card">
                     <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
+                        <i v-for="i in 5" :key="i" class="fa-solid fa-star" :style="{ color: i <= review.rating ? 'var(--warning)' : '#e5e7eb' }"></i>
                     </div>
-                    <p class="review-text">"Template E-Commerce Super ini sungguh menghemat waktu development tim saya hingga berbulan-bulan! Sangat clean dan mudah dikustomisasi."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: linear-gradient(135deg, #1472FF, #00f0ff);">AS</div>
-                        <div>
-                            <div class="author-name">Ahmad Syamsudin</div>
-                            <div class="author-role">Tech Lead · Startup X</div>
+                    <p class="review-text">"{{ review.comment }}"</p>
+                    <div class="review-author" :class="{ 'is-sultan-author': review.is_sultan }">
+                        <div class="author-avatar" :style="{ background: review.is_sultan ? 'linear-gradient(135deg, #fcd34d, #f59e0b)' : 'linear-gradient(135deg, #1472FF, #00f0ff)' }">
+                            {{ review.user_name.charAt(0).toUpperCase() }}
                         </div>
-                    </div>
-                </div>
-                <!-- Review 2 -->
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"UI/UX Startup Kit-nya bener-bener lifesaver! Ratusan komponen Figma yang sudah pakai Auto Layout bikin proses desain MVP jadi secepat kilat."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #eab308;">NR</div>
                         <div>
-                            <div class="author-name">Nadia Ramadhani</div>
-                            <div class="author-role">UI/UX Designer Freelance</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Review 3 -->
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <p class="review-text">"Source code Point of Sales-nya mantap, dokumentasinya rapih. Ada sedikit kendala saat setup print thermal tapi CS-nya fast respon banget."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #a855f7;">BK</div>
-                        <div>
-                            <div class="author-name">Budi Kurniawan</div>
-                            <div class="author-role">Pemilik Toko Retail</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Review 4 -->
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Wireframe Pack gratisannya gila sih! Lengkap banget buat referensi awal. Ga nyangka dapet aset se-premium ini cuma-cuma."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #22c55e;">SA</div>
-                        <div>
-                            <div class="author-name">Siska Anggraeni</div>
-                            <div class="author-role">Mahasiswa IT</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Review 5 -->
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Baru pertama kali beli source code Food Delivery di sini, arsitektur kodenya bagus pakai GetX. Recommended banget buat referensi skripsi!"</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #ef4444;">FA</div>
-                        <div>
-                            <div class="author-name">Faisal Akbar</div>
-                            <div class="author-role">Mobile Developer</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Review 6 -->
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Template Admin Dashboard ini bikin klien saya puas banget! Animasi chart-nya halus dan integrasi API-nya gampang dipahami."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #3b82f6;">DW</div>
-                        <div>
-                            <div class="author-name">Dian Wibowo</div>
-                            <div class="author-role">Web Agency Founder</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Duplicate for seamless loop -->
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Template E-Commerce Super ini sungguh menghemat waktu development tim saya hingga berbulan-bulan! Sangat clean dan mudah dikustomisasi."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: linear-gradient(135deg, #1472FF, #00f0ff);">AS</div>
-                        <div>
-                            <div class="author-name">Ahmad Syamsudin</div>
-                            <div class="author-role">Tech Lead · Startup X</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"UI/UX Startup Kit-nya bener-bener lifesaver! Ratusan komponen Figma yang sudah pakai Auto Layout bikin proses desain MVP jadi secepat kilat."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #eab308;">NR</div>
-                        <div>
-                            <div class="author-name">Nadia Ramadhani</div>
-                            <div class="author-role">UI/UX Designer Freelance</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                    </div>
-                    <p class="review-text">"Source code Point of Sales-nya mantap, dokumentasinya rapih. Ada sedikit kendala saat setup print thermal tapi CS-nya fast respon banget."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #a855f7;">BK</div>
-                        <div>
-                            <div class="author-name">Budi Kurniawan</div>
-                            <div class="author-role">Pemilik Toko Retail</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Wireframe Pack gratisannya gila sih! Lengkap banget buat referensi awal. Ga nyangka dapet aset se-premium ini cuma-cuma."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #22c55e;">SA</div>
-                        <div>
-                            <div class="author-name">Siska Anggraeni</div>
-                            <div class="author-role">Mahasiswa IT</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Baru pertama kali beli source code Food Delivery di sini, arsitektur kodenya bagus pakai GetX. Recommended banget buat referensi skripsi!"</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #ef4444;">FA</div>
-                        <div>
-                            <div class="author-name">Faisal Akbar</div>
-                            <div class="author-role">Mobile Developer</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="review-card">
-                    <div class="review-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="review-text">"Template Admin Dashboard ini bikin klien saya puas banget! Animasi chart-nya halus dan integrasi API-nya gampang dipahami."</p>
-                    <div class="review-author">
-                        <div class="author-avatar" style="background: #3b82f6;">DW</div>
-                        <div>
-                            <div class="author-name">Dian Wibowo</div>
-                            <div class="author-role">Web Agency Founder</div>
+                            <div class="author-name">
+                                {{ review.user_name }}
+                                <span v-if="review.is_sultan" class="sultan-badge"><i class="fa-solid fa-crown" style="font-size: 10px;"></i> Sultan</span>
+                            </div>
+                            <div class="author-role">{{ review.product_name }}</div>
                         </div>
                     </div>
                 </div>
