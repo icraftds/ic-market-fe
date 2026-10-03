@@ -3,6 +3,8 @@ import { nextTick, onMounted, ref } from 'vue';
 
 definePageMeta({ layout: 'default' })
 
+const config = useRuntimeConfig();
+
 const welcomeUserId = ref('1');
 const welcomeCoins = ref('1.000');
 
@@ -167,7 +169,6 @@ const openPreview = (product) => {
         document.body.style.overflow = 'hidden';
         
         // Record view asynchronously
-        const config = useRuntimeConfig();
         $fetch(`${config.public.apiBase}/products/${product.id}/view`, {
             method: 'POST'
         }).catch(err => console.error('Failed to record view:', err));
@@ -319,7 +320,6 @@ watch(() => route.query, () => {
 
 const fetchFeaturedReviews = async () => {
     try {
-        const config = useRuntimeConfig();
         const res = await $fetch(`${config.public.apiBase}/reviews/featured`);
         if (res.success) {
             featuredReviews.value = res.data;
@@ -341,6 +341,7 @@ onMounted(async () => {
     }
     await applyRouteQuery();
     await refreshHotProducts();
+    await fetchFeaturedReviews();
 
     // Intersection Observer for infinite scroll
     const observer = new IntersectionObserver((entries) => {
