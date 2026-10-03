@@ -652,6 +652,7 @@ a { text-decoration: none; color: inherit; }
     top: 64px;
     height: calc(100vh - 64px);
     overflow-y: auto;
+    align-self: start;
 }
 
 .sidebar-section { margin-bottom: 36px; }
