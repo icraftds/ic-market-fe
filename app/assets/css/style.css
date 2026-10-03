@@ -137,13 +137,12 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; overflow-x: clip; width: 100%; max-width: 100%; }
+html { scroll-behavior: smooth; width: 100%; max-width: 100%; }
 
 body {
     font-family: 'Inter', sans-serif;
     background: var(--bg);
     color: var(--text);
-    overflow-x: clip;
     width: 100%;
     max-width: 100%;
     -webkit-font-smoothing: antialiased;
