@@ -393,77 +393,43 @@ onMounted(async () => {
             <!-- Label Produk Terpanas -->
             <div class="hot-label">🔥 Produk Terpanassss</div>
 
-            <!-- Card Stack (bertumpuk & miring) -->
-            <div class="hero-card-stack" id="hero-card-stack">
+            <!-- Hot Products Grid (2x2) -->
+            <div class="hero-card-grid" id="hero-card-grid">
 
                 <template v-if="isLoading">
-                    <article class="stack-card product-card stack-active" style="pointer-events: none; opacity: 0.8; height: 420px; display: flex; flex-direction: column;">
-                        <div class="card-thumb skeleton-box" style="flex: 1; border-radius: 0;"></div>
-                        <div class="card-body">
-                            <div class="skeleton-box" style="height: 14px; width: 40%; margin-bottom: 8px;"></div>
-                            <div class="skeleton-box" style="height: 18px; width: 70%; margin-bottom: 12px;"></div>
-                            <div class="card-footer" style="border: none; padding-top: 0; margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
-                                <div class="skeleton-box" style="height: 24px; width: 40%;"></div>
-                                <div class="skeleton-box" style="height: 16px; width: 25%;"></div>
-                            </div>
-                            <div style="text-align: center; padding-top: 12px; font-size: 0.85rem; font-weight: 600; color: var(--muted); border-top: 1px solid var(--border); margin-top: 12px;">
-                                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 4px;"></i> Memuat produk..
+                    <article v-for="i in 4" :key="'skel-hot-'+i" class="product-card" style="pointer-events: none; opacity: 0.8; display: flex; flex-direction: column;">
+                        <div class="card-thumb skeleton-box" style="flex: 1; min-height: 120px; border-radius: 0;"></div>
+                        <div class="card-body" style="padding: 12px;">
+                            <div class="skeleton-box" style="height: 12px; width: 50%; margin-bottom: 6px;"></div>
+                            <div class="skeleton-box" style="height: 16px; width: 80%; margin-bottom: 8px;"></div>
+                            <div style="text-align: center; padding-top: 8px; font-size: 0.75rem; font-weight: 600; color: var(--muted); border-top: 1px solid var(--border); margin-top: 8px;">
+                                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 4px;"></i> Memuat..
                             </div>
                         </div>
                     </article>
                 </template>
 
                 <template v-else>
-                    <article v-for="(product, index) in hotProducts" :key="product.id"
-                        class="stack-card product-card" @click="openPreview(product)"
-                        :class="[`stack-card--${3 - index}`, index === 0 ? 'stack-active' : '']"
-                        :data-title="product.name"
-                        :data-store="product.storeName"
-                        :data-store-slug="product.storeSlug"
-                        :data-category="product.category"
-                        :data-price="product.price"
-                        :data-img="catalogImage(product)"
-                        :data-tags="catalogTags(product).join(',')">
-                    <div class="card-thumb">
-                        <img :src="catalogImage(product)" :alt="product.name">
-                        <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
-                            {{ product.price === 0 ? 'Gratis' : 'Premium' }}
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">{{ product.category }}</span>
-                        <a class="card-store" :href="`/store/${product.storeSlug}`">Oleh: {{ product.storeName }}</a>
-                        <h3 class="card-title">{{ product.name }}</h3>
-                        <div class="card-footer">
-                            <span class="card-price" :class="{ 'free-price': product.price === 0 }">
-                                <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
+                    <article v-for="product in hotProducts.slice(0, 4)" :key="product.id"
+                        class="product-card" @click="openPreview(product)"
+                        style="cursor: pointer;">
+                        <div class="card-thumb">
+                            <img :src="catalogImage(product)" :alt="product.name">
+                            <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
+                                {{ product.price === 0 ? 'Gratis' : 'Premium' }}
                             </span>
-                            <div class="card-rating">
-                                <i class="fa-solid fa-star"></i>
-                                {{ catalogReviews(product) > 0 ? `${catalogRating(product).toFixed(1)} (${catalogReviews(product)})` : 'Baru' }}
+                        </div>
+                        <div class="card-body">
+                            <span class="card-category">{{ product.category }}</span>
+                            <h3 class="card-title">{{ product.name }}</h3>
+                            <div class="card-footer">
+                                <span class="card-price" :class="{ 'free-price': product.price === 0 }">
+                                    <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
+                                </span>
                             </div>
                         </div>
-                        <div class="card-actions hero-featured-btn" style="padding:0; margin-top:8px;"
-                            :data-title="product.name"
-                            :data-store="product.storeName"
-                            :data-store-slug="product.storeSlug"
-                            :data-category="product.category"
-                            :data-price="product.price"
-                            :data-product-id="product.id"
-                            :data-img="catalogImage(product)"
-                            :data-tags="catalogTags(product).join(',')">
-                            <button class="btn-primary" style="width:100%">
-                                <i class="fa-solid fa-cart-shopping"></i> Tambah
-                            </button>
-                        </div>
-                    </div>
-                </article>
+                    </article>
                 </template>
-
-                <!-- Hint klik -->
-                <div class="stack-hint">
-                    <i class="fa-solid fa-hand-pointer"></i> Klik kartu belakang untuk pindah
-                </div>
             </div>
         </div>
         </div>
