@@ -235,9 +235,9 @@ const placeOrder = async () => {
       return
     }
 
-    // Clear backend cart
-    const { clearCart } = useCart()
-    await clearCart()
+    // Sync cart state with backend (backend already removed checkout items)
+    const { fetchCart } = useCart()
+    await fetchCart()
 
     localStorage.removeItem('icmarket_cart')
     localStorage.removeItem('icmarket_checkout_groups')
@@ -246,6 +246,7 @@ const placeOrder = async () => {
 
     localStorage.setItem('icmarket_order_id', response.data.transaction_id)
     localStorage.setItem('icmarket_order_status', response.data.status)
+    localStorage.setItem('icmarket_order_created_at', response.data.created_at)
 
     // Always go to payment page for iCoin-Z payment
     router.push('/payment')

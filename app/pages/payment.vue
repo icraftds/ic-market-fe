@@ -113,14 +113,29 @@ onMounted(async () => {
   uniqueSuffix.value  = Math.floor(Math.random() * 900) + 100
   transferTotal.value = total.value + uniqueSuffix.value
 
-  let seconds = 24 * 60 - 1
-  timerInterval = setInterval(() => {
-    if (seconds <= 0) { clearInterval(timerInterval); timerText.value = '00:00'; return }
-    seconds--
-    const m = String(Math.floor(seconds / 60)).padStart(2, '0')
-    const s = String(seconds % 60).padStart(2, '0')
-    timerText.value = `${m}:${s}`
-  }, 1000)
+  const orderCreatedAtStr = localStorage.getItem('icmarket_order_created_at')
+  const orderCreatedAt = orderCreatedAtStr ? new Date(orderCreatedAtStr) : new Date()
+  const expiryDate = new Date(orderCreatedAt.getTime() + 24 * 60 * 60 * 1000)
+
+  const updateTimer = () => {
+    const now = new Date()
+    const diff = Math.floor((expiryDate.getTime() - now.getTime()) / 1000)
+    
+    if (diff <= 0) {
+      if (timerInterval) clearInterval(timerInterval)
+      timerText.value = '00:00:00'
+      paymentError.value = 'Waktu pembayaran telah habis. Pesanan ini akan dibatalkan.'
+      return
+    }
+    
+    const h = String(Math.floor(diff / 3600)).padStart(2, '0')
+    const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0')
+    const s = String(diff % 60).padStart(2, '0')
+    timerText.value = `${h}:${m}:${s}`
+  }
+
+  updateTimer()
+  timerInterval = setInterval(updateTimer, 1000)
 })
 
 onUnmounted(() => {
