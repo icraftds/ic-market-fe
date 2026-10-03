@@ -373,7 +373,7 @@ a { text-decoration: none; color: inherit; }
     background: linear-gradient(90deg, #f59e0b, #ef4444);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-right: 0;
+    align-self: center;
 }
 
 /* ── Hot Products Grid (2x2) ── */

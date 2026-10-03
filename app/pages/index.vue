@@ -391,7 +391,7 @@ onMounted(async () => {
 
         <div class="hero-right">
             <!-- Label Produk Terpanas -->
-            <div class="hot-label">🔥 Produk Terpanassss</div>
+            <div class="hot-label">🔥 Produk Terpanas</div>
 
             <!-- Hot Products Grid (2x2) -->
             <div class="hero-card-grid" id="hero-card-grid">
