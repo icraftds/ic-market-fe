@@ -416,14 +416,6 @@ a { text-decoration: none; color: inherit; }
 .hero-card-grid .card-footer {
     padding-top: 8px;
     margin-top: 8px;
-}255,255,255,0.5);
-    font-family: 'Inter', sans-serif;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-.hero-card-stack:hover .stack-hint {
-    opacity: 1;
 }
 .stat-item {}
 .stat-item .num {
