@@ -23,6 +23,15 @@ const checkoutError = ref('')
 const promoCode      = ref('')
 const promoMsg       = ref('')
 const promoSuccess   = ref(false)
+
+// ── Modals ───────────────────────────────────────────────────────────────────
+const showTermsModal = ref(false)
+const showPrivacyModal = ref(false)
+
+const openTerms = (e) => { e.preventDefault(); showTermsModal.value = true; document.body.style.overflow = 'hidden' }
+const closeTerms = () => { showTermsModal.value = false; document.body.style.overflow = '' }
+const openPrivacy = (e) => { e.preventDefault(); showPrivacyModal.value = true; document.body.style.overflow = 'hidden' }
+const closePrivacy = () => { showPrivacyModal.value = false; document.body.style.overflow = '' }
 const appliedVoucher = ref(null)   // { code, type, amount }
 const orderSummaryRef = ref(null)
 const myVouchers     = ref([])     // user's available vouchers from API
@@ -452,7 +461,7 @@ onMounted(async () => {
           <template #footer>
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.75rem;color:var(--muted);margin-top:16px;margin-bottom:12px;line-height:1.4;">
               <input v-model="agreeTerms" type="checkbox" style="margin-top:2px;accent-color:var(--accent);flex-shrink:0;">
-              <span>Saya menyetujui <a href="#" style="color:var(--accent-2);font-weight:600;">Syarat & Ketentuan</a> dan <a href="#" style="color:var(--accent-2);font-weight:600;">Kebijakan Privasi</a>.</span>
+              <span>Saya menyetujui <a href="#" @click="openTerms" style="color:var(--accent-2);font-weight:600;">Syarat & Ketentuan</a> dan <a href="#" @click="openPrivacy" style="color:var(--accent-2);font-weight:600;">Kebijakan Privasi</a>.</span>
             </label>
 
             <div v-if="checkoutError" class="flow-alert warn" style="margin-bottom:12px;">
@@ -479,6 +488,54 @@ onMounted(async () => {
       </div>
 
     </div>
+
+    <!-- Modals -->
+    <div v-if="showTermsModal" class="legal-overlay" @click.self="closeTerms">
+      <div class="legal-modal">
+        <div class="legal-header">
+          <h3>Syarat & Ketentuan IC Market</h3>
+          <button @click="closeTerms" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="legal-body">
+          <p>Selamat datang di IC Market. Dengan mendaftar dan/atau menggunakan situs kami, Anda menyetujui Syarat dan Ketentuan berikut:</p>
+          <ol>
+            <li><strong>Penggunaan Layanan:</strong> Layanan ini ditujukan untuk jual-beli produk digital seperti aset game, source code, desain, dan sejenisnya. Pengguna dilarang mengunggah konten bajakan atau melanggar hak cipta.</li>
+            <li><strong>Transaksi & Saldo:</strong> Seluruh transaksi menggunakan saldo <strong>iCoin-Z</strong>. Saldo yang sudah dibeli tidak dapat diuangkan kembali.</li>
+            <li><strong>Produk Digital:</strong> Akses ke produk digital yang sudah dibeli dijamin selamanya. Jika produk terbukti rusak atau tidak sesuai deskripsi, keluhan dapat diselesaikan melalui pusat resolusi kami.</li>
+            <li><strong>Tanggung Jawab Pengguna:</strong> Anda bertanggung jawab penuh atas keamanan akun dan kata sandi Anda. IC Market tidak bertanggung jawab atas kerugian akibat kelalaian Anda menjaga informasi akun.</li>
+            <li><strong>Perubahan Syarat:</strong> IC Market berhak mengubah Syarat & Ketentuan ini kapan saja tanpa pemberitahuan sebelumnya. Pengguna diharapkan memeriksa halaman ini secara berkala.</li>
+          </ol>
+          <p>Dengan melanjutkan transaksi, Anda menyatakan telah membaca, memahami, dan menyetujui Syarat & Ketentuan di atas.</p>
+        </div>
+        <div class="legal-footer">
+          <button class="flow-cta" style="padding: 10px 20px; font-size: 0.85rem; width: auto;" @click="closeTerms">Saya Mengerti</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showPrivacyModal" class="legal-overlay" @click.self="closePrivacy">
+      <div class="legal-modal">
+        <div class="legal-header">
+          <h3>Kebijakan Privasi IC Market</h3>
+          <button @click="closePrivacy" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="legal-body">
+          <p>Kami di IC Market sangat menghargai privasi Anda. Kebijakan ini menjelaskan bagaimana kami mengumpulkan, menggunakan, dan melindungi informasi pribadi Anda:</p>
+          <ul>
+            <li><strong>Pengumpulan Data:</strong> Kami mengumpulkan informasi yang Anda berikan saat mendaftar, seperti nama, alamat email, nomor WhatsApp, serta riwayat transaksi di platform kami.</li>
+            <li><strong>Penggunaan Informasi:</strong> Informasi Anda digunakan murni untuk memproses pesanan, memberikan dukungan pelanggan (30 hari <em>support</em>), serta meningkatkan layanan.</li>
+            <li><strong>Proteksi Data:</strong> Data Anda diamankan menggunakan enkripsi berlapis (termasuk SSL 256-bit) dan kami mematuhi standar keamanan ketat untuk mencegah akses tidak sah.</li>
+            <li><strong>Berbagi dengan Pihak Ketiga:</strong> Kami tidak pernah menjual atau menyewakan informasi pribadi Anda. Data hanya dibagikan secara terbatas dengan layanan esensial pihak ketiga (seperti <em>payment gateway</em>).</li>
+            <li><strong>Penghapusan Akun:</strong> Anda dapat meminta penghapusan akun beserta seluruh data pribadi dengan menghubungi tim dukungan <em>(support)</em> kami kapan saja.</li>
+          </ul>
+          <p>Dengan menggunakan IC Market, Anda menyetujui seluruh praktik privasi data ini.</p>
+        </div>
+        <div class="legal-footer">
+          <button class="flow-cta" style="padding: 10px 20px; font-size: 0.85rem; width: auto;" @click="closePrivacy">Saya Mengerti</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -646,4 +703,73 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .vc-use-btn:hover { opacity: 0.88; transform: scale(1.03); }
+
+/* ── Legal Modals ─────────────────────────────────────────────────────────── */
+.legal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 15, 30, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.legal-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.legal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.legal-header h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.close-btn:hover { color: var(--red); }
+.legal-body {
+  padding: 24px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+.legal-body p { margin-bottom: 12px; }
+.legal-body ol, .legal-body ul { margin-left: 20px; margin-bottom: 16px; }
+.legal-body li { margin-bottom: 8px; }
+.legal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>
