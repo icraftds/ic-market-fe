@@ -110,6 +110,12 @@ onMounted(async () => {
     return
   }
 
+  const status = localStorage.getItem('icmarket_order_status')
+  if (status === 'completed') {
+    router.push('/success')
+    return
+  }
+
   uniqueSuffix.value  = Math.floor(Math.random() * 900) + 100
   transferTotal.value = total.value + uniqueSuffix.value
 

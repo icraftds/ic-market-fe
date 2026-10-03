@@ -257,8 +257,11 @@ const placeOrder = async () => {
     localStorage.setItem('icmarket_order_status', response.data.status)
     localStorage.setItem('icmarket_order_created_at', response.data.created_at)
 
-    // Always go to payment page for iCoin-Z payment
-    router.push('/payment')
+    if (response.data.status === 'completed') {
+      router.push('/success')
+    } else {
+      router.push('/payment')
+    }
   } catch (error) {
     console.error('Gagal menyiapkan pesanan:', error)
     checkoutError.value = error.data?.message || 'Pesanan belum dapat diproses. Silakan coba lagi.'
