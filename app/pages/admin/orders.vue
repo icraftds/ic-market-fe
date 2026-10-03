@@ -27,7 +27,25 @@ const loadOrders = async () => {
       headers: { Authorization: `Bearer ${authToken.value}` }
     })
     if (res.success && res.data) {
-      orders.value = res.data
+      let defaultCommissionRate = 10;
+      if (import.meta.client) {
+          const stored = JSON.parse(localStorage.getItem('icmarket_system_settings') || 'null');
+          if (stored && stored.defaultCommissionRate !== undefined) {
+              defaultCommissionRate = Number(stored.defaultCommissionRate);
+          }
+      }
+      
+      const processedOrders = res.data.map(order => {
+          if (order.storeOrders) {
+              order.storeOrders.forEach(so => {
+                  so.commissionRate = defaultCommissionRate;
+                  so.platformFee = so.total * (so.commissionRate / 100);
+                  so.sellerNet = so.total - so.platformFee;
+              });
+          }
+          return order;
+      });
+      orders.value = processedOrders
     }
   } catch (e) {
     console.error('Failed to load orders', e)

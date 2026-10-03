@@ -84,7 +84,22 @@ const loadOrders = async () => {
     })
     
     if (response.success && response.data) {
-      orders.value = response.data
+      let defaultCommissionRate = 10;
+      if (import.meta.client) {
+          const stored = JSON.parse(localStorage.getItem('icmarket_system_settings') || 'null');
+          if (stored && stored.defaultCommissionRate !== undefined) {
+              defaultCommissionRate = Number(stored.defaultCommissionRate);
+          }
+      }
+
+      const processedOrders = response.data.map(order => {
+          order.commissionRate = defaultCommissionRate;
+          order.platformFee = order.total * (order.commissionRate / 100);
+          order.sellerNet = order.total - order.platformFee;
+          return order;
+      });
+
+      orders.value = processedOrders
     }
   } catch (error) {
     console.error('Failed to load orders', error)
