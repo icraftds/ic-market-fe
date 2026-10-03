@@ -526,89 +526,16 @@ onMounted(async () => {
                 </template>
 
                 <template v-else>
-                    <!-- Produk seller dinamis: memakai UI card yang sama dengan file ZIP -->
-                    <article
+                    <ProductCard
                         v-for="product in catalogProducts"
-                    :key="product.catalogId"
-                    class="product-card" @click="openPreview(product)"
-                    :data-category="String(product.category || '').toLowerCase()"
-                    :data-price="product.price"
-                    :data-img="catalogImage(product)"
-                    :data-title="product.name"
-                    :data-store="product.storeName"
-                    :data-store-slug="product.storeSlug"
-                    :data-store-id="product.storeId"
-                    :data-store-application-id="product.storeApplicationId"
-                    :data-tenant-schema="product.tenantSchema"
-                    :data-product-id="product.id"
-                    :data-catalog-id="product.catalogId"
-                    :data-desc="product.description || 'Produk dari seller IC Market.'"
-                    :data-features="catalogFeatures(product).join(',')"
-                    :data-spec-updated="catalogSpecifications(product).lastUpdated"
-                    :data-spec-support="catalogSpecifications(product).support"
-                    :data-spec-format="catalogSpecifications(product).fileFormat"
-                    :data-spec-license="catalogSpecifications(product).license"
-                    :data-tags="catalogTags(product).join(',')"
-                    :data-rating="catalogRating(product)"
-                    :data-reviews="catalogReviews(product)"
-                    :data-free="product.price === 0 ? 'true' : 'false'"
-                    :data-type="product.type || 'Digital'"
-                >
-                    <div class="card-thumb">
-                        <img :src="catalogImage(product)" :alt="product.name" loading="lazy">
-                        <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
-                            {{ product.price === 0 ? 'Gratis' : 'Seller' }}
-                        </span>
-                        <button class="card-quick-view" aria-label="Quick View">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-category">{{ product.category }}</span>
-                        <a class="card-store" :href="`/store/${product.storeSlug}`">
-                            Oleh: {{ product.storeName }}
-                        </a>
-                        <h3 class="card-title">{{ product.name }}</h3>
-                        <div class="card-footer">
-                            <span class="card-price" :class="{ 'free-price': product.price === 0 }">
-                                <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
-                            </span>
-                            <div class="card-rating">
-                                <i class="fa-solid fa-star"></i>
-                                {{ catalogReviews(product) > 0 ? `${catalogRating(product).toFixed(1)} (${catalogReviews(product)})` : 'Baru' }}
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                            <button
-                                v-if="product.price > 0"
-                                class="btn-primary card-buy-direct"
-                                :style="isInCart(product.id || product.catalogId) ? 'opacity: 0.5; cursor: not-allowed;' : ''"
-                                :disabled="isInCart(product.id || product.catalogId)"
-                                aria-label="Beli Langsung"
-                                @click.stop="!isInCart(product.id || product.catalogId) && handleDirectBuy(product, $event)"
-                            >
-                                <i class="fa-solid fa-bolt"></i> Beli
-                            </button>
-                            <button
-                                class="btn-icon card-add-cart"
-                                :class="{ 'btn-primary download': product.price === 0, 'in-cart': product.price > 0 && isInCart(product.id || product.catalogId) }"
-                                :style="product.price === 0 ? 'width:100%;' : ''"
-                                :aria-label="product.price === 0 ? 'Download gratis' : 'Tambahkan Keranjang'"
-                                @click.stop="handleAddCart(product, $event)"
-                            >
-                                <template v-if="product.price === 0">
-                                    <i class="fa-solid fa-download"></i> Download
-                                </template>
-                                <template v-else-if="isInCart(product.id || product.catalogId)">
-                                    <i class="fa-solid fa-check"></i>
-                                </template>
-                                <template v-else>
-                                    <i class="fa-solid fa-cart-plus"></i>
-                                </template>
-                            </button>
-                        </div>
-                    </div>
-                </article>
+                        :key="product.catalogId"
+                        :product="product"
+                        :show-quick-view="true"
+                        @preview="openPreview"
+                        @add-cart="handleAddCart"
+                        @direct-buy="handleDirectBuy"
+                    />
+
                 </template>
 
             </div><!-- /product-grid -->

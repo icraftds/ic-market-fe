@@ -303,61 +303,15 @@ onMounted(() => {
           <span>{{ store.products.length }} produk</span>
         </div>
 
-        <div v-if="store.products.length" class="product-grid list-view" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; align-items: start;">
-          <article
+        <div v-if="store.products.length" class="product-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; align-items: start;">
+          <ProductCard
             v-for="product in store.products"
             :key="product.id || product.catalogId"
-            class="product-card"
-          >
-            <div class="card-thumb">
-                <img :src="catalogImage(product)" :alt="product.name" loading="lazy">
-                <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
-                    {{ product.price === 0 ? 'Gratis' : 'Seller' }}
-                </span>
-            </div>
-            <div class="card-body">
-                <span class="card-category">{{ product.category }}</span>
-                <a class="card-store" :href="`/store/${slug}`">
-                    Oleh: {{ store.name }}
-                </a>
-                <h3 class="card-title">{{ product.name }}</h3>
-                <div class="card-footer">
-                    <span class="card-price" :class="{ 'free-price': product.price === 0 }">
-                        <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
-                    </span>
-                    <div class="card-rating">
-                        <i class="fa-solid fa-star"></i>
-                        {{ catalogReviews(product) > 0 ? `${catalogRating(product).toFixed(1)} (${catalogReviews(product)})` : 'Baru' }}
-                    </div>
-                </div>
-                <div class="card-actions">
-                    <button
-                        v-if="product.price > 0"
-                        class="btn-primary card-buy-direct"
-                        :style="isInCart(product.id || product.catalogId) ? 'opacity: 0.5; cursor: not-allowed;' : ''"
-                        :disabled="isInCart(product.id || product.catalogId)"
-                        aria-label="Beli Langsung"
-                        @click.stop="!isInCart(product.id || product.catalogId) && handleDirectBuy(product, $event)"
-                    >
-                        <i class="fa-solid fa-bolt"></i> Beli
-                    </button>
-                    <button
-                        class="btn-icon card-add-cart"
-                        :class="{ 'btn-primary download': product.price === 0, 'in-cart': product.price > 0 && isInCart(product.id || product.catalogId) }"
-                        :style="product.price === 0 ? 'width:100%;' : ''"
-                        :aria-label="product.price === 0 ? 'Download gratis' : 'Tambahkan Keranjang'"
-                        @click.stop="handleAddCart(product, $event)"
-                    >
-                        <template v-if="product.price === 0">
-                            <i class="fa-solid fa-download"></i> Download
-                        </template>
-                        <template v-else>
-                            <i class="fa-solid fa-cart-plus"></i> <span v-if="isInCart(product.id || product.catalogId)">Di Keranjang</span><span v-else>Keranjang</span>
-                        </template>
-                    </button>
-                </div>
-            </div>
-          </article>
+            :product="product"
+            :show-quick-view="false"
+            @add-cart="handleAddCart"
+            @direct-buy="handleDirectBuy"
+          />
         </div>
 
         <div v-else class="empty-products">
