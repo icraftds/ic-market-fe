@@ -125,7 +125,14 @@ const processTopup = async () => {
     }
   } catch (error) {
     console.error('Topup failed:', error)
-    alert('Terjadi kesalahan saat memproses top up. Pastikan server backend berjalan.')
+    const status = error.response?.status
+    const errorMsg = error.data?.message || error.message || ''
+    
+    if (status === 500 || status === 502 || status === 504 || status === 522 || errorMsg.includes('522') || errorMsg.toLowerCase().includes('pakasir')) {
+      alert('Maaf Server Pembayaran sedang sibuk, silakan coba dalam beberapa menit,')
+    } else {
+      alert('Terjadi kesalahan saat memproses top up. Pastikan server backend berjalan.')
+    }
   } finally {
     isProcessing.value = false
   }
