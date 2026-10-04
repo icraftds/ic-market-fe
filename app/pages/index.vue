@@ -26,6 +26,7 @@ const showWelcome = ref(false);
 const welcomeUser = ref('');
 const welcomeType = ref('login');
 const featuredReviews = ref([]);
+const categories = ref([]);
 
 
 
@@ -329,6 +330,17 @@ const fetchFeaturedReviews = async () => {
     }
 };
 
+const fetchCategories = async () => {
+    try {
+        const res = await $fetch(`${config.public.apiBase}/products/categories`);
+        if (res.success) {
+            categories.value = res.data;
+        }
+    } catch (e) {
+        console.error('Failed to fetch categories', e);
+    }
+};
+
 onMounted(async () => {
     if (import.meta.client && sessionStorage.getItem('icmarket_show_welcome')) {
         const type = sessionStorage.getItem('icmarket_show_welcome');
@@ -342,6 +354,7 @@ onMounted(async () => {
     await applyRouteQuery();
     await refreshHotProducts();
     await fetchFeaturedReviews();
+    await fetchCategories();
 
     // Intersection Observer for infinite scroll
     const observer = new IntersectionObserver((entries) => {
@@ -468,14 +481,8 @@ onMounted(async () => {
         <li class="cat-item" :class="{ active: activeCategory === 'semua' }" @click="setCategory('semua')">
             Semua <span class="cat-count">{{ totalProducts }}</span>
         </li>
-        <li class="cat-item" :class="{ active: activeCategory === 'web template' }" @click="setCategory('web template')">
-            Web Template
-        </li>
-        <li class="cat-item" :class="{ active: activeCategory === 'ui kit' }" @click="setCategory('ui kit')">
-            UI Kit
-        </li>
-        <li class="cat-item" :class="{ active: activeCategory === 'source code' }" @click="setCategory('source code')">
-            Source Code
+        <li v-for="cat in categories" :key="cat" class="cat-item" style="text-transform: capitalize;" :class="{ active: activeCategory === cat }" @click="setCategory(cat)">
+            {{ cat }}
         </li>
     </ul>
             </div>
