@@ -313,7 +313,7 @@ onBeforeUnmount(() => {
         <div class="nb-right">
           <span class="nb-tag">50+ Produk Digital</span>
           <span class="nb-tag">Support 30 Hari</span>
-          <span class="nb-tag green">✦ Gratis Ongkir Digital</span>
+          <span class="nb-tag green">✦ Akses Instan (Otomatis)</span>
         </div>
 
       </div>
