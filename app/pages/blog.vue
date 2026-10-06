@@ -30,6 +30,7 @@ definePageMeta({ layout: 'default' })
         </div>
       </div>
     </div>
+    <SiteFooter style="position: absolute; bottom: 0; width: 100%;" />
   </main>
 </template>
 

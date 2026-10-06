@@ -61,6 +61,7 @@ const toggleFaq = (index) => {
         </div>
       </div>
     </div>
+    <SiteFooter />
   </main>
 </template>
 

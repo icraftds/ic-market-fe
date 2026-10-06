@@ -60,6 +60,7 @@ definePageMeta({ layout: 'default' })
         </section>
       </div>
     </div>
+    <SiteFooter />
   </main>
 </template>
 

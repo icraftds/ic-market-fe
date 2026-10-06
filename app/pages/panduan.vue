@@ -56,6 +56,7 @@ const steps = [
         </NuxtLink>
       </div>
     </div>
+    <SiteFooter />
   </main>
 </template>
 
