@@ -3,69 +3,195 @@ definePageMeta({ layout: 'default' })
 </script>
 
 <template>
-  <main class="static-page">
-    <div class="static-container">
-      <div class="coming-soon-wrapper">
-        <i class="fa-solid fa-newspaper"></i>
-        <h1>Blog IC Market</h1>
-        <p>Fitur blog saat ini sedang dalam tahap pengembangan. Segera nantikan artikel-artikel menarik seputar dunia *programming*, desain, dan pembaruan platform kami!</p>
-        <NuxtLink to="/" class="primary-button">Kembali ke Beranda</NuxtLink>
+  <main class="blog-page">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+    
+    <div class="blog-container">
+      <div class="coming-soon-card">
+        <div class="floating-icon">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div class="badge">Sedang Diramu</div>
+        <h1 class="gradient-text">Blog IC Market</h1>
+        <p class="description">
+          Tim iCraft sedang merebus ide-ide segar! Segera nantikan artikel seputar dunia programming, tips desain UI/UX, dan cerita di balik layar pengembangan platform ini.
+        </p>
+        
+        <div class="newsletter-mockup">
+          <input type="text" placeholder="Tinggalkan email untuk notifikasi..." disabled />
+          <button disabled>Beritahu Saya</button>
+        </div>
+        
+        <div class="action-links">
+          <NuxtLink to="/" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Kembali ke Beranda
+          </NuxtLink>
+        </div>
       </div>
     </div>
   </main>
 </template>
 
 <style scoped>
-.static-page {
-  padding: 60px 20px;
+.blog-page {
   min-height: calc(100vh - 140px);
-  background: var(--bg-color, #f4f7f6);
+  background: var(--bg-color, #0f172a);
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 40px 20px;
 }
 
-.static-container {
-  max-width: 600px;
+.blob-1, .blob-2 {
+  position: absolute;
+  filter: blur(80px);
+  z-index: 0;
+  border-radius: 50%;
+  animation: float 10s ease-in-out infinite alternate;
+}
+
+.blob-1 {
+  top: 10%;
+  left: 20%;
+  width: 400px;
+  height: 400px;
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.blob-2 {
+  bottom: 10%;
+  right: 20%;
+  width: 500px;
+  height: 500px;
+  background: rgba(168, 85, 247, 0.15);
+  animation-delay: -5s;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, -50px) scale(1.1); }
+}
+
+.blog-container {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 12px;
-  padding: 50px 30px;
-  text-align: center;
+  max-width: 600px;
 }
 
-.coming-soon-wrapper i {
-  font-size: 3rem;
-  color: var(--primary, #1472ff);
+.coming-soon-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  padding: 60px 40px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.4);
+}
+
+.floating-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #38bdf8, #8b5cf6);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  margin: 0 auto 30px;
+  box-shadow: 0 15px 30px -10px rgba(139, 92, 246, 0.5);
+  animation: float-icon 3s ease-in-out infinite alternate;
+}
+
+@keyframes float-icon {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-10px); }
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   margin-bottom: 20px;
 }
 
-.coming-soon-wrapper h1 {
+.gradient-text {
   font-family: 'Outfit', sans-serif;
-  font-size: 2rem;
-  margin-bottom: 10px;
-  color: var(--text-primary, #111);
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 20px;
 }
 
-.coming-soon-wrapper p {
-  color: var(--text-secondary, #666);
-  line-height: 1.6;
-  margin-bottom: 30px;
+.description {
+  color: #94a3b8;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 40px;
 }
 
-.primary-button {
-  display: inline-block;
-  padding: 12px 24px;
-  background: var(--primary, #1472ff);
+.newsletter-mockup {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 40px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.newsletter-mockup input {
+  flex: 1;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.2s;
+  font-family: inherit;
+  outline: none;
 }
 
-.primary-button:hover {
-  background: var(--primary-dark, #0d5dd6);
+.newsletter-mockup button {
+  padding: 16px 24px;
+  background: #38bdf8;
+  color: #0f172a;
+  border: none;
+  border-radius: 16px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.action-links {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 30px;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #f8fafc;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.btn-back:hover {
+  color: #38bdf8;
+}
+
+@media (max-width: 768px) {
+  .coming-soon-card { padding: 40px 20px; }
+  .newsletter-mockup { flex-direction: column; }
 }
 </style>
