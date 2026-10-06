@@ -39,7 +39,7 @@
     <div class="footer-bottom">
         <div class="footer-bottom-inner">
             <span class="footer-bottom-text">© 2026 IC Market · iCraft Studio. All rights reserved.</span>
-            <span class="footer-bottom-text">Made with ♥ in Indonesia</span>
+            <span class="footer-bottom-text">Made with ♥ in Bandung</span>
         </div>
     </div>
   </div>
