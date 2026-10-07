@@ -140,9 +140,8 @@ onBeforeUnmount(() => {
                     <!-- NOT LOGGED IN -->
           <template v-if="!isLoggedIn">
             <div class="desktop-auth-btns">
-              <NuxtLink to="/login" class="nav-btn-ghost">Masuk</NuxtLink>
-              <NuxtLink to="/register" class="nav-btn-primary">
-                <i class="fa-solid fa-user-plus"></i> Daftar Gratis
+              <NuxtLink to="/login" class="nav-btn-primary">
+                <i class="fa-solid fa-right-to-bracket"></i> Masuk/Daftar
               </NuxtLink>
             </div>
             
@@ -153,10 +152,7 @@ onBeforeUnmount(() => {
               <div v-if="isMenuOpen" class="nav-dropdown burger-dropdown">
                 <div class="nav-dropdown-body">
                   <NuxtLink to="/login" class="dd-item" @click="isMenuOpen = false">
-                    <i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>
-                  </NuxtLink>
-                  <NuxtLink to="/register" class="dd-item accent" @click="isMenuOpen = false">
-                    <i class="fa-solid fa-user-plus"></i><span>Daftar Gratis</span>
+                    <i class="fa-solid fa-right-to-bracket"></i><span>Masuk/Daftar</span>
                   </NuxtLink>
                 </div>
               </div>
