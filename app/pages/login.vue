@@ -5,6 +5,8 @@ import OtpForm from '~/components/OtpForm.vue'
 definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
+const config = useRuntimeConfig()
+const { pending: isSubmitting, run: runAuth, redirect: redirectAuth } = useAuthPending()
 const { session, login, verifyOtp, resendOtp } = useDemoAuth()
 const {
   readApplications,
@@ -21,12 +23,12 @@ const form = reactive({
 const error = ref('')
 const showOtpForm = ref(false)
 const otpCode = ref('')
-const isVerifyingOtp = ref(false)
+const isVerifyingOtp = isSubmitting
 const resendMessage = ref('')
 
 onMounted(() => {
-  if (useRuntimeConfig().public.ssoEnabled) {
-    window.location.replace('/auth/start?return_to=' + encodeURIComponent(typeof route.query.redirect === 'string' ? route.query.redirect : '/'))
+  if (config.public.ssoEnabled) {
+    redirectAuth('/auth/start?return_to=' + encodeURIComponent(typeof route.query.redirect === 'string' ? route.query.redirect : '/'), { replace: true })
     return
   }
   const savedEmail = sessionStorage.getItem('icmarket_login_email')
@@ -190,80 +192,67 @@ const finishLogin = async (user) => {
   await navigateTo(redirectTarget.value)
 }
 
-const isSubmitting = ref(false)
-
-async function submitLogin() {
+async function submitLogin(event) {
+  if (isSubmitting.value || event?.target?.reportValidity?.() === false) return
   error.value = ''
-
   const email = form.email.trim().toLowerCase()
   const password = form.password
-
   if (!email || !password) {
     error.value = 'Email dan password wajib diisi.'
     return
   }
-
-  isSubmitting.value = true
-
-  const result = await login(email, password)
-
-  isSubmitting.value = false
-
-  if (!result.success) {
-    if (result.is_unverified) {
-      sessionStorage.setItem('icmarket_login_email', email)
-      showOtpForm.value = true
-    } else {
-      error.value = result.message
+  await runAuth(async signal => {
+    const result = await login(email, password, { signal })
+    signal.throwIfAborted()
+    if (!result.success) {
+      if (result.is_unverified) {
+        sessionStorage.setItem('icmarket_login_email', email)
+        showOtpForm.value = true
+      } else error.value = result.message
+      return
     }
-    return
-  }
+    await completeLoginNavigation()
+  })
+}
 
-  if (session.value?.role === 'seller') {
-    await navigateTo('/seller/dashboard')
-  } else {
-      if (import.meta.client && redirectTarget.value === '/') {
-    sessionStorage.setItem('icmarket_show_welcome', '1')
-  }
-  await navigateTo(redirectTarget.value)
+async function completeLoginNavigation() {
+  if (session.value?.role === 'seller') await navigateTo('/seller/dashboard')
+  else {
+    if (import.meta.client && redirectTarget.value === '/') sessionStorage.setItem('icmarket_show_welcome', '1')
+    await navigateTo(redirectTarget.value)
   }
 }
 
 async function submitOtp(code) {
+  if (isSubmitting.value) return
+  if (!/^\d{6}$/.test(String(code))) { error.value = 'OTP harus enam digit.'; return }
   error.value = ''
   resendMessage.value = ''
-  isVerifyingOtp.value = true
-
-  const res = await verifyOtp(form.email.trim().toLowerCase(), code)
-  isVerifyingOtp.value = false
-
-  if (res.success) {
-    sessionStorage.removeItem('icmarket_login_email')
-    showOtpForm.value = false
-
-    if (session.value?.role === 'seller') {
-      await navigateTo('/seller/dashboard')
-    } else {
-        if (import.meta.client && redirectTarget.value === '/') {
-    sessionStorage.setItem('icmarket_show_welcome', '1')
-  }
-  await navigateTo(redirectTarget.value)
-    }
-  } else {
-    error.value = res.message || 'Verifikasi gagal.'
-  }
+  const email = form.email.trim().toLowerCase()
+  await runAuth(async signal => {
+    const res = await verifyOtp(email, code, { signal })
+    signal.throwIfAborted()
+    if (res.success) {
+      sessionStorage.removeItem('icmarket_login_email')
+      showOtpForm.value = false
+      await completeLoginNavigation()
+    } else error.value = res.message || 'Verifikasi gagal.'
+  })
 }
 
 async function handleResendOtp() {
+  if (isSubmitting.value) return
   error.value = ''
-
-  const res = await resendOtp(form.email.trim().toLowerCase())
-  if (!res.success) {
-    error.value = res.message || 'Gagal mengirim ulang OTP.'
-  }
+  const email = form.email.trim().toLowerCase()
+  await runAuth(async signal => {
+    const res = await resendOtp(email, { signal })
+    signal.throwIfAborted()
+    if (!res.success) error.value = res.message || 'Gagal mengirim ulang OTP.'
+  })
 }
 
 function cancelOtp() {
+  if (isSubmitting.value) return
   sessionStorage.removeItem('icmarket_login_email')
   showOtpForm.value = false
   error.value = ''

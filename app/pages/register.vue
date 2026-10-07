@@ -12,15 +12,15 @@ const form = reactive({
   confirmPassword: ''
 })
 
+const { pending: isSubmitting, run: runAuth } = useAuthPending()
 const error = ref('')
 const success = ref(false)
 const showOtpForm = ref(false)
 const otpCode = ref('')
-const isVerifyingOtp = ref(false)
+const isVerifyingOtp = isSubmitting
 const resendMessage = ref('')
 
 const { register, verifyOtp, resendOtp } = useDemoAuth()
-const isSubmitting = ref(false)
 
 onMounted(() => {
   const savedEmail = sessionStorage.getItem('icmarket_register_email')
@@ -30,12 +30,13 @@ onMounted(() => {
   }
 })
 
-async function submitRegister() {
+async function submitRegister(event) {
+  if (isSubmitting.value || event?.target?.reportValidity?.() === false) return
   error.value = ''
   success.value = false
   resendMessage.value = ''
 
-  if (!form.name || !form.email || !form.phone || !form.password || !form.confirmPassword) {
+  if (!form.name.trim() || !form.email.trim() || !form.phone.trim() || !form.password || !form.confirmPassword) {
     error.value = 'Semua field wajib diisi.'
     return
   }
@@ -50,50 +51,47 @@ async function submitRegister() {
     return
   }
 
-  isSubmitting.value = true
-  const res = await register(
-    form.name.trim(), 
-    form.email.trim().toLowerCase(), 
-    form.phone.trim(),
-    form.password, 
-    form.confirmPassword
-  )
-  isSubmitting.value = false
-
-  if (res.success) {
-    sessionStorage.setItem('icmarket_register_email', form.email.trim().toLowerCase())
-    showOtpForm.value = true
-  } else {
-    error.value = res.message || 'Registrasi gagal.'
-  }
+  const payload = [form.name.trim(), form.email.trim().toLowerCase(), form.phone.trim(), form.password, form.confirmPassword]
+  await runAuth(async signal => {
+    const res = await register(...payload, { signal })
+    signal.throwIfAborted()
+    if (res.success) {
+      sessionStorage.setItem('icmarket_register_email', payload[1])
+      showOtpForm.value = true
+    } else error.value = res.message || 'Registrasi gagal.'
+  })
 }
 
 async function submitOtp(code) {
+  if (isSubmitting.value) return
+  if (!/^\d{6}$/.test(String(code))) { error.value = 'OTP harus enam digit.'; return }
   error.value = ''
   resendMessage.value = ''
-  isVerifyingOtp.value = true
-  
-  const res = await verifyOtp(form.email.trim().toLowerCase(), code)
-  isVerifyingOtp.value = false
-
-  if (res.success) {
-    sessionStorage.removeItem('icmarket_register_email')
-    showOtpForm.value = false
-    success.value = true
-  } else {
-    error.value = res.message || 'Verifikasi gagal.'
-  }
+  const email = form.email.trim().toLowerCase()
+  await runAuth(async signal => {
+    const res = await verifyOtp(email, code, { signal })
+    signal.throwIfAborted()
+    if (res.success) {
+      sessionStorage.removeItem('icmarket_register_email')
+      showOtpForm.value = false
+      success.value = true
+    } else error.value = res.message || 'Verifikasi gagal.'
+  })
 }
 
 async function handleResendOtp() {
+  if (isSubmitting.value) return
   error.value = ''
-  const res = await resendOtp(form.email.trim().toLowerCase())
-  if (!res.success) {
-    error.value = res.message || 'Gagal mengirim ulang OTP.'
-  }
+  const email = form.email.trim().toLowerCase()
+  await runAuth(async signal => {
+    const res = await resendOtp(email, { signal })
+    signal.throwIfAborted()
+    if (!res.success) error.value = res.message || 'Gagal mengirim ulang OTP.'
+  })
 }
 
 function cancelOtp() {
+  if (isSubmitting.value) return
   sessionStorage.removeItem('icmarket_register_email')
   showOtpForm.value = false
   error.value = ''

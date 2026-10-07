@@ -1,16 +1,25 @@
 export default defineNuxtRouteMiddleware(async (to) => {
     const config = useRuntimeConfig()
+    const authPending = useAuthPending()
     const { session, syncSession } = useDemoAuth()
 
+    const path = to.path
+    if (config.public.ssoEnabled && ['/login', '/register'].includes(path)) {
+        const target = typeof to.query.redirect === 'string' ? to.query.redirect : '/'
+        if (import.meta.client) {
+            authPending.redirect('/auth/start?return_to=' + encodeURIComponent(target))
+            return false
+        }
+        return navigateTo('/auth/start?return_to=' + encodeURIComponent(target), { external: true, redirectCode: 303 })
+    }
     await syncSession()
 
-    const path = to.path
     if (config.public.ssoEnabled) {
-        if (['/login', '/register'].includes(path)) {
-            const target = typeof to.query.redirect === 'string' ? to.query.redirect : '/'
-            return navigateTo('/auth/start?return_to=' + encodeURIComponent(target), { external: true, redirectCode: 303 })
-        }
         if (!session.value && (path.startsWith('/admin/') || path.startsWith('/seller/') || ['/profile', '/cart', '/checkout', '/orders', '/payment', '/success', '/topup', '/vouchers'].includes(path))) {
+            if (import.meta.client) {
+                authPending.redirect('/auth/start?return_to=' + encodeURIComponent(to.fullPath))
+                return false
+            }
             return navigateTo('/auth/start?return_to=' + encodeURIComponent(to.fullPath), { external: true, redirectCode: 303 })
         }
     }

@@ -133,39 +133,44 @@ export const useDemoAuth = () => {
         return app._sessionRequest
     }
 
-    const register = async (name, email, phone, password, password_confirmation) => {
+    const register = async (name, email, phone, password, password_confirmation, { signal } = {}) => {
         try {
             const response = await productApi(`${config.public.authApiBase}/register`, {
-                method: 'POST',
+                method: 'POST', signal,
                 headers: { Accept: 'application/json' },
                 body: { name, email, phone, password, password_confirmation }
             })
+            signal?.throwIfAborted()
             if (response.success) {
                 // AuthSSO requires OTP, so we just return success to trigger OTP modal
                 return { success: true, message: response.message }
             }
             return { success: false, message: response.message || 'Registrasi gagal' }
         } catch (e) {
+            if (signal?.aborted) throw signal.reason
+            if (!e.response && !e.data) throw e
             return { success: false, retryAfter: e.retryAfter, message: e.data?.message || 'Registrasi gagal, email mungkin sudah terdaftar', errors: e.data?.errors }
         }
     }
 
-    const verifyOtp = async (email, otp) => {
+    const verifyOtp = async (email, otp, { signal } = {}) => {
         if (!/^\d{6}$/.test(String(otp))) return { success: false, message: 'OTP harus enam digit.' }
         try {
             const response = await productApi(`${config.public.authApiBase}/verify-otp`, {
-                method: 'POST',
+                method: 'POST', signal,
                 headers: { Accept: 'application/json' },
                 body: { email, otp: String(otp) }
             })
+            signal?.throwIfAborted()
             if (response.success && response.data?.token) {
                 // Sync SSO token with backend to get backend token and role
                 const syncRes = await productApi(`${config.public.apiBase}/sso/sync`, {
-                    method: 'POST',
+                    method: 'POST', signal,
                     headers: { Accept: 'application/json' },
                     body: { token: response.data.token }
                 })
                 
+                signal?.throwIfAborted()
                 if (syncRes.success && syncRes.data?.token) {
                     await acceptMarketSession(syncRes.data)
                     if (import.meta.client) {
@@ -176,38 +181,44 @@ export const useDemoAuth = () => {
             }
             return { success: false, message: response.message || 'Verifikasi gagal' }
         } catch (e) {
+            if (signal?.aborted) throw signal.reason
+            if (!e.response && !e.data) throw e
             return { success: false, retryAfter: e.retryAfter, message: e.data?.message || 'OTP salah atau kadaluarsa' }
         }
     }
 
-    const resendOtp = async (email) => {
+    const resendOtp = async (email, { signal } = {}) => {
         try {
             const response = await productApi(`${config.public.authApiBase}/resend-otp`, {
-                method: 'POST',
+                method: 'POST', signal,
                 headers: { Accept: 'application/json' },
                 body: { email }
             })
             return { success: response.success, message: response.message }
         } catch (e) {
+            if (signal?.aborted) throw signal.reason
+            if (!e.response && !e.data) throw e
             return { success: false, retryAfter: e.retryAfter, message: e.data?.message || 'Gagal mengirim ulang OTP' }
         }
     }
 
-    const login = async (email, password) => {
+    const login = async (email, password, { signal } = {}) => {
         try {
             const response = await productApi(`${config.public.authApiBase}/login`, {
-                method: 'POST',
+                method: 'POST', signal,
                 headers: { Accept: 'application/json' },
                 body: { email, password }
             })
+            signal?.throwIfAborted()
             if (response.success && response.data?.token) {
                 // Sync SSO token with backend to get backend token and role
                 const syncRes = await productApi(`${config.public.apiBase}/sso/sync`, {
-                    method: 'POST',
+                    method: 'POST', signal,
                     headers: { Accept: 'application/json' },
                     body: { token: response.data.token }
                 })
 
+                signal?.throwIfAborted()
                 if (syncRes.success && syncRes.data?.token) {
                     await acceptMarketSession(syncRes.data)
                     if (import.meta.client) {
@@ -218,6 +229,8 @@ export const useDemoAuth = () => {
             }
             return { success: false, message: response.message || 'Login gagal' }
         } catch (e) {
+            if (signal?.aborted) throw signal.reason
+            if (!e.response && !e.data) throw e
             const isUnverified = e.data?.errors?.is_unverified?.[0] === true || e.data?.errors?.is_unverified === true
             return { 
                 success: false, 
