@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { nextTick, onMounted, ref } from 'vue';
 
 definePageMeta({ layout: 'default' })
@@ -85,10 +86,24 @@ const catalogSpecifications = (product) => ({
     license: product?.specifications?.license || 'Personal'
 });
 
-const catalogRating = (product) => Number(product?.rating || 0);
-const catalogReviews = (product) => Number(product?.review_count || 0);
+const catalogRating = (product) => Number(product?.reviews_avg_rating ?? product?.rating ?? 0);
+const catalogReviews = (product) => Number(product?.reviews_count ?? product?.review_count ?? 0);
 
-const selectedProduct = ref(null);
+const selectedProduct = ref(null)
+const reviewMeta = ref(null)
+const reviewsLoading = ref(false)
+const reviewsConfig = useRuntimeConfig()
+const loadProductReviews = async (page = 1) => {
+    if (!selectedProduct.value || reviewsLoading.value) return
+    const id = selectedProduct.value.id
+    reviewsLoading.value = true
+    try {
+        const response = await productApi(`${reviewsConfig.public.apiBase}/products/${id}/reviews`, { query: { page, limit: 20 } })
+        if (selectedProduct.value?.id !== id) return
+        selectedProduct.value = { ...selectedProduct.value, reviews: response.data || [] }
+        reviewMeta.value = response.meta
+    } finally { reviewsLoading.value = false }
+};
 const activeImageIndex = ref(0);
 
 
@@ -164,13 +179,15 @@ const animateToCart = (btn) => {
 
 const openPreview = (product) => {
     selectedProduct.value = product;
+    reviewMeta.value = null;
+    loadProductReviews().catch(() => {});
     activeImageIndex.value = 0;
     if (import.meta.client) {
         document.getElementById('preview-modal')?.showModal();
         document.body.style.overflow = 'hidden';
         
         // Record view asynchronously
-        $fetch(`${config.public.apiBase}/products/${product.id}/view`, {
+        productApi(`${config.public.apiBase}/products/${product.id}/view`, {
             method: 'POST'
         }).catch(err => console.error('Failed to record view:', err));
     }
@@ -321,7 +338,7 @@ watch(() => route.query, () => {
 
 const fetchFeaturedReviews = async () => {
     try {
-        const res = await $fetch(`${config.public.apiBase}/reviews/featured`);
+        const res = await productApi(`${config.public.apiBase}/reviews/featured`);
         if (res.success) {
             featuredReviews.value = res.data;
         }
@@ -332,7 +349,7 @@ const fetchFeaturedReviews = async () => {
 
 const fetchCategories = async () => {
     try {
-        const res = await $fetch(`${config.public.apiBase}/products/categories`);
+        const res = await productApi(`${config.public.apiBase}/products/categories`);
         if (res.success) {
             categories.value = res.data;
         }
@@ -706,6 +723,7 @@ onMounted(async () => {
                     </div>
                 </div>
                 
+                <ApiPagination :meta="reviewMeta" :busy="reviewsLoading" @page="loadProductReviews" />
                 <div v-if="selectedProduct && selectedProduct.reviews && selectedProduct.reviews.length" class="modal-reviews" style="padding: 0 24px 24px;">
                     <h3 style="font-size: 1rem; margin-bottom: 12px;">Ulasan Pembeli</h3>
                     <div class="review-scroll" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; scroll-snap-type: x mandatory;">

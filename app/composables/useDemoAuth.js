@@ -1,4 +1,6 @@
 export const useDemoAuth = () => {
+    if (useRuntimeConfig().public.ssoEnabled) return useSsoAuth()
+    const productApi = useProductApi()
     const session = useState('icmarket-auth-session', () => null)
 
     const sessionCookie = useCookie('icmarket_auth_token', {
@@ -7,38 +9,133 @@ export const useDemoAuth = () => {
     })
 
     const config = useRuntimeConfig()
+    const app = useNuxtApp()
+    const walletBalance = useState('icmarket-wallet-balance', () => null)
+    const walletStatus = useState('icmarket-wallet-status', () => 'unavailable')
+    const walletInitializationPending = useState('icmarket-wallet-init-pending', () => false)
+    const walletHistories = useState('icmarket-wallet-histories', () => [])
+    const walletMeta = useState('icmarket-wallet-meta', () => null)
+    const authStatus = useState('icmarket-auth-status', () => 'idle')
 
-    const fetchUser = async () => {
+    const fetchWallet = async (page = null) => {
+        const currentToken = sessionCookie.value
+        if (!currentToken) return false
+        try {
+            const response = await productApi(`${config.public.apiBase}/wallet`, {
+                headers: { Authorization: `Bearer ${currentToken}` },
+                query: page === null ? { include_histories: 0 } : { page, limit: 20 }
+            })
+            if (currentToken !== sessionCookie.value) return false
+            if (!response.success || response.data?.balance == null) throw new Error('Saldo tidak tersedia')
+            walletBalance.value = Number(response.data.balance)
+            walletStatus.value = 'fresh'
+            if (session.value) session.value = { ...session.value, coins: walletBalance.value }
+            if (page !== null) {
+                walletHistories.value = response.data.histories || []
+                walletMeta.value = response.meta
+            }
+            return true
+        } catch (error) {
+            if (currentToken === sessionCookie.value) walletStatus.value = walletBalance.value === null ? 'unavailable' : 'stale'
+            return false
+        }
+    }
+
+    const initializeWallet = async (retry = false) => {
+        const currentToken = sessionCookie.value
+        if (!currentToken || !import.meta.client) return false
+        if (app._walletInitRequest) return app._walletInitRequest
+        if (!retry && app._walletInitializedToken === currentToken) return !walletInitializationPending.value
+        app._walletInitializedToken = currentToken
+        app._walletInitRequest = productApi(`${config.public.apiBase}/wallet/initialize`, {
+            method: 'POST', headers: { Authorization: `Bearer ${currentToken}` }, body: {}
+        }).then(() => {
+            if (currentToken === sessionCookie.value) walletInitializationPending.value = false
+            return true
+        }).catch(() => {
+            if (currentToken === sessionCookie.value) walletInitializationPending.value = true
+            return false
+        }).finally(() => { app._walletInitRequest = null })
+        return app._walletInitRequest
+    }
+
+    const acceptMarketSession = async (data) => {
+        app._profileRequest = null
+        app._sessionRequest = null
+        app._sessionSyncedAt = null
+        sessionCookie.value = data.token
+        session.value = data.user || null
+        walletBalance.value = null
+        walletHistories.value = []
+        walletStatus.value = 'unavailable'
+        walletInitializationPending.value = !!data.wallet_initialization_pending
+        app._walletInitializedToken = data.token
+        if (walletInitializationPending.value) await initializeWallet(true)
+        await fetchUser()
+        await fetchWallet()
+    }
+
+    const loadUser = async () => {
+        const currentToken = sessionCookie.value
         if (!sessionCookie.value) {
+            walletBalance.value = null
+            walletHistories.value = []
+            walletStatus.value = 'unavailable'
             session.value = null
             return null
         }
         
         try {
             // Get user from backend (which has roles, coins, etc)
-            const response = await $fetch(`${config.public.apiBase}/user`, {
+            const response = await productApi(`${config.public.apiBase}/user?include_wallet=false`, {
                 headers: {
                     Authorization: `Bearer ${sessionCookie.value}`
                 }
             })
             if (response.success) {
-                session.value = response.data
+                if (currentToken !== sessionCookie.value) return null
+                authStatus.value = 'fresh'
+                session.value = { ...response.data, coins: walletBalance.value }
                 return session.value
             }
         } catch (e) {
-            sessionCookie.value = null
-            session.value = null
+            if (currentToken !== sessionCookie.value) return null
+            const status = e.response?.status || e.statusCode || e.status
+            authStatus.value = status === 403 ? 'denied' : 'unavailable'
+            if (status === 401) {
+                sessionCookie.value = null
+                session.value = null
+                walletBalance.value = null
+                walletHistories.value = []
+            }
         }
         return null
     }
 
-    const syncSession = async () => {
-        return await fetchUser()
+    const fetchUser = () => {
+        if (!app._profileRequest) app._profileRequest = loadUser().finally(() => { app._profileRequest = null })
+        return app._profileRequest
+    }
+
+    const syncSession = async (force = false) => {
+        if (!force && app._sessionToken === sessionCookie.value && app._sessionSyncedAt && Date.now() - app._sessionSyncedAt < 30000) return session.value
+        if (app._sessionToken === sessionCookie.value && app._sessionRequest) return app._sessionRequest
+        app._sessionToken = sessionCookie.value
+        app._sessionRequest = (async () => {
+            await fetchUser()
+            if (sessionCookie.value) {
+                await initializeWallet()
+                await fetchWallet()
+            }
+            app._sessionSyncedAt = Date.now()
+            return session.value
+        })().finally(() => { app._sessionRequest = null })
+        return app._sessionRequest
     }
 
     const register = async (name, email, phone, password, password_confirmation) => {
         try {
-            const response = await $fetch(`${config.public.authApiBase}/register`, {
+            const response = await productApi(`${config.public.authApiBase}/register`, {
                 method: 'POST',
                 headers: { Accept: 'application/json' },
                 body: { name, email, phone, password, password_confirmation }
@@ -49,28 +146,28 @@ export const useDemoAuth = () => {
             }
             return { success: false, message: response.message || 'Registrasi gagal' }
         } catch (e) {
-            return { success: false, message: e.data?.message || 'Registrasi gagal, email mungkin sudah terdaftar', errors: e.data?.errors }
+            return { success: false, retryAfter: e.retryAfter, message: e.data?.message || 'Registrasi gagal, email mungkin sudah terdaftar', errors: e.data?.errors }
         }
     }
 
     const verifyOtp = async (email, otp) => {
+        if (!/^\d{6}$/.test(String(otp))) return { success: false, message: 'OTP harus enam digit.' }
         try {
-            const response = await $fetch(`${config.public.authApiBase}/verify-otp`, {
+            const response = await productApi(`${config.public.authApiBase}/verify-otp`, {
                 method: 'POST',
                 headers: { Accept: 'application/json' },
-                body: { email, otp }
+                body: { email, otp: String(otp) }
             })
             if (response.success && response.data?.token) {
                 // Sync SSO token with backend to get backend token and role
-                const syncRes = await $fetch(`${config.public.apiBase}/sso/sync`, {
+                const syncRes = await productApi(`${config.public.apiBase}/sso/sync`, {
                     method: 'POST',
                     headers: { Accept: 'application/json' },
                     body: { token: response.data.token }
                 })
                 
                 if (syncRes.success && syncRes.data?.token) {
-                    sessionCookie.value = syncRes.data.token
-                    await fetchUser()
+                    await acceptMarketSession(syncRes.data)
                     if (import.meta.client) {
                         window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
                     }
@@ -79,41 +176,40 @@ export const useDemoAuth = () => {
             }
             return { success: false, message: response.message || 'Verifikasi gagal' }
         } catch (e) {
-            return { success: false, message: e.data?.message || 'OTP salah atau kadaluarsa' }
+            return { success: false, retryAfter: e.retryAfter, message: e.data?.message || 'OTP salah atau kadaluarsa' }
         }
     }
 
     const resendOtp = async (email) => {
         try {
-            const response = await $fetch(`${config.public.authApiBase}/resend-otp`, {
+            const response = await productApi(`${config.public.authApiBase}/resend-otp`, {
                 method: 'POST',
                 headers: { Accept: 'application/json' },
                 body: { email }
             })
             return { success: response.success, message: response.message }
         } catch (e) {
-            return { success: false, message: e.data?.message || 'Gagal mengirim ulang OTP' }
+            return { success: false, retryAfter: e.retryAfter, message: e.data?.message || 'Gagal mengirim ulang OTP' }
         }
     }
 
     const login = async (email, password) => {
         try {
-            const response = await $fetch(`${config.public.authApiBase}/login`, {
+            const response = await productApi(`${config.public.authApiBase}/login`, {
                 method: 'POST',
                 headers: { Accept: 'application/json' },
                 body: { email, password }
             })
             if (response.success && response.data?.token) {
                 // Sync SSO token with backend to get backend token and role
-                const syncRes = await $fetch(`${config.public.apiBase}/sso/sync`, {
+                const syncRes = await productApi(`${config.public.apiBase}/sso/sync`, {
                     method: 'POST',
                     headers: { Accept: 'application/json' },
                     body: { token: response.data.token }
                 })
 
                 if (syncRes.success && syncRes.data?.token) {
-                    sessionCookie.value = syncRes.data.token
-                    await fetchUser()
+                    await acceptMarketSession(syncRes.data)
                     if (import.meta.client) {
                         window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
                     }
@@ -134,7 +230,7 @@ export const useDemoAuth = () => {
     const logout = async () => {
         try {
             if (sessionCookie.value) {
-                await $fetch(`${config.public.apiBase}/logout`, {
+                await productApi(`${config.public.apiBase}/logout`, {
                     method: 'POST',
                     headers: {
                         Authorization: `Bearer ${sessionCookie.value}`
@@ -147,6 +243,12 @@ export const useDemoAuth = () => {
         
         session.value = null
         sessionCookie.value = null
+        walletBalance.value = null
+        walletHistories.value = []
+        walletMeta.value = null
+        walletStatus.value = 'unavailable'
+        app._walletInitializedToken = null
+        app._sessionSyncedAt = null
 
         if (import.meta.client) {
             window.dispatchEvent(
@@ -162,6 +264,8 @@ export const useDemoAuth = () => {
 
     return {
         session,
+        walletBalance, walletStatus, walletHistories, walletMeta, walletInitializationPending, authStatus,
+        fetchWallet, initializeWallet, acceptMarketSession,
         isSultan,
         syncSession,
         register,

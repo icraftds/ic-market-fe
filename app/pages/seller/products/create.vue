@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
 const route = useRoute()
@@ -97,7 +98,7 @@ const loadProduct = async () => {
 
   try {
     const config = useRuntimeConfig()
-    const response = await $fetch(`${config.public.apiBase}/products/${route.query.id}`)
+    const response = await productApi(`${config.public.apiBase}/products/${route.query.id}`)
     
     if (response.success && response.data) {
       const data = response.data
@@ -320,11 +321,11 @@ const handleDigitalFiles = async (event) => {
     // Upload ke backend
     try {
       const config = useRuntimeConfig()
-      const authToken = useCookie('icmarket_auth_token')
+      const authToken = useAuthCredential()
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await $fetch(`${config.public.apiBase}/seller/files/upload`, {
+      const response = await productApi(`${config.public.apiBase}/seller/files/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authToken.value}` },
         body: formData
@@ -384,7 +385,7 @@ const saveProduct = async () => {
 
   try {
     const config = useRuntimeConfig()
-    const authToken = useCookie('icmarket_auth_token')
+    const authToken = useAuthCredential()
 
     // Gambar di-encode sebagai array URL/Base64 untuk backend
     const imageUrls = form.value.images.map((img) => img.imageUrl).filter(Boolean)
@@ -432,13 +433,13 @@ const saveProduct = async () => {
     }
 
     if (isEditing.value) {
-      await $fetch(`${config.public.apiBase}/seller/products/${route.query.id}`, {
+      await productApi(`${config.public.apiBase}/seller/products/${route.query.id}`, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${authToken.value}` },
           body: payload
       })
     } else {
-      await $fetch(`${config.public.apiBase}/seller/products`, {
+      await productApi(`${config.public.apiBase}/seller/products`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${authToken.value}` },
           body: payload

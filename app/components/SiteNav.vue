@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+const config = useRuntimeConfig()
 
-const { session, syncSession, logout, isSultan } = useDemoAuth()
+const { session, syncSession, logout, isSultan, walletBalance, walletStatus } = useDemoAuth()
 
 const role = computed(() => session.value?.role || null)
 const isLoggedIn = computed(() => Boolean(session.value))
@@ -38,7 +39,7 @@ const refreshNavigation = () => {
 }
 
 const handleLogout = async () => {
-  logout()
+  await logout()
   await navigateTo('/')
 }
 
@@ -171,7 +172,7 @@ onBeforeUnmount(() => {
               </div>
               <div class="nav-coin-detail">
                 <span class="nav-coin-lbl">iCoinZ</span>
-                <span class="nav-coin-val">{{ Number(session.coins || 0).toLocaleString('id-ID') }}</span>
+                <span class="nav-coin-val" :title="walletStatus === 'fresh' ? 'Saldo terbaru' : 'Saldo belum dapat diperbarui'">{{ walletBalance === null ? '—' : Number(walletBalance).toLocaleString('id-ID') }}</span>
               </div>
             </NuxtLink>
 
@@ -252,6 +253,7 @@ onBeforeUnmount(() => {
                   <button type="button" class="dd-item danger" @click="handleLogout">
                     <i class="fa-solid fa-right-from-bracket"></i><span>Keluar</span>
                   </button>
+                  <a v-if="config.public.ssoEnabled && config.public.ssoGlobalLogoutEnabled" href="https://ic-auth.unikom.my.id/logout" class="dd-item danger">Keluar dari semua aplikasi</a>
                 </div>
               </div>
             </div>
@@ -267,7 +269,7 @@ onBeforeUnmount(() => {
 
         <!-- Links utama (selalu tampil) -->
         <NuxtLink to="/" class="nb-link">Beranda</NuxtLink>
-        <a href="https://gamez.icraftds.id" class="nb-link" target="_blank" rel="noopener noreferrer">Game-Z</a>
+        <a :href="config.public.ssoEnabled ? 'https://gamez.icraftds.id/auth/start?return_to=%2F' : 'https://gamez.icraftds.id'" class="nb-link" target="_blank" rel="noopener noreferrer">Game-Z</a>
         <NuxtLink to="/seller/register" class="nb-link highlight">
           {{ role === 'seller' ? 'Toko Saya' : 'Buka Toko' }}
         </NuxtLink>

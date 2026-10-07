@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
 const products = ref([])
@@ -6,12 +7,12 @@ const search = ref('')
 const statusFilter = ref('all')
 const deleteTarget = ref(null)
 const config = useRuntimeConfig()
-const authToken = useCookie('icmarket_auth_token')
+const authToken = useAuthCredential()
 const sellerStore = ref(null)
 
 const loadStoreInfo = async () => {
     try {
-        const response = await $fetch(`${config.public.apiBase}/seller/store`, {
+        const response = await productApi(`${config.public.apiBase}/seller/store`, {
             headers: { Authorization: `Bearer ${authToken.value}` }
         })
         if (response.success) {
@@ -22,12 +23,18 @@ const loadStoreInfo = async () => {
     }
 }
 
+const paginationMeta = ref(null)
+const pageLoading = ref(false)
+const currentPage = ref(1)
+const changePage = async (page) => { if (pageLoading.value) return; pageLoading.value = true; currentPage.value = page; try { await loadProducts() } finally { pageLoading.value = false } }
 const loadProducts = async () => {
     try {
-        const response = await $fetch(`${config.public.apiBase}/seller/products`, {
+        const response = await productApi(`${config.public.apiBase}/seller/products`, {
+      query: { page: currentPage.value, limit: 20 },
             headers: { Authorization: `Bearer ${authToken.value}` }
         })
         if (response.success) {
+      paginationMeta.value = response.meta || null
             products.value = response.data
         }
     } catch (error) {
@@ -58,7 +65,7 @@ const cancelDelete = () => { deleteTarget.value = null }
 const confirmDelete = async () => {
   if (!deleteTarget.value) return
   try {
-      await $fetch(`${config.public.apiBase}/seller/products/${deleteTarget.value.id}`, {
+      await productApi(`${config.public.apiBase}/seller/products/${deleteTarget.value.id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${authToken.value}` }
       })
@@ -72,7 +79,7 @@ const confirmDelete = async () => {
 const toggleStatus = async (product) => {
   const newStatus = product.status === 'published' ? 'inactive' : 'published'
   try {
-      await $fetch(`${config.public.apiBase}/seller/products/${product.id}`, {
+      await productApi(`${config.public.apiBase}/seller/products/${product.id}`, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${authToken.value}` },
           body: { status: newStatus }
@@ -190,6 +197,7 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <ApiPagination :meta="paginationMeta" :busy="pageLoading" @page="changePage" />
   </main>
 </template>
 

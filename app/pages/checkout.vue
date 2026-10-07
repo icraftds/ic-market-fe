@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -7,6 +8,9 @@ definePageMeta({ layout: 'flow' })
 const router = useRouter()
 const { session, syncSession } = useDemoAuth()
 const config = useRuntimeConfig()
+const globalLoader = useState('global_loader', () => false)
+const { fetchCart } = useCart()
+const authToken = useAuthCredential()
 
 const buyerName = ref('')
 const buyerPhone = ref('')
@@ -51,8 +55,8 @@ const applyPromo = async () => {
       0
     )
 
-    const token = useCookie('icmarket_auth_token').value
-    const res = await $fetch(`${config.public.apiBase}/vouchers/validate`, {
+    const token = authToken.value
+    const res = await productApi(`${config.public.apiBase}/vouchers/validate`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: { code, subtotal }
@@ -207,6 +211,10 @@ const placeOrder = async () => {
     return
   }
 
+  if (localStorage.getItem('icmarket_order_status') === 'pending' && localStorage.getItem('icmarket_order_owner') === String(session.value.id)) {
+    router.push('/payment')
+    return
+  }
   await loadCheckoutData()
 
   if (!checkoutCart.value.length) {
@@ -215,10 +223,10 @@ const placeOrder = async () => {
   }
 
   isSubmitting.value = true
-  useState('global_loader').value = true
+  globalLoader.value = true
 
   try {
-    const token = useCookie('icmarket_auth_token').value
+    const token = authToken.value
     if (!token) throw new Error('Not authenticated')
 
     const items = checkoutCart.value.map(c => ({
@@ -227,7 +235,7 @@ const placeOrder = async () => {
     }))
 
     const config = useRuntimeConfig()
-    const response = await $fetch(`${config.public.apiBase}/orders/checkout`, {
+    const response = await productApi(`${config.public.apiBase}/orders/checkout`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: {
@@ -239,13 +247,18 @@ const placeOrder = async () => {
 
     if (!response.success) {
       checkoutError.value = response.message || 'Gagal checkout.'
-      useState('global_loader').value = false
+      globalLoader.value = false
       isSubmitting.value = false
       return
     }
 
+    // Save the reserved order before secondary requests can fail.
+    localStorage.setItem('icmarket_order_id', response.data.transaction_id)
+    localStorage.setItem('icmarket_order_status', response.data.status)
+    localStorage.setItem('icmarket_order_created_at', response.data.created_at)
+    localStorage.setItem('icmarket_order_owner', String(session.value.id))
+
     // Sync cart state with backend (backend already removed checkout items)
-    const { fetchCart } = useCart()
     await fetchCart()
 
     localStorage.removeItem('icmarket_cart')
@@ -267,7 +280,7 @@ const placeOrder = async () => {
     checkoutError.value = error.data?.message || 'Pesanan belum dapat diproses. Silakan coba lagi.'
   } finally {
     isSubmitting.value = false
-    useState('global_loader').value = false
+    globalLoader.value = false
   }
 }
 
@@ -280,6 +293,7 @@ onMounted(async () => {
     return
   }
 
+  if (localStorage.getItem('icmarket_order_status') === 'pending' && localStorage.getItem('icmarket_order_owner') === String(session.value.id)) { await router.push('/payment'); return }
   await loadCheckoutData()
 
   if (!checkoutCart.value.length) {
@@ -302,8 +316,8 @@ onMounted(async () => {
 
   // Load user's available vouchers
   try {
-    const token = useCookie('icmarket_auth_token').value
-    const res = await $fetch(`${config.public.apiBase}/my-vouchers`, {
+    const token = authToken.value
+    const res = await productApi(`${config.public.apiBase}/my-vouchers`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     myVouchers.value = res.data || []

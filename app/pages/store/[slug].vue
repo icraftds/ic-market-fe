@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -252,16 +253,20 @@ const handleAddCart = async (product, e) => {
 
 
 
+const paginationMeta = ref(null)
+const currentPage = ref(1)
+const changePage = async (page) => { currentPage.value = page; await fetchStoreData() }
 const fetchStoreData = async () => {
   isLoading.value = true
   try {
-    const storeRes = await $fetch(`${config.public.apiBase}/stores/${slug.value}`).catch(() => null)
+    const storeRes = await productApi(`${config.public.apiBase}/stores/${slug.value}`).catch(() => null)
     if (storeRes && storeRes.success) {
       dynamicStore.value = storeRes.data
     }
 
-    const prodRes = await $fetch(`${config.public.apiBase}/products?store_slug=${slug.value}`).catch(() => null)
+    const prodRes = await productApi(`${config.public.apiBase}/products?store_slug=${slug.value}&page=${currentPage.value}&limit=12`).catch(() => null)
     if (prodRes && prodRes.success) {
+      paginationMeta.value = prodRes.meta
       dynamicProducts.value = prodRes.data
     }
   } catch (error) {
@@ -272,7 +277,6 @@ const fetchStoreData = async () => {
 }
 
 onMounted(() => {
-  refreshCatalog()
   fetchStoreData()
 })
 </script>
@@ -331,6 +335,7 @@ onMounted(() => {
       <p>Slug toko yang kamu buka belum tersedia pada katalog.</p>
       <button type="button" @click="router.push('/')">Kembali ke katalog</button>
     </div>
+    <ApiPagination :meta="paginationMeta" :busy="isLoading" @page="changePage" />
   </main>
 </template>
 

@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
@@ -70,6 +71,10 @@ const filteredOrders = computed(() => {
   })
 })
 
+const paginationMeta = ref(null)
+const pageLoading = ref(false)
+const currentPage = ref(1)
+const changePage = async (page) => { if (pageLoading.value) return; pageLoading.value = true; currentPage.value = page; try { await loadOrders() } finally { pageLoading.value = false } }
 const loadOrders = async () => {
   await syncSession()
   if (!session.value) {
@@ -80,11 +85,13 @@ const loadOrders = async () => {
   try {
     dataLoading.value = true
     const config = useRuntimeConfig()
-    const token = useCookie('icmarket_auth_token').value
-    const response = await $fetch(`${config.public.apiBase}/orders`, {
+    const token = useAuthCredential().value
+    const response = await productApi(`${config.public.apiBase}/orders`, {
+      query: { page: currentPage.value, limit: 20 },
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
     })
     if (response.success) {
+      paginationMeta.value = response.meta || null
       // Normalize orders for the frontend view
       orders.value = response.data.map(order => {
         // Group items by store (dummy store grouping if backend doesn't provide store info yet)
@@ -130,6 +137,8 @@ const loadOrders = async () => {
 const continuePayment = async (order) => {
   setCurrentOrder(order.orderId)
   if (import.meta.client) {
+    localStorage.setItem('icmarket_order_owner', String(session.value.id))
+    localStorage.setItem('icmarket_order_created_at', order.createdAt)
     localStorage.setItem('icmarket_subtotal', order.totals?.total || 0)
     localStorage.setItem('icmarket_discount', 0)
     localStorage.setItem('icmarket_item_count', order.items?.length || 0)
@@ -204,8 +213,8 @@ const submitReview = async () => {
   isSubmitting.value = true;
   try {
     const config = useRuntimeConfig()
-    const token = useCookie('icmarket_auth_token').value
-    await $fetch(`${config.public.apiBase}/orders/${reviewForm.value.orderId}/reviews`, {
+    const token = useAuthCredential().value
+    await productApi(`${config.public.apiBase}/orders/${reviewForm.value.orderId}/reviews`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: {
@@ -355,6 +364,7 @@ const submitReview = async () => {
         </div>
       </div>
     </div>
+    <ApiPagination :meta="paginationMeta" :busy="pageLoading" @page="changePage" />
   </main>
 </template>
 

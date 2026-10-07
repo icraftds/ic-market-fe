@@ -1,10 +1,13 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 definePageMeta({ layout: 'flow' })
 const router = useRouter()
-const { session, syncSession } = useDemoAuth()
+const paymentConfig = useRuntimeConfig()
+const paymentToken = useAuthCredential()
+const { session, syncSession, fetchWallet, walletStatus, walletBalance } = useDemoAuth()
 
 const formatCoin = (n) => Number(n || 0).toLocaleString('id-ID')
 
@@ -29,6 +32,23 @@ let autoPaymentTimer  = null
 let autoRedirectTimer = null
 const timerText       = ref('23:59')
 
+const findOrder = useFindOrder()
+const paymentPoll = usePaymentPoll(async (isCurrent) => {
+  const order = await findOrder(orderId.value)
+  if (!isCurrent()) return false
+  if (order && ['completed', 'processing'].includes(order.status)) {
+    localStorage.setItem('icmarket_order_status', order.status)
+    await fetchWallet()
+    await router.push('/success')
+    return true
+  }
+  if (order?.status === 'cancelled') {
+    paymentError.value = 'Pesanan dibatalkan oleh backend.'
+    return true
+  }
+  return false
+}, { isAuthenticated: () => !!session.value, onTimeout: () => { paymentError.value = 'Status pembayaran belum pasti. Cek ulang atau buka daftar pesanan.' } })
+
 // ── Payment method (now selected here, not in checkout) ───────────────────
 const selectedMethod = ref('coin')
 
@@ -38,7 +58,7 @@ const uniqueSuffix = ref(0)
 const transferTotal = ref(0)
 
 // ── Coin payment ──────────────────────────────────────────────────────────
-const coinSufficient = computed(() => (session.value?.coins || 0) >= total.value)
+const coinSufficient = computed(() => walletStatus.value === 'fresh' && Number(session.value?.coins) >= total.value)
 
 const copyText = (value) => {
   navigator.clipboard?.writeText(String(value || '').replace(/\s/g, ''))
@@ -57,6 +77,7 @@ const handleFileUpload = (event) => {
 const completePayment = async () => {
   if (isVerifying.value) return
 
+  if (walletStatus.value !== 'fresh') { paymentError.value = 'Saldo belum dapat diperbarui. Coba periksa Wallet kembali.'; await fetchWallet(); return }
   if (selectedMethod.value === 'coin' && !coinSufficient.value) {
     paymentError.value = 'Saldo iCoin-Z tidak mencukupi. Silakan top up terlebih dahulu.'
     return
@@ -66,10 +87,10 @@ const completePayment = async () => {
   paymentError.value = ''
 
   try {
-    const config = useRuntimeConfig()
-    const token = useCookie('icmarket_auth_token').value
+    const config = paymentConfig
+    const token = paymentToken.value
 
-    const response = await $fetch(`${config.public.apiBase}/orders/${orderId.value}/pay`, {
+    const response = await productApi(`${config.public.apiBase}/orders/${orderId.value}/pay`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -78,11 +99,13 @@ const completePayment = async () => {
       throw new Error(response.message || 'Pembayaran gagal.')
     }
 
-    await syncSession()
-    await router.push('/success')
+    paymentPoll.start()
   } catch (error) {
-    console.error('Gagal memproses pembayaran:', error)
-    paymentError.value = error.message || 'Pembayaran belum dapat dikonfirmasi. Silakan coba lagi.'
+    const status = error.response?.status || error.statusCode
+    if (!status || status >= 500) {
+      paymentError.value = 'Pembayaran sedang dicocokkan. Cek status pesanan; referensi pembayaran tetap sama.'
+      paymentPoll.start()
+    } else paymentError.value = error.data?.message || error.message || 'Pembayaran belum dapat dikonfirmasi. Silakan coba lagi.'
   } finally {
     isVerifying.value = false
   }
@@ -94,11 +117,13 @@ const onMethodChange = () => {
 }
 
 onMounted(async () => {
+  await syncSession()
   if (!session.value) {
     router.push('/login')
     return
   }
 
+  if (localStorage.getItem('icmarket_order_owner') !== String(session.value.id)) { await router.push('/orders'); return }
   orderId.value  = localStorage.getItem('icmarket_order_id') || ''
   subtotal.value = Number(localStorage.getItem('icmarket_subtotal') || 0)
   discount.value = Number(localStorage.getItem('icmarket_discount') || 0)
@@ -110,11 +135,7 @@ onMounted(async () => {
     return
   }
 
-  const status = localStorage.getItem('icmarket_order_status')
-  if (status === 'completed') {
-    router.push('/success')
-    return
-  }
+  paymentPoll.start()
 
   uniqueSuffix.value  = Math.floor(Math.random() * 900) + 100
   transferTotal.value = total.value + uniqueSuffix.value
@@ -130,7 +151,7 @@ onMounted(async () => {
     if (diff <= 0) {
       if (timerInterval) clearInterval(timerInterval)
       timerText.value = '00:00:00'
-      paymentError.value = 'Waktu pembayaran telah habis. Pesanan ini akan dibatalkan.'
+      paymentError.value = 'Waktu pembayaran berakhir. Cek status pesanan dari backend.'
       return
     }
     
@@ -145,6 +166,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  paymentPoll.dispose()
   if (timerInterval)     clearInterval(timerInterval)
   if (autoPaymentTimer)  clearTimeout(autoPaymentTimer)
   if (autoRedirectTimer) clearTimeout(autoRedirectTimer)
@@ -205,7 +227,7 @@ onUnmounted(() => {
               <div class="coin-balance-row">
                 <div>
                   <div class="coin-label">Saldo iCoin-Z Anda</div>
-                  <div class="coin-value"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ formatCoin(session?.coins || 0) }}</div>
+                  <div class="coin-value"><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ walletBalance === null ? '—' : formatCoin(walletBalance) }}</div>
                 </div>
                 <div style="text-align:right;">
                   <div class="coin-label">Total Tagihan</div>
@@ -223,6 +245,7 @@ onUnmounted(() => {
               </div>
             </div>
 
+<button class="flow-cta" @click="paymentPoll.start">Cek status pembayaran</button>
             <!-- Manual confirm button -->
             <div v-if="coinSufficient" style="margin-top: 16px;">
               <button class="flow-cta" :disabled="isVerifying" @click="completePayment">
@@ -236,9 +259,9 @@ onUnmounted(() => {
             </div>
 
             <!-- Manual confirm button only shown if insufficient -->
-            <div v-if="selectedMethod === 'coin' && !coinSufficient" style="margin-top: 16px;">
+            <div v-if="selectedMethod === 'coin' && !coinSufficient && walletStatus === 'fresh'" style="margin-top: 16px;">
               <button class="flow-cta" disabled style="opacity:0.4;cursor:not-allowed;">
-                <i class="fa-solid fa-lock"></i> Saldo Tidak Mencukupi
+                <i class="fa-solid fa-lock"></i> {{ walletStatus === 'fresh' ? 'Saldo Tidak Mencukupi' : 'Saldo belum tersedia' }}
               </button>
             </div>
 

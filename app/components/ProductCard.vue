@@ -39,8 +39,8 @@ const catalogImage = (product) => {
   return imgs[0] || FALLBACK_PRODUCT_IMAGE
 }
 
-const catalogRating = (product) => Number(product?.rating || 0)
-const catalogReviews = (product) => Number(product?.review_count || 0)
+const catalogRating = (product) => Number(product?.reviews_avg_rating ?? product?.rating ?? 0)
+const catalogReviews = (product) => Number(product?.reviews_count ?? product?.review_count ?? 0)
 
 const { cart: apiCart } = useCart()
 const isInCart = (productId) => {

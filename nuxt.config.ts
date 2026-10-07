@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import process from 'node:process'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -20,7 +21,22 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    sso: {
+      enabled: process.env.SSO_ENABLED === 'true',
+      issuer: process.env.SSO_ISSUER || 'https://ic-auth.unikom.my.id',
+      clientId: process.env.SSO_CLIENT_ID || '01a113e2-70ab-7071-8e04-536025ee8459',
+      redirectUri: process.env.SSO_REDIRECT_URI || 'https://market.icraftds.id/auth/callback',
+      appOrigin: process.env.APP_ORIGIN || 'https://market.icraftds.id',
+      backendOrigin: process.env.PRODUCT_BACKEND_URL || 'https://icmarket.unikom.my.id',
+      clientSecret: process.env.SSO_CLIENT_SECRET || '',
+      encryptionKey: process.env.BFF_SESSION_ENCRYPTION_KEY || '',
+      redisUrl: process.env.UPSTASH_REDIS_REST_URL || '',
+      redisToken: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+      environment: process.env.VERCEL_ENV || 'development',
+    },
     public: {
+      ssoEnabled: process.env.SSO_ENABLED === 'true',
+      ssoGlobalLogoutEnabled: process.env.SSO_GLOBAL_LOGOUT_ENABLED === 'true',
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',
       authApiBase: process.env.NUXT_PUBLIC_AUTH_API_BASE || 'http://localhost:8003/api'
     }

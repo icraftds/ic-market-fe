@@ -5,7 +5,7 @@ import OtpForm from '~/components/OtpForm.vue'
 definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
-const { setSession } = useDemoAuth()
+const { session, login, verifyOtp, resendOtp } = useDemoAuth()
 const {
   readApplications,
   writeApplications,
@@ -25,6 +25,10 @@ const isVerifyingOtp = ref(false)
 const resendMessage = ref('')
 
 onMounted(() => {
+  if (useRuntimeConfig().public.ssoEnabled) {
+    window.location.replace('/auth/start?return_to=' + encodeURIComponent(typeof route.query.redirect === 'string' ? route.query.redirect : '/'))
+    return
+  }
   const savedEmail = sessionStorage.getItem('icmarket_login_email')
   if (savedEmail) {
     form.email = savedEmail
@@ -201,7 +205,6 @@ async function submitLogin() {
 
   isSubmitting.value = true
 
-  const { login, verifyOtp, resendOtp } = useDemoAuth()
   const result = await login(email, password)
 
   isSubmitting.value = false
@@ -216,7 +219,6 @@ async function submitLogin() {
     return
   }
 
-  const { session } = useDemoAuth()
   if (session.value?.role === 'seller') {
     await navigateTo('/seller/dashboard')
   } else {
@@ -231,15 +233,14 @@ async function submitOtp(code) {
   error.value = ''
   resendMessage.value = ''
   isVerifyingOtp.value = true
-  
-  const { verifyOtp } = useDemoAuth()
+
   const res = await verifyOtp(form.email.trim().toLowerCase(), code)
   isVerifyingOtp.value = false
 
   if (res.success) {
     sessionStorage.removeItem('icmarket_login_email')
     showOtpForm.value = false
-    const { session } = useDemoAuth()
+
     if (session.value?.role === 'seller') {
       await navigateTo('/seller/dashboard')
     } else {
@@ -255,7 +256,7 @@ async function submitOtp(code) {
 
 async function handleResendOtp() {
   error.value = ''
-  const { resendOtp } = useDemoAuth()
+
   const res = await resendOtp(form.email.trim().toLowerCase())
   if (!res.success) {
     error.value = res.message || 'Gagal mengirim ulang OTP.'

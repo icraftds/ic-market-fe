@@ -1,10 +1,11 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
 
 const config = useRuntimeConfig()
-const authToken = useCookie('icmarket_auth_token')
+const authToken = useAuthCredential()
 
 const orders = ref([])
 const search = ref('')
@@ -23,7 +24,7 @@ const statusLabel = (status) => {
 
 const loadOrders = async () => {
   try {
-    const res = await $fetch(`${config.public.apiBase}/admin/orders`, {
+    const res = await productApi(`${config.public.apiBase}/admin/orders`, {
       headers: { Authorization: `Bearer ${authToken.value}` }
     })
     if (res.success && res.data) {

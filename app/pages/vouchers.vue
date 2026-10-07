@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { ref, onMounted } from 'vue'
 
 const { session } = useDemoAuth()
@@ -8,10 +9,10 @@ const loading = ref(true)
 
 const fetchVouchers = async () => {
   try {
-    const token = useCookie('icmarket_auth_token').value
+    const token = useAuthCredential().value
     if (!token) return
 
-    const res = await $fetch(`${config.public.apiBase}/my-vouchers`, {
+    const res = await productApi(`${config.public.apiBase}/my-vouchers`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     

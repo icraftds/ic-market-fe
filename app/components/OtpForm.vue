@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 
 const props = defineProps({
   email: {
@@ -96,7 +96,7 @@ const onOtpPaste = (event) => {
 }
 
 const submitOtp = () => {
-  if (otpCode.value.length === 6) {
+  if (!props.isVerifying && otpCode.value.length === 6) {
     emit('submit', otpCode.value)
   }
 }
@@ -106,13 +106,14 @@ const handleResendOtp = () => {
   emit('resend')
   startCooldown(90) // 90 seconds
 }
+onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <template>
   <div class="otp-box">
     <div class="auth-heading" style="margin-bottom: 32px; text-align: center;">
       <h2 style="font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 8px; letter-spacing: -0.5px;">Verifikasi OTP</h2>
-      <p style="color: var(--muted); font-size: 15px; margin: 0;">Kami telah mengirimkan kode 6 digit ke email<br/><strong>{{ email }}</strong></p>
+      <p style="color: var(--muted); font-size: 15px; margin: 0;">Pengiriman kode 6 digit telah diantrekan ke email<br/><strong>{{ email }}</strong></p>
     </div>
     
     <form @submit.prevent="submitOtp" class="modern-form">

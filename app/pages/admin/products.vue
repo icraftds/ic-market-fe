@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
@@ -8,11 +9,11 @@ const search = ref('')
 const statusFilter = ref('all')
 const notice = ref('')
 const config = useRuntimeConfig()
-const authToken = useCookie('icmarket_auth_token')
+const authToken = useAuthCredential()
 
 const loadProducts = async () => {
     try {
-        const response = await $fetch(`${config.public.apiBase}/admin/products`, {
+        const response = await productApi(`${config.public.apiBase}/admin/products`, {
             headers: { Authorization: `Bearer ${authToken.value}` }
         })
         if (response.success) {
@@ -25,7 +26,7 @@ const loadProducts = async () => {
 
 const toggleHotProduct = async (product) => {
     try {
-        const response = await $fetch(`${config.public.apiBase}/admin/products/${product.id}/toggle-hot`, {
+        const response = await productApi(`${config.public.apiBase}/admin/products/${product.id}/toggle-hot`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${authToken.value}` }
         })

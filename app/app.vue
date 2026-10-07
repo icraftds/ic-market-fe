@@ -1,10 +1,21 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useState, useNuxtApp } from '#app'
 
+const now = ref(Date.now())
+const rateLimitUntil = useState('icmarket-rate-limit-until', () => 0)
+const cooldownSeconds = computed(() => Math.max(0, Math.ceil((rateLimitUntil.value - now.value) / 1000)))
+let cooldownTimer
+onMounted(() => { cooldownTimer = setInterval(() => { now.value = Date.now() }, 1000) })
+onUnmounted(() => clearInterval(cooldownTimer))
 const isLoading = useState('global_loader', () => false)
 const router = useRouter()
+const route = useRoute()
+const config = useRuntimeConfig()
+const session = useState('icmarket-auth-session', () => null)
+const authStatus = useState('icmarket-auth-status', () => 'idle')
+const privateScreen = computed(() => route.path.startsWith('/admin/') || route.path.startsWith('/seller/') || ['/profile', '/cart', '/checkout', '/orders', '/payment', '/success', '/topup', '/vouchers'].includes(route.path))
 
 // Auto-hide the global loader and reset body overflow when ANY route transition completes
 router.afterEach(() => {
@@ -20,6 +31,8 @@ router.afterEach(() => {
 
 <template>
   <div>
+<p v-if="cooldownSeconds" role="status" style="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:999999;background:#222;color:white;padding:12px;border-radius:8px;">Terlalu banyak permintaan. Tunggu {{ cooldownSeconds }} detik.</p>
+    <p v-if="config.public.ssoEnabled && authStatus === 'unavailable'" role="status">Layanan sesi belum tersedia. Coba kembali sebentar lagi.</p>
     <!-- SPA Progress Bar (Fast Navigation Feedback) -->
     <NuxtLoadingIndicator color="#1472ff" :height="3" />
 
@@ -34,7 +47,7 @@ router.afterEach(() => {
     </Transition>
 
     <NuxtLayout>
-      <NuxtPage />
+      <NuxtPage v-if="!config.public.ssoEnabled || !privateScreen || session" />
     </NuxtLayout>
   </div>
 </template>

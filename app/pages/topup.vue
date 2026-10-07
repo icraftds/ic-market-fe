@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+const productApi = useProductApi()
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const { session, syncSession } = useDemoAuth()
+const { session, syncSession, fetchWallet, walletBalance, walletStatus, walletHistories, walletMeta, initializeWallet, walletInitializationPending } = useDemoAuth()
 
 const isProcessing = ref(false)
 const successMsg = ref('')
@@ -13,7 +14,12 @@ const showSuccessModal = ref(false)
 const qrisUrl = ref('')
 const qrisString = ref('')
 const topupAmount = ref(0)
-const pollingInterval = ref(null)
+const invoiceUncertain = ref(false)
+const vouchers = ref([])
+const config = useRuntimeConfig()
+const token = useAuthCredential()
+const historyPage = ref(1)
+const loadHistory = async (page) => { historyPage.value = page; await fetchWallet(page) }
 const qrisTimerInterval = ref(null)
 const qrisTimeLeft = ref('15:00')
 
@@ -27,9 +33,9 @@ const filterType = ref('all')
 const filterDate = ref('all')
 
 const filteredHistories = computed(() => {
-  if (!session.value?.histories) return []
+  if (!walletHistories.value) return []
   
-  return session.value.histories.filter(h => {
+  return walletHistories.value.filter(h => {
     if (filterType.value !== 'all' && h.type !== filterType.value) return false
     
     if (filterDate.value !== 'all') {
@@ -57,8 +63,11 @@ const amounts = [
 
 const selectedAmount = ref(amounts[0])
 
-onMounted(() => {
-  syncSession()
+onMounted(async () => {
+  await syncSession()
+  await loadHistory(1)
+  const owner = sessionStorage.getItem('icmarket_pending_qris_owner')
+  invoiceUncertain.value = sessionStorage.getItem(`icmarket_topup_uncertain:${session.value?.id}`) === 'true'
   if (!session.value) {
     router.push('/login')
   }
@@ -68,7 +77,7 @@ onMounted(() => {
   const pendingQrisString = sessionStorage.getItem('icmarket_pending_qris_string')
   const pendingAmount = sessionStorage.getItem('icmarket_pending_qris_amount')
   
-  if (pendingQris || pendingQrisString) {
+  if (owner === String(session.value?.id) && (pendingQris || pendingQrisString)) {
     qrisUrl.value = pendingQris || ''
     qrisString.value = pendingQrisString || ''
     topupAmount.value = Number(pendingAmount) || 0
@@ -81,29 +90,32 @@ onMounted(() => {
 const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
 
 const processTopup = async () => {
-  if (isProcessing.value || !session.value) return
+  if (isProcessing.value || !session.value || invoiceUncertain.value || qrisUrl.value || qrisString.value) return
   
   isProcessing.value = true
   successMsg.value = ''
   
   try {
-    const currentCoins = Number(session.value.coins || 0)
+    sessionStorage.setItem(`icmarket_topup_uncertain:${session.value.id}`, 'true')
+    invoiceUncertain.value = true
     
     // Memanggil API Backend Laravel
-    const config = useRuntimeConfig()
-    const response = await $fetch(`${config.public.apiBase}/topup`, {
+    const response = await productApi(`${config.public.apiBase}/topup`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${useCookie('icmarket_auth_token').value}`
+        Authorization: `Bearer ${useAuthCredential().value}`
       },
       body: {
         amount: selectedAmount.value.value,
-        method: selectedMethod.value,
-        currentCoins: currentCoins
+        method: selectedMethod.value
       }
     })
     
     if (response.success && (response.data?.payment_url || response.data?.qr_string)) {
+      invoiceUncertain.value = false
+      sessionStorage.removeItem(`icmarket_topup_uncertain:${session.value.id}`)
+      sessionStorage.setItem('icmarket_pending_qris_owner', String(session.value.id))
+      sessionStorage.setItem('icmarket_pending_qris_transaction', response.data.transactionId || '')
       qrisUrl.value = response.data.payment_url || ''
       qrisString.value = response.data.qr_string || ''
       topupAmount.value = selectedAmount.value.value
@@ -124,7 +136,11 @@ const processTopup = async () => {
       alert(response.message || 'Gagal memproses Top Up')
     }
   } catch (error) {
-    console.error('Topup failed:', error)
+    if ([400, 401, 403, 409, 422, 429].includes(error.response?.status || error.statusCode)) {
+      invoiceUncertain.value = false
+      sessionStorage.removeItem(`icmarket_topup_uncertain:${session.value.id}`)
+    }
+    if (invoiceUncertain.value) { alert('Invoice belum dapat dikonfirmasi. Periksa pembayaran atau hubungi dukungan sebelum membuat invoice baru.'); return }
     const status = error.response?.status
     const errorMsg = error.data?.message || error.message || ''
     
@@ -138,47 +154,23 @@ const processTopup = async () => {
   }
 }
 
-const startPolling = () => {
-  if (pollingInterval.value) clearInterval(pollingInterval.value)
-  const initialCoins = Number(session.value?.coins || 0)
-  
-  pollingInterval.value = setInterval(async () => {
-    await syncSession()
-    const currentCoins = Number(session.value?.coins || 0)
-    
-    if (currentCoins > initialCoins) {
-      clearInterval(pollingInterval.value)
-      pollingInterval.value = null
-      showQrisModal.value = false
-      qrisUrl.value = ''
-      qrisString.value = ''
-      sessionStorage.removeItem('icmarket_pending_qris')
-      sessionStorage.removeItem('icmarket_pending_qris_string')
-      sessionStorage.removeItem('icmarket_pending_qris_amount')
-      sessionStorage.removeItem('icmarket_pending_qris_expires_at')
-      if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
-      showSuccessModal.value = true
-    }
-  }, 3000) // Poll every 3 seconds
-}
-
+const poll = usePaymentPoll(async (isCurrent) => {
+  await Promise.all([
+    fetchWallet(),
+    productApi(`${config.public.apiBase}/my-vouchers`, { headers: { Authorization: `Bearer ${token.value}` } }).then(response => { vouchers.value = response.data || [] })
+  ])
+  if (!isCurrent()) return false
+  successMsg.value = 'Saldo dan voucher telah diperiksa. Pemenuhan pembayaran dapat selesai pada waktu berbeda.'
+  // There is no product invoice-status endpoint to prove this particular top-up completed.
+  return false
+}, { isAuthenticated: () => !!session.value, onTimeout: () => { successMsg.value = 'Pemenuhan pembayaran belum dapat dikonfirmasi. Cek ulang saldo dan voucher.' } })
+const startPolling = () => poll.start()
 const closeQrisModal = () => {
   showQrisModal.value = false
-  qrisUrl.value = ''
-  qrisString.value = ''
-  sessionStorage.removeItem('icmarket_pending_qris')
-  sessionStorage.removeItem('icmarket_pending_qris_string')
-  sessionStorage.removeItem('icmarket_pending_qris_amount')
-  sessionStorage.removeItem('icmarket_pending_qris_expires_at')
-  if (pollingInterval.value) {
-    clearInterval(pollingInterval.value)
-    pollingInterval.value = null
-  }
-  if (qrisTimerInterval.value) {
-    clearInterval(qrisTimerInterval.value)
-    qrisTimerInterval.value = null
-  }
+  poll.stop()
+  if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
 }
+onUnmounted(() => { poll.dispose(); if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value) })
 
 const startQrisTimer = () => {
   if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
@@ -192,8 +184,8 @@ const startQrisTimer = () => {
     
     if (diff <= 0) {
       qrisTimeLeft.value = '00:00'
-      closeQrisModal()
-      alert('Waktu pembayaran telah habis. Silakan buat transaksi baru.')
+      clearInterval(qrisTimerInterval.value)
+      successMsg.value = 'Waktu QRIS berakhir. Periksa saldo dan voucher sebelum membuat transaksi baru.'
       return
     }
     
@@ -204,6 +196,18 @@ const startQrisTimer = () => {
   
   updateTimer()
   qrisTimerInterval.value = setInterval(updateTimer, 1000)
+}
+
+const beginNewTopup = () => {
+  if (invoiceUncertain.value || isProcessing.value) return
+  const storageKey = `icmarket_topup_invoices:${session.value.id}`
+  const invoices = JSON.parse(sessionStorage.getItem(storageKey) || '[]')
+  invoices.push({ transactionId: sessionStorage.getItem('icmarket_pending_qris_transaction'), payment_url: qrisUrl.value, qr_string: qrisString.value, amount: topupAmount.value })
+  sessionStorage.setItem(storageKey, JSON.stringify(invoices))
+  closeQrisModal()
+  qrisUrl.value = ''
+  qrisString.value = ''
+  for (const suffix of ['', '_string', '_amount', '_expires_at', '_owner', '_transaction']) sessionStorage.removeItem(`icmarket_pending_qris${suffix}`)
 }
 
 const openInNewTab = () => {
@@ -227,14 +231,18 @@ const openInNewTab = () => {
       <div class="current-balance">
         <div class="balance-content">
           <span>Saldo iCoin-Z Anda Saat Ini</span>
-          <h2><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="width: 1.4em; height: 1.4em; vertical-align: -0.2em; margin-right: 8px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));" /> {{ Number(session?.coins || 0).toLocaleString('id-ID') }}</h2>
+          <h2><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="width: 1.4em; height: 1.4em; vertical-align: -0.2em; margin-right: 8px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));" /> {{ walletBalance === null ? '—' : formatCoin(walletBalance) }}</h2>
         </div>
         <div class="balance-decoration"></div>
       </div>
       
+      <p v-if="walletStatus !== 'fresh' || walletInitializationPending" role="status">Saldo belum dapat diperbarui. <button @click="async () => { await initializeWallet(true); await fetchWallet() }">Coba lagi</button></p>
+      <p v-if="invoiceUncertain" role="status">Invoice belum dapat dikonfirmasi. Periksa pembayaran atau hubungi dukungan.</p>
+      <button v-if="qrisUrl || qrisString" @click="() => { showQrisModal = true; startPolling() }">Buka pembayaran tersimpan / cek ulang</button>
+      <button v-if="(qrisUrl || qrisString) && !invoiceUncertain" @click="beginNewTopup">Mulai top-up baru setelah memeriksa pembayaran sebelumnya</button>
       <div class="topup-tabs">
         <button class="tab-btn" :class="{ active: activeTab === 'topup' }" @click="activeTab = 'topup'">Top Up iCoin-Z</button>
-        <button class="tab-btn" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'">Riwayat Transaksi</button>
+        <button class="tab-btn" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'; loadHistory(historyPage)">Riwayat Transaksi</button>
       </div>
 
       <div v-if="activeTab === 'history'" class="tab-content" style="margin-top: 32px;">
@@ -282,6 +290,11 @@ const openInNewTab = () => {
         </div>
       </div>
 
+      <div v-if="activeTab === 'history' && walletMeta">
+        <button :disabled="historyPage <= 1" @click="loadHistory(historyPage - 1)">Sebelumnya</button>
+        <span>{{ historyPage }} / {{ walletMeta.last_page }}</span>
+        <button :disabled="historyPage >= walletMeta.last_page" @click="loadHistory(historyPage + 1)">Berikutnya</button>
+      </div>
       <div v-if="activeTab === 'topup'" id="topup-form" style="padding-top: 32px;">
         <h3>Pilih Nominal Top Up</h3>
       <div class="amount-grid">
@@ -325,7 +338,7 @@ const openInNewTab = () => {
           </p>
           <button 
             class="primary-button" 
-            :disabled="isProcessing"
+            :disabled="isProcessing || invoiceUncertain || !!qrisUrl || !!qrisString"
             @click="processTopup"
           >
             <span v-if="isProcessing"><i class="fa-solid fa-spinner fa-spin"></i> Memproses...</span>

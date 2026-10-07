@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
@@ -8,14 +9,20 @@ const search = ref('')
 const statusFilter = ref('all')
 const notice = ref('')
 const config = useRuntimeConfig()
-const authToken = useCookie('icmarket_auth_token')
+const authToken = useAuthCredential()
 
+const paginationMeta = ref(null)
+const pageLoading = ref(false)
+const currentPage = ref(1)
+const changePage = async (page) => { if (pageLoading.value) return; pageLoading.value = true; currentPage.value = page; try { await loadStores() } finally { pageLoading.value = false } }
 const loadStores = async () => {
     try {
-        const response = await $fetch(`${config.public.apiBase}/admin/stores`, {
+        const response = await productApi(`${config.public.apiBase}/admin/stores`, {
+      query: { page: currentPage.value, limit: 20 },
             headers: { Authorization: `Bearer ${authToken.value}` }
         })
         if (response.success) {
+      paginationMeta.value = response.meta || null
             stores.value = response.data
         }
     } catch (e) {
@@ -25,7 +32,7 @@ const loadStores = async () => {
 
 const approveStore = async (store) => {
     try {
-        const response = await $fetch(`${config.public.apiBase}/admin/stores/${store.id}/approve`, {
+        const response = await productApi(`${config.public.apiBase}/admin/stores/${store.id}/approve`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${authToken.value}` }
         })
@@ -94,6 +101,7 @@ onMounted(() => {
         </tr>
       </tbody>
     </table>
+    <ApiPagination :meta="paginationMeta" :busy="pageLoading" @page="changePage" />
   </main>
 </template>
 

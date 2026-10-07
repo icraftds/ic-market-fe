@@ -1,19 +1,26 @@
 <script setup>
+const productApi = useProductApi()
 import { onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
 const router = useRouter()
-const { syncSession } = useDemoAuth()
+const { syncSession, acceptMarketSession } = useDemoAuth()
 const sessionCookie = useCookie('icmarket_auth_token', {
     sameSite: 'lax',
     default: () => null
 })
 
+const config = useRuntimeConfig()
 const errorMsg = ref('')
 
 onMounted(async () => {
+    if (config.public.ssoEnabled) {
+        await router.replace({ path: route.path, query: {} })
+        window.location.replace('/auth/start?return_to=%2F')
+        return
+    }
     const token = route.query.token
 
     if (!token) {
@@ -22,21 +29,19 @@ onMounted(async () => {
         return
     }
 
+    await router.replace({ path: route.path, query: {} })
     try {
-        const config = useRuntimeConfig()
+
         // Exchange SSO token for local IC Market token
-        const res = await $fetch(`${config.public.apiBase}/sso/sync`, {
+        const res = await productApi(`${config.public.apiBase}/sso/sync`, {
             method: 'POST',
             body: { token }
         })
 
         if (res.success && res.data?.token) {
             // Set the LOCAL token to cookie
-            sessionCookie.value = res.data.token
+            await acceptMarketSession(res.data)
             
-            // Simpan juga token aslinya dari AuthSSO untuk dipakai menyeberang ke aplikasi lain (seperti Gamez)
-            const ssoTokenCookie = useCookie('auth_sso_token', { sameSite: 'lax', default: () => null })
-            ssoTokenCookie.value = token
 
             // Fetch user profile to sync session state in frontend
             const user = await syncSession()
@@ -58,7 +63,7 @@ onMounted(async () => {
 
     } catch (error) {
         errorMsg.value = error.message || 'Terjadi kesalahan saat memverifikasi token.'
-        sessionCookie.value = null
+        if ((error.response?.status || error.statusCode) === 401) sessionCookie.value = null
         setTimeout(() => router.push('/login'), 2000)
     }
 })

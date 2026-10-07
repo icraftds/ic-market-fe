@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 
 export const useProductCatalog = () => {
+    const productApi = useProductApi()
     const TENANTS_KEY = 'icmarket_admin_stores'
 
     const { readApplications } = useSellerApplications()
@@ -401,7 +402,7 @@ export const useProductCatalog = () => {
         if (!import.meta.client) return []
         try {
             const config = useRuntimeConfig()
-            const response = await $fetch(`${config.public.apiBase}/products?limit=3&is_hot=true`)
+            const response = await productApi(`${config.public.apiBase}/products?limit=3&is_hot=true`)
             if (response.success) {
                 hotProducts.value = response.data.map(p => {
                     let rawImages = []
@@ -442,7 +443,7 @@ export const useProductCatalog = () => {
         try {
             const config = useRuntimeConfig()
             const query = new URLSearchParams(params).toString()
-            const response = await $fetch(`${config.public.apiBase}/products?${query}`)
+            const response = await productApi(`${config.public.apiBase}/products?${query}`)
             
             if (response.success) {
                 const newProducts = response.data.map(p => {

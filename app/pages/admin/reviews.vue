@@ -59,10 +59,12 @@
         </div>
       </article>
     </section>
+    <ApiPagination :meta="paginationMeta" :busy="pageLoading" @page="changePage" />
   </main>
 </template>
 
 <script setup>
+const productApi = useProductApi()
 import { ref, onMounted } from 'vue'
 
 definePageMeta({ 
@@ -70,20 +72,26 @@ definePageMeta({
 })
 
 const config = useRuntimeConfig()
-const authToken = useCookie('icmarket_auth_token')
+const authToken = useAuthCredential()
 
 const reviews = ref([])
 const isLoading = ref(true)
 const toggling = ref({})
 
+const paginationMeta = ref(null)
+const pageLoading = ref(false)
+const currentPage = ref(1)
+const changePage = async (page) => { if (pageLoading.value) return; pageLoading.value = true; currentPage.value = page; try { await fetchReviews() } finally { pageLoading.value = false } }
 const fetchReviews = async () => {
   try {
-    const res = await $fetch(`${config.public.apiBase}/admin/reviews`, {
+    const res = await productApi(`${config.public.apiBase}/admin/reviews`, {
+      query: { page: currentPage.value, limit: 20 },
       headers: {
         Authorization: `Bearer ${authToken.value}`
       }
     })
     if (res.success) {
+      paginationMeta.value = res.meta || null
       reviews.value = res.data
     }
   } catch (e) {
@@ -96,7 +104,7 @@ const fetchReviews = async () => {
 const toggleFeatured = async (review) => {
   toggling.value[review.id] = true
   try {
-    const res = await $fetch(`${config.public.apiBase}/admin/reviews/${review.id}/toggle-featured`, {
+    const res = await productApi(`${config.public.apiBase}/admin/reviews/${review.id}/toggle-featured`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authToken.value}`

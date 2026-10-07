@@ -1,4 +1,5 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'default' })
@@ -70,6 +71,10 @@ const processingCount = computed(() => orders.value.filter((order) => order.stat
 const completedCount = computed(() => orders.value.filter((order) => order.status === 'completed').length)
 const revenue = computed(() => orders.value.reduce((sum, order) => sum + Number(order.total || 0), 0))
 
+const paginationMeta = ref(null)
+const pageLoading = ref(false)
+const currentPage = ref(1)
+const changePage = async (page) => { if (pageLoading.value) return; pageLoading.value = true; currentPage.value = page; try { await loadOrders() } finally { pageLoading.value = false } }
 const loadOrders = async () => {
   if (!activeStoreId.value || !canManageActiveStore.value) {
     orders.value = []
@@ -78,12 +83,14 @@ const loadOrders = async () => {
 
   try {
     const config = useRuntimeConfig()
-    const authToken = useCookie('icmarket_auth_token')
-    const response = await $fetch(`${config.public.apiBase}/seller/orders`, {
+    const authToken = useAuthCredential()
+    const response = await productApi(`${config.public.apiBase}/seller/orders`, {
+      query: { page: currentPage.value, limit: 20 },
       headers: { Authorization: `Bearer ${authToken.value}` }
     })
     
     if (response.success && response.data) {
+      paginationMeta.value = response.meta || null
       let defaultCommissionRate = 10;
       if (import.meta.client) {
           const stored = JSON.parse(localStorage.getItem('icmarket_system_settings') || 'null');
@@ -123,8 +130,8 @@ const changeStatus = async (order, nextStatus) => {
 
   try {
     const config = useRuntimeConfig()
-    const authToken = useCookie('icmarket_auth_token')
-    const response = await $fetch(`${config.public.apiBase}/seller/orders/${order.id}/status`, {
+    const authToken = useAuthCredential()
+    const response = await productApi(`${config.public.apiBase}/seller/orders/${order.id}/status`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${authToken.value}` },
       body: { status: nextStatus }
@@ -262,6 +269,7 @@ onBeforeUnmount(() => {
         <p>Pesanan yang sudah dibayar buyer akan masuk ke toko aktif di sini.</p>
       </section>
     </template>
+    <ApiPagination :meta="paginationMeta" :busy="pageLoading" @page="changePage" />
   </main>
 </template>
 

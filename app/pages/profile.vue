@@ -1,9 +1,10 @@
 <script setup>
+const productApi = useProductApi()
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const { session, syncSession } = useDemoAuth()
+const { session, syncSession, walletBalance, walletStatus } = useDemoAuth()
 
 const form = ref({
   name: '',
@@ -38,10 +39,10 @@ const saveProfile = async () => {
   
   isSubmitting.value = true
   const config = useRuntimeConfig()
-  const token = useCookie('icmarket_auth_token')
+  const token = useAuthCredential()
   
   try {
-    const response = await $fetch(`${config.public.apiBase}/user`, {
+    const response = await productApi(`${config.public.apiBase}/user`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token.value}`
@@ -110,7 +111,7 @@ const saveProfile = async () => {
           <div class="form-group">
             <label>Saldo iCoin-Z</label>
             <div class="coin-display">
-              <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="height:16px;vertical-align:middle;margin-right:4px;" /> {{ Number(form.coins).toLocaleString('id-ID') }} iCoin-Z
+              <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="height:16px;vertical-align:middle;margin-right:4px;" /> {{ walletBalance === null ? '—' : Number(walletBalance).toLocaleString('id-ID') }} iCoin-Z
             </div>
           </div>
 

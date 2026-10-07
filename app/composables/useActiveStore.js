@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 
 export const useActiveStore = () => {
+    const productApi = useProductApi()
     const TENANTS_KEY = 'icmarket_admin_stores'
 
     const { session, syncSession } = useDemoAuth()
@@ -146,9 +147,9 @@ export const useActiveStore = () => {
         
         try {
             const config = useRuntimeConfig()
-            const authToken = useCookie('icmarket_auth_token')
+            const authToken = useAuthCredential()
             
-            const res = await $fetch(`${config.public.apiBase}/seller/store`, {
+            const res = await productApi(`${config.public.apiBase}/seller/store`, {
                 headers: { Authorization: `Bearer ${authToken.value}` }
             })
 

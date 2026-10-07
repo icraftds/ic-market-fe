@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 
 export const useCart = () => {
+    const productApi = useProductApi()
     const cart = useState('icmarket_cart', () => [])
     const isLoading = ref(false)
 
@@ -9,10 +10,10 @@ export const useCart = () => {
     const fetchCart = async () => {
         isLoading.value = true
         try {
-            const token = useCookie('icmarket_auth_token').value
+            const token = useAuthCredential().value
             if (!token) return []
 
-            const response = await $fetch(`${getApiBase()}/cart`, {
+            const response = await productApi(`${getApiBase()}/cart`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     Accept: 'application/json'
@@ -38,13 +39,13 @@ export const useCart = () => {
 
     const addToCart = async (productId, quantity = 1) => {
         try {
-            const token = useCookie('icmarket_auth_token').value
+            const token = useAuthCredential().value
             if (!token) {
                 alert('Silakan login terlebih dahulu')
                 return
             }
 
-            const response = await $fetch(`${getApiBase()}/cart`, {
+            const response = await productApi(`${getApiBase()}/cart`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -67,8 +68,8 @@ export const useCart = () => {
 
     const updateQuantity = async (cartId, quantity) => {
         try {
-            const token = useCookie('icmarket_auth_token').value
-            await $fetch(`${getApiBase()}/cart/${cartId}`, {
+            const token = useAuthCredential().value
+            await productApi(`${getApiBase()}/cart/${cartId}`, {
                 method: 'PUT',
                 headers: { 
                     Authorization: `Bearer ${token}`,
@@ -85,8 +86,8 @@ export const useCart = () => {
 
     const removeFromCart = async (cartId) => {
         try {
-            const token = useCookie('icmarket_auth_token').value
-            await $fetch(`${getApiBase()}/cart/${cartId}`, {
+            const token = useAuthCredential().value
+            await productApi(`${getApiBase()}/cart/${cartId}`, {
                 method: 'DELETE',
                 headers: { 
                     Authorization: `Bearer ${token}`,
@@ -102,8 +103,8 @@ export const useCart = () => {
 
     const clearCart = async () => {
         try {
-            const token = useCookie('icmarket_auth_token').value
-            const response = await $fetch(`${getApiBase()}/cart/clear`, {
+            const token = useAuthCredential().value
+            const response = await productApi(`${getApiBase()}/cart/clear`, {
                 method: 'DELETE',
                 headers: { 
                     Authorization: `Bearer ${token}`,

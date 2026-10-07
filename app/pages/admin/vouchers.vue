@@ -1,10 +1,11 @@
 <script setup>
+const productApi = useProductApi()
 import { computed, ref, onMounted } from 'vue'
 
 definePageMeta({ layout: 'default' })
 
 const config = useRuntimeConfig()
-const token  = useCookie('icmarket_auth_token')
+const token  = useAuthCredential()
 
 // ── State ─────────────────────────────────────────────────────────────────
 const vouchers    = ref([])
@@ -57,7 +58,7 @@ const filteredVouchers = computed(() => {
 const load = async () => {
   isLoading.value = true
   try {
-    const res = await $fetch(`${config.public.apiBase}/admin/vouchers`, {
+    const res = await productApi(`${config.public.apiBase}/admin/vouchers`, {
       headers: authHeaders(),
     })
     vouchers.value = res.data || []
@@ -70,7 +71,7 @@ const load = async () => {
 
 const loadUsers = async () => {
   try {
-    const res = await $fetch(`${config.public.apiBase}/admin/users`, {
+    const res = await productApi(`${config.public.apiBase}/admin/users`, {
       headers: authHeaders(),
     })
     usersList.value = res.data || []
@@ -105,12 +106,12 @@ const submitForm = async () => {
 
   try {
     if (isEditing.value) {
-      await $fetch(`${config.public.apiBase}/admin/vouchers/${editId.value}`, {
+      await productApi(`${config.public.apiBase}/admin/vouchers/${editId.value}`, {
         method: 'PUT', headers: authHeaders(), body: payload,
       })
       showNotice('success', `Voucher ${payload.code} berhasil diperbarui.`)
     } else {
-      await $fetch(`${config.public.apiBase}/admin/vouchers`, {
+      await productApi(`${config.public.apiBase}/admin/vouchers`, {
         method: 'POST', headers: authHeaders(), body: payload,
       })
       showNotice('success', `Voucher ${payload.code} berhasil dibuat.`)
@@ -128,7 +129,7 @@ const submitForm = async () => {
 
 const toggleActive = async (v) => {
   try {
-    await $fetch(`${config.public.apiBase}/admin/vouchers/${v.id}`, {
+    await productApi(`${config.public.apiBase}/admin/vouchers/${v.id}`, {
       method: 'PUT',
       headers: authHeaders(),
       body: { ...v, is_active: !v.is_active, expires_at: v.expires_at || null, max_usage: v.max_usage || null },
@@ -143,7 +144,7 @@ const toggleActive = async (v) => {
 const deleteVoucher = async (v) => {
   if (!confirm(`Hapus voucher ${v.code}?`)) return
   try {
-    await $fetch(`${config.public.apiBase}/admin/vouchers/${v.id}`, {
+    await productApi(`${config.public.apiBase}/admin/vouchers/${v.id}`, {
       method: 'DELETE', headers: authHeaders(),
     })
     showNotice('error', `Voucher ${v.code} dihapus.`)
