@@ -3,18 +3,22 @@ export function usePaymentPoll(check, { onTimeout = () => {}, isAuthenticated = 
   let generation = 0
   let deadline = 0
   let attempt = 0
-  const stop = () => {
+  let wanted = false
+  const suspend = () => {
     generation++
     clearTimeout(timer)
     timer = null
   }
+  const stop = () => { wanted = false; suspend() }
   const start = () => {
-    stop()
+    suspend()
+    wanted = true
     const run = generation
     deadline = Date.now() + 120000
     attempt = 0
     const tick = async () => {
-      if (run !== generation || document.hidden || !isAuthenticated()) return
+      if (run !== generation || document.hidden) return
+      if (!isAuthenticated()) { stop(); return }
       if (Date.now() >= deadline) { onTimeout(); stop(); return }
       let done = false
       try { done = await check(() => run === generation && !document.hidden && isAuthenticated()) } catch (error) {
@@ -29,7 +33,10 @@ export function usePaymentPoll(check, { onTimeout = () => {}, isAuthenticated = 
     }
     tick()
   }
-  const visibility = () => { if (document.hidden) stop() }
+  const visibility = () => {
+    if (document.hidden) suspend()
+    else if (wanted && isAuthenticated()) start()
+  }
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibility)
   const dispose = () => { stop(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', visibility) }
   return { start, stop, dispose }

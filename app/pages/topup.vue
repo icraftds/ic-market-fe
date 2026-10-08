@@ -22,6 +22,7 @@ const historyPage = ref(1)
 const loadHistory = async (page) => { historyPage.value = page; await fetchWallet(page) }
 const qrisTimerInterval = ref(null)
 const qrisTimeLeft = ref('15:00')
+let successTimer = null
 
 const paymentMethods = [
   { id: 'qris', name: 'QRIS (Otomatis)', sub: 'GoPay, OVO, DANA, LinkAja, ShopeePay', icon: 'fa-solid fa-qrcode' }
@@ -70,6 +71,7 @@ onMounted(async () => {
   invoiceUncertain.value = sessionStorage.getItem(`icmarket_topup_uncertain:${session.value?.id}`) === 'true'
   if (!session.value) {
     router.push('/login')
+    return
   }
 
   // Restore pending QRIS if any
@@ -154,23 +156,60 @@ const processTopup = async () => {
   }
 }
 
+const findTopupCredit = async (transactionId, amount) => {
+  let page = 1
+  let lastPage = 1
+  do {
+    const response = await productApi(`${config.public.apiBase}/wallet`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+      query: { page, limit: 50, include_histories: 1 }
+    })
+    if (!response.success) throw new Error('Riwayat wallet belum tersedia.')
+    const credit = response.data?.histories?.find(history =>
+      String(history.reference_id) === transactionId && history.type === 'credit' && Number(history.amount) === amount
+    )
+    if (credit) return credit
+    lastPage = Number(response.meta?.last_page || 1)
+    page++
+  } while (page <= lastPage)
+  return null
+}
+const refreshTopupVouchers = async owner => {
+  const response = await productApi(`${config.public.apiBase}/my-vouchers`, { headers: { Authorization: `Bearer ${token.value}` } })
+  if (String(session.value?.id) === owner) vouchers.value = response.data || []
+}
 const poll = usePaymentPoll(async (isCurrent) => {
-  await Promise.all([
-    fetchWallet(),
-    productApi(`${config.public.apiBase}/my-vouchers`, { headers: { Authorization: `Bearer ${token.value}` } }).then(response => { vouchers.value = response.data || [] })
-  ])
-  if (!isCurrent()) return false
-  successMsg.value = 'Saldo dan voucher telah diperiksa. Pemenuhan pembayaran dapat selesai pada waktu berbeda.'
-  // There is no product invoice-status endpoint to prove this particular top-up completed.
-  return false
-}, { isAuthenticated: () => !!session.value, onTimeout: () => { successMsg.value = 'Pemenuhan pembayaran belum dapat dikonfirmasi. Cek ulang saldo dan voucher.' } })
+  const owner = String(session.value?.id)
+  const transactionId = sessionStorage.getItem('icmarket_pending_qris_transaction')
+  if (!transactionId || sessionStorage.getItem('icmarket_pending_qris_owner') !== owner) return false
+  const credit = await findTopupCredit(transactionId, topupAmount.value)
+  if (!isCurrent() || String(session.value?.id) !== owner || !credit) return false
+  await fetchWallet()
+  if (!isCurrent() || String(session.value?.id) !== owner) return false
+  showQrisModal.value = false
+  if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
+  qrisUrl.value = ''
+  qrisString.value = ''
+  invoiceUncertain.value = false
+  sessionStorage.removeItem(`icmarket_topup_uncertain:${owner}`)
+  for (const suffix of ['', '_string', '_amount', '_expires_at', '_owner', '_transaction']) sessionStorage.removeItem(`icmarket_pending_qris${suffix}`)
+  successMsg.value = 'Topup iCoinz berhasil. Bonus voucher mengikuti pemrosesan backend.'
+  refreshTopupVouchers(owner).catch(() => {})
+  successTimer = setTimeout(() => {
+    if (String(session.value?.id) !== owner) return
+    showSuccessModal.value = true
+    refreshTopupVouchers(owner).catch(() => {})
+    syncSession().catch(() => {})
+  }, 2000)
+  return true
+}, { isAuthenticated: () => !!session.value, onTimeout: () => { successMsg.value = 'Pembayaran masih diproses. Buka kembali QR untuk memeriksa status top-up.' } })
 const startPolling = () => poll.start()
 const closeQrisModal = () => {
   showQrisModal.value = false
   poll.stop()
   if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
 }
-onUnmounted(() => { poll.dispose(); if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value) })
+onUnmounted(() => { clearTimeout(successTimer); poll.dispose(); if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value) })
 
 const startQrisTimer = () => {
   if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
