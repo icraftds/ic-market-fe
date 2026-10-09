@@ -36,6 +36,7 @@ const openTerms = (e) => { e.preventDefault(); showTermsModal.value = true; docu
 const closeTerms = () => { showTermsModal.value = false; document.body.style.overflow = '' }
 const openPrivacy = (e) => { e.preventDefault(); showPrivacyModal.value = true; document.body.style.overflow = 'hidden' }
 const closePrivacy = () => { showPrivacyModal.value = false; document.body.style.overflow = '' }
+const promoPending = ref(false)
 const appliedVoucher = ref(null)   // { code, type, amount }
 const orderSummaryRef = ref(null)
 const myVouchers     = ref([])     // user's available vouchers from API
@@ -43,11 +44,13 @@ const myVouchers     = ref([])     // user's available vouchers from API
 // ── Voucher helpers (localStorage no longer needed) ──────────────────────────
 
 const applyPromo = async () => {
+  if (promoPending.value || isSubmitting.value) return
   const code = promoCode.value.trim().toUpperCase()
   if (!code) return
 
   promoMsg.value = ''
   promoSuccess.value = false
+  promoPending.value = true
 
   try {
     const subtotal = checkoutCart.value.reduce(
@@ -76,10 +79,11 @@ const applyPromo = async () => {
     promoSuccess.value = false
     promoMsg.value = e.data?.message || 'Kode voucher tidak valid.'
     updateTotals(null)
-  }
+  } finally { promoPending.value = false }
 }
 
 const removePromo = () => {
+  if (promoPending.value || isSubmitting.value) return
   promoCode.value = ''
   promoMsg.value = ''
   promoSuccess.value = false
@@ -89,6 +93,7 @@ const removePromo = () => {
 
 // ── Voucher card helpers ───────────────────────────────────────────────────
 const useVoucherCard = (v) => {
+  if (promoPending.value || isSubmitting.value) return
   promoCode.value = v.code
   applyPromo()
 }
@@ -193,7 +198,7 @@ const loadCheckoutData = async () => {
 }
 
 const placeOrder = async () => {
-  if (isSubmitting.value) return
+  if (isSubmitting.value || promoPending.value) return
   checkoutError.value = ''
 
   if (!buyerName.value.trim() || !buyerEmail.value.trim() || !buyerPhone.value.trim()) {
@@ -428,7 +433,7 @@ onMounted(async () => {
                   <strong v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(appliedVoucher.amount).toLocaleString('id-ID') }}</strong>
                 </span>
               </div>
-              <button class="promo-remove-btn" @click="removePromo">
+              <button :disabled="promoPending || isSubmitting" class="promo-remove-btn" @click="removePromo">
                 <i class="fa-solid fa-xmark"></i> Hapus
               </button>
             </div>
@@ -436,12 +441,13 @@ onMounted(async () => {
               <input
                 v-model="promoCode"
                 class="promo-input"
+                :disabled="promoPending || isSubmitting"
                 type="text"
                 placeholder="Masukkan kode voucher…"
-                maxlength="20"
+                maxlength="30"
                 @keyup.enter="applyPromo"
               >
-              <button class="promo-apply-btn" @click="applyPromo">Pakai</button>
+              <button class="promo-apply-btn" :disabled="promoPending || isSubmitting" @click="applyPromo">{{ promoPending ? 'Memeriksa...' : 'Pakai' }}</button>
             </div>
             <div v-if="promoMsg" style="font-size:0.8rem;margin-top:4px;" :style="{ color: promoSuccess ? 'var(--green)' : 'var(--red)' }" v-html="promoMsg"></div>
             <div v-if="!appliedVoucher" class="flow-alert info" style="margin-top:10px;">
@@ -463,7 +469,7 @@ onMounted(async () => {
                 </div>
                 <div class="vc-right">
                   <span v-if="v.target_users && v.target_users.length > 0" class="vc-badge-private"><i class="fa-solid fa-lock"></i> Milikmu</span>
-                  <button class="vc-use-btn" @click.stop="useVoucherCard(v)">Pakai</button>
+                  <button :disabled="promoPending || isSubmitting" class="vc-use-btn" @click.stop="useVoucherCard(v)">Pakai</button>
                 </div>
               </div>
             </div>

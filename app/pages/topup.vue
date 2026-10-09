@@ -57,9 +57,9 @@ const amounts = [
   { value: 20000, price: 21000, discount: '' },
   { value: 50000, price: 51000, discount: '' },
   { value: 100000, price: 100000, discount: 'Bebas Admin' },
-  { value: 250000, price: 250000, discount: '+ Voucher 5%' },
-  { value: 500000, price: 500000, discount: '+ Voucher Rp 25rb' },
-  { value: 1000000, price: 1000000, discount: '+ Voucher Rp 75rb & Badge Sultan 🔥' }
+  { value: 250000, price: 250000, discount: '+ Voucher diskon 5%' },
+  { value: 500000, price: 500000, discount: '+ Voucher diskon Rp 25rb' },
+  { value: 1000000, price: 1000000, discount: '+ Voucher diskon Rp 75rb & Sultan 30 hari 🔥' }
 ]
 
 const selectedAmount = ref(amounts[0])
@@ -67,6 +67,7 @@ const selectedAmount = ref(amounts[0])
 onMounted(async () => {
   await syncSession()
   await loadHistory(1)
+  reward.restore()
   const owner = sessionStorage.getItem('icmarket_pending_qris_owner')
   invoiceUncertain.value = sessionStorage.getItem(`icmarket_topup_uncertain:${session.value?.id}`) === 'true'
   if (!session.value) {
@@ -174,10 +175,18 @@ const findTopupCredit = async (transactionId, amount) => {
   } while (page <= lastPage)
   return null
 }
-const refreshTopupVouchers = async owner => {
+const refreshTopupVouchers = async () => {
+  const owner = String(session.value?.id)
   const response = await productApi(`${config.public.apiBase}/my-vouchers`, { headers: { Authorization: `Bearer ${token.value}` } })
+  if (!response.success) throw Error('Daftar voucher belum tersedia.')
   if (String(session.value?.id) === owner) vouchers.value = response.data || []
 }
+const reward = useTopupReward({ session, refresh: async () => {
+  const results = await Promise.allSettled([fetchWallet(), refreshTopupVouchers(), syncSession(true)])
+  if (results.some(result => result.status === 'rejected' || result.value === false || result.value === null)) throw Error('Data reward belum dapat diperbarui.')
+} })
+const rewardMessage = reward.message
+const rewardRefreshing = reward.busy
 const poll = usePaymentPoll(async (isCurrent) => {
   const owner = String(session.value?.id)
   const transactionId = sessionStorage.getItem('icmarket_pending_qris_transaction')
@@ -193,13 +202,11 @@ const poll = usePaymentPoll(async (isCurrent) => {
   invoiceUncertain.value = false
   sessionStorage.removeItem(`icmarket_topup_uncertain:${owner}`)
   for (const suffix of ['', '_string', '_amount', '_expires_at', '_owner', '_transaction']) sessionStorage.removeItem(`icmarket_pending_qris${suffix}`)
-  successMsg.value = 'Topup iCoinz berhasil. Bonus voucher mengikuti pemrosesan backend.'
-  refreshTopupVouchers(owner).catch(() => {})
+  successMsg.value = 'Topup iCoinz berhasil. Status reward ditampilkan terpisah.'
+  reward.start(transactionId)
   successTimer = setTimeout(() => {
     if (String(session.value?.id) !== owner) return
     showSuccessModal.value = true
-    refreshTopupVouchers(owner).catch(() => {})
-    syncSession().catch(() => {})
   }, 2000)
   return true
 }, { isAuthenticated: () => !!session.value, onTimeout: () => { successMsg.value = 'Pembayaran masih diproses. Buka kembali QR untuk memeriksa status top-up.' } })
@@ -209,7 +216,7 @@ const closeQrisModal = () => {
   poll.stop()
   if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
 }
-onUnmounted(() => { clearTimeout(successTimer); poll.dispose(); if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value) })
+onUnmounted(() => { clearTimeout(successTimer); reward.dispose(); poll.dispose(); if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value) })
 
 const startQrisTimer = () => {
   if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
@@ -276,6 +283,8 @@ const openInNewTab = () => {
       </div>
       
       <p v-if="walletStatus !== 'fresh' || walletInitializationPending" role="status">Saldo belum dapat diperbarui. <button @click="async () => { await initializeWallet(true); await fetchWallet() }">Coba lagi</button></p>
+      <p v-if="rewardMessage" role="status">{{ rewardMessage }} <button :disabled="rewardRefreshing" @click="reward.retry">{{ rewardRefreshing ? 'Memperbarui...' : 'Cek reward' }}</button></p>
+      <p>Voucher topup khusus akun penerima, sekali pakai, berlaku 7 hari sebagai diskon pembelian; bukan tambahan saldo. Reward otomatis hanya untuk tepat 250.000, tepat 500.000, atau minimal 1.000.000.</p>
       <p v-if="invoiceUncertain" role="status">Invoice belum dapat dikonfirmasi. Periksa pembayaran atau hubungi dukungan.</p>
       <button v-if="qrisUrl || qrisString" @click="() => { showQrisModal = true; startPolling() }">Buka pembayaran tersimpan / cek ulang</button>
       <button v-if="(qrisUrl || qrisString) && !invoiceUncertain" @click="beginNewTopup">Mulai top-up baru setelah memeriksa pembayaran sebelumnya</button>
