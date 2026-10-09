@@ -20,7 +20,8 @@ export const useSsoAuth = () => {
         cart.value = []; orders.value = []; activeStore.value = null
         if (import.meta.client && wasAuthenticated) window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
     }
-    const syncSession = async () => {
+    const syncSession = async (force = false) => {
+        if (!force && authStatus.value === 'authenticated') return session.value
         if (app._ssoSessionRequest) return app._ssoSessionRequest
         app._ssoSessionRequest = transport('/api/session', { retry: 0 }).then(data => {
             if (session.value?.id !== data.user.id) clear()
