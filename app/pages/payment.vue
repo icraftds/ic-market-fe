@@ -142,7 +142,7 @@ onMounted(async () => {
 
   const orderCreatedAtStr = localStorage.getItem('icmarket_order_created_at')
   const orderCreatedAt = orderCreatedAtStr ? new Date(orderCreatedAtStr) : new Date()
-  const expiryDate = new Date(orderCreatedAt.getTime() + 24 * 60 * 60 * 1000)
+  const expiryDate = new Date(orderCreatedAt.getTime() + 30 * 60 * 1000)
 
   const updateTimer = () => {
     const now = new Date()

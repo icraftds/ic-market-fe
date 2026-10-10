@@ -146,6 +146,22 @@ const continuePayment = async (order) => {
   await navigateTo('/payment')
 }
 
+const cancelOrder = async (order) => {
+  if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')) return
+  try {
+    const config = useRuntimeConfig()
+    const token = useAuthCredential().value
+    await productApi(`${config.public.apiBase}/orders/${order.orderId}/cancel`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    alert('Pesanan berhasil dibatalkan.')
+    await loadOrders()
+  } catch (err) {
+    alert(err.data?.message || 'Gagal membatalkan pesanan.')
+  }
+}
+
 const openStore = (storeOrder) => {
   if (!storeOrder.storeSlug) return '#'
   return `/store/${storeOrder.storeSlug}`
@@ -319,14 +335,23 @@ const submitReview = async () => {
             <strong v-html="formatCurrency(order.totals?.total)"></strong>
           </div>
 
-          <button
-            v-if="order.status === 'pending'"
-            class="primary-button"
-            type="button"
-            @click="continuePayment(order)"
-          >
-            Bayar Sekarang
-          </button>
+          <div v-if="order.status === 'pending'" style="display: flex; gap: 8px;">
+            <button
+              class="secondary-button"
+              type="button"
+              style="padding: 11px 16px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--text); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer;"
+              @click="cancelOrder(order)"
+            >
+              Batalkan
+            </button>
+            <button
+              class="primary-button"
+              type="button"
+              @click="continuePayment(order)"
+            >
+              Bayar Sekarang
+            </button>
+          </div>
         </div>
       </article>
     </section>
