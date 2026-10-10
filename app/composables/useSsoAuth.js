@@ -29,7 +29,13 @@ export const useSsoAuth = () => {
             csrf.value = data.csrf
             walletInitializationPending.value = data.wallet_initialization_pending
             authStatus.value = 'authenticated'
-            if (import.meta.client) fetchWallet()
+            if (import.meta.client) {
+                if (walletInitializationPending.value) {
+                    initializeWallet()
+                } else {
+                    fetchWallet()
+                }
+            }
             return session.value
         }).catch(error => {
             const status = error.statusCode || error.response?.status
