@@ -244,16 +244,32 @@ const startQrisTimer = () => {
   qrisTimerInterval.value = setInterval(updateTimer, 1000)
 }
 
+const newTopupError = ref('')
+
 const beginNewTopup = () => {
   if (invoiceUncertain.value || isProcessing.value) return
   const storageKey = `icmarket_topup_invoices:${session.value.id}`
   const invoices = JSON.parse(sessionStorage.getItem(storageKey) || '[]')
+  
+  if (invoices.length >= 1) {
+    const lastTime = Number(sessionStorage.getItem('icmarket_last_new_topup_time') || '0')
+    const now = Date.now()
+    if (now - lastTime < 60000) {
+      newTopupError.value = 'Tunggu waktu 1 menit lagi untuk melakukan topup.'
+      setTimeout(() => { newTopupError.value = '' }, 5000)
+      return
+    }
+  }
+
   invoices.push({ transactionId: sessionStorage.getItem('icmarket_pending_qris_transaction'), payment_url: qrisUrl.value, qr_string: qrisString.value, amount: topupAmount.value })
   sessionStorage.setItem(storageKey, JSON.stringify(invoices))
+  sessionStorage.setItem('icmarket_last_new_topup_time', Date.now().toString())
+  
   closeQrisModal()
   qrisUrl.value = ''
   qrisString.value = ''
   for (const suffix of ['', '_string', '_amount', '_expires_at', '_owner', '_transaction']) sessionStorage.removeItem(`icmarket_pending_qris${suffix}`)
+  newTopupError.value = ''
 }
 
 const openInNewTab = () => {
@@ -407,6 +423,10 @@ const handleOpenQris = () => {
             <span v-if="isProcessing"><i class="fa-solid fa-spinner fa-spin"></i> Memproses...</span>
             <span v-else>Lanjutkan Pembayaran</span>
           </button>
+          
+          <div v-if="newTopupError" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 12px 16px; border-radius: 12px; font-weight: 600; font-size: 13px; margin-top: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ newTopupError }}
+          </div>
           
           <div class="pending-actions" v-if="qrisUrl || qrisString" style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px;">
             <button class="action-btn primary" @click="handleOpenQris" style="width: 100%; justify-content: center;">
