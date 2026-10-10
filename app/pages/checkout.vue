@@ -216,10 +216,7 @@ const placeOrder = async () => {
     return
   }
 
-  if (localStorage.getItem('icmarket_order_status') === 'pending' && localStorage.getItem('icmarket_order_owner') === String(session.value.id)) {
-    router.push('/payment')
-    return
-  }
+
   await loadCheckoutData()
 
   if (!checkoutCart.value.length) {
@@ -298,7 +295,7 @@ onMounted(async () => {
     return
   }
 
-  if (localStorage.getItem('icmarket_order_status') === 'pending' && localStorage.getItem('icmarket_order_owner') === String(session.value.id)) { await router.push('/payment'); return }
+
   await loadCheckoutData()
 
   if (!checkoutCart.value.length) {

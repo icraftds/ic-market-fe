@@ -284,10 +284,22 @@ const openInNewTab = () => {
       
       <p v-if="walletStatus !== 'fresh' || walletInitializationPending" role="status">Saldo belum dapat diperbarui. <button @click="async () => { await initializeWallet(true); await fetchWallet() }">Coba lagi</button></p>
       <p v-if="rewardMessage" role="status">{{ rewardMessage }} <button :disabled="rewardRefreshing" @click="reward.retry">{{ rewardRefreshing ? 'Memperbarui...' : 'Cek reward' }}</button></p>
-      <p>Voucher topup khusus akun penerima, sekali pakai, berlaku 7 hari sebagai diskon pembelian; bukan tambahan saldo. Reward otomatis hanya untuk tepat 250.000, tepat 500.000, atau minimal 1.000.000.</p>
-      <p v-if="invoiceUncertain" role="status">Invoice belum dapat dikonfirmasi. Periksa pembayaran atau hubungi dukungan.</p>
-      <button v-if="qrisUrl || qrisString" @click="() => { showQrisModal = true; startPolling() }">Buka pembayaran tersimpan / cek ulang</button>
-      <button v-if="(qrisUrl || qrisString) && !invoiceUncertain" @click="beginNewTopup">Mulai top-up baru setelah memeriksa pembayaran sebelumnya</button>
+      <div class="topup-notice">
+        <div class="notice-icon"><i class="fa-solid fa-circle-info"></i></div>
+        <div class="notice-content">
+          <p>Voucher topup khusus akun penerima, sekali pakai, berlaku 7 hari sebagai diskon pembelian; bukan tambahan saldo. Reward otomatis hanya untuk tepat 250.000, tepat 500.000, atau minimal 1.000.000.</p>
+          <p v-if="invoiceUncertain" role="status" class="warning-text"><i class="fa-solid fa-triangle-exclamation"></i> Invoice belum dapat dikonfirmasi. Periksa pembayaran atau hubungi dukungan.</p>
+          
+          <div class="notice-actions" v-if="qrisUrl || qrisString">
+            <button class="action-btn primary" @click="() => { showQrisModal = true; startPolling(); startQrisTimer() }">
+              <i class="fa-solid fa-qrcode"></i> Buka pembayaran tersimpan / cek ulang
+            </button>
+            <button v-if="!invoiceUncertain" class="action-btn secondary" @click="beginNewTopup">
+              <i class="fa-solid fa-plus"></i> Mulai top-up baru
+            </button>
+          </div>
+        </div>
+      </div>
       <div class="topup-tabs">
         <button class="tab-btn" :class="{ active: activeTab === 'topup' }" @click="activeTab = 'topup'">Top Up iCoin-Z</button>
         <button class="tab-btn" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'; loadHistory(historyPage)">Riwayat Transaksi</button>
@@ -702,6 +714,71 @@ const openInNewTab = () => {
 @keyframes pulseGlow {
   0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; }
   100% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+
+.topup-notice {
+  display: flex;
+  gap: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 32px;
+}
+.notice-icon {
+  font-size: 24px;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+.notice-content {
+  flex: 1;
+}
+.notice-content p {
+  margin: 0 0 8px 0;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.warning-text {
+  color: #ea580c !important;
+  font-weight: 600;
+}
+.notice-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+.action-btn.primary {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+.action-btn.primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+.action-btn.secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+.action-btn.secondary:hover {
+  background: #e2e8f0;
+  color: #1e293b;
 }
 
 .topup-page {

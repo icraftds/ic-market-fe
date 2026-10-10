@@ -33,9 +33,19 @@ const readCartCount = async () => {
   await fetchCart()
 }
 
+const hasPendingOrder = ref(false)
+const checkPendingOrder = () => {
+  if (import.meta.client) {
+    const isPending = localStorage.getItem('icmarket_order_status') === 'pending'
+    const isOwner = localStorage.getItem('icmarket_order_owner') === String(session.value?.id)
+    hasPendingOrder.value = isPending && isOwner
+  }
+}
+
 const refreshNavigation = () => {
   syncSession()
   readCartCount()
+  checkPendingOrder()
 }
 
 const handleLogout = async () => {
@@ -69,6 +79,12 @@ onBeforeUnmount(() => {
 
 <template>
   <header class="nav-root">
+    <div v-if="hasPendingOrder" class="nav-pending-bar">
+      <div class="nav-pending-inner">
+        <span><i class="fa-solid fa-circle-exclamation" style="margin-right: 6px;"></i> Anda memiliki pesanan yang menunggu pembayaran.</span>
+        <NuxtLink to="/orders" class="nav-pending-btn">Selesaikan Pembayaran</NuxtLink>
+      </div>
+    </div>
 
     <!-- ════════════ TOP BAR ════════════ -->
     <div class="nav-top">
@@ -127,7 +143,7 @@ onBeforeUnmount(() => {
         <div class="nav-actions">
 
           <!-- Cart -->
-          <NuxtLink v-if="isLoggedIn" to="/cart" id="cart-btn" class="nav-action-item" title="Keranjang Belanja">
+          <NuxtLink v-if="isLoggedIn && !hasPendingOrder" to="/cart" id="cart-btn" class="nav-action-item" title="Keranjang Belanja">
             <div class="nav-action-icon-wrap">
               <i class="fa-solid fa-cart-shopping"></i>
               <span v-if="cartCount > 0" class="nav-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
@@ -321,6 +337,32 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.nav-pending-bar {
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: 1px solid #fed7aa;
+}
+.nav-pending-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 8px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.nav-pending-btn {
+  background: #ea580c;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.nav-pending-btn:hover { background: #c2410c; }
 /* ═══════════════════════════════════════
    NAV ROOT — Light, clean, airy
 ═══════════════════════════════════════ */
