@@ -44,6 +44,10 @@ const paymentPoll = usePaymentPoll(async (isCurrent) => {
   }
   if (order?.status === 'cancelled') {
     paymentError.value = 'Pesanan dibatalkan oleh backend.'
+    if (import.meta.client) {
+      localStorage.removeItem('icmarket_order_status')
+      window.dispatchEvent(new Event('storage'))
+    }
     return true
   }
   return false

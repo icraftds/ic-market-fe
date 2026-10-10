@@ -38,7 +38,18 @@ const checkPendingOrder = () => {
   if (import.meta.client) {
     const isPending = localStorage.getItem('icmarket_order_status') === 'pending'
     const isOwner = localStorage.getItem('icmarket_order_owner') === String(session.value?.id)
-    hasPendingOrder.value = isPending && isOwner
+    
+    let isExpired = false
+    const createdAtStr = localStorage.getItem('icmarket_order_created_at')
+    if (createdAtStr) {
+      const createdAt = new Date(createdAtStr).getTime()
+      if (Date.now() - createdAt > 30 * 60 * 1000) {
+        isExpired = true
+        if (isPending) localStorage.removeItem('icmarket_order_status')
+      }
+    }
+    
+    hasPendingOrder.value = isPending && isOwner && !isExpired
   }
 }
 

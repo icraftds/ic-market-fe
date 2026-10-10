@@ -126,6 +126,15 @@ const loadOrders = async () => {
           items: items
         }
       })
+      
+      if (import.meta.client && localStorage.getItem('icmarket_order_status') === 'pending') {
+        const currentOrderId = localStorage.getItem('icmarket_order_id')
+        const stillPending = res.data.some(o => o.transaction_id === currentOrderId && o.status === 'pending')
+        if (!stillPending) {
+          localStorage.removeItem('icmarket_order_status')
+          window.dispatchEvent(new Event('storage'))
+        }
+      }
     }
   } catch (error) {
     console.error('Failed to load orders', error)
@@ -155,6 +164,14 @@ const cancelOrder = async (order) => {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` }
     })
+    
+    if (import.meta.client) {
+      if (localStorage.getItem('icmarket_order_owner') === String(session.value?.id)) {
+        localStorage.removeItem('icmarket_order_status')
+        window.dispatchEvent(new Event('storage')) // Trigger SiteNav update
+      }
+    }
+    
     alert('Pesanan berhasil dibatalkan.')
     await loadOrders()
   } catch (err) {
