@@ -261,6 +261,18 @@ const openInNewTab = () => {
     window.open(qrisUrl.value, '_blank')
   }
 }
+
+const handleOpenQris = () => {
+  const expiresAt = Number(sessionStorage.getItem('icmarket_pending_qris_expires_at'))
+  if (expiresAt && Date.now() >= expiresAt) {
+    alert('Waktu pembayaran telah berakhir. Silakan klik "Mulai top-up baru" untuk melakukan top up lagi.')
+    qrisTimeLeft.value = '00:00'
+    return
+  }
+  showQrisModal.value = true
+  startPolling()
+  startQrisTimer()
+}
 </script>
 
 <template>
@@ -289,15 +301,6 @@ const openInNewTab = () => {
         <div class="notice-content">
           <p>Voucher topup khusus akun penerima, sekali pakai, berlaku 7 hari sebagai diskon pembelian; bukan tambahan saldo. Reward otomatis hanya untuk tepat 250.000, tepat 500.000, atau minimal 1.000.000.</p>
           <p v-if="invoiceUncertain" role="status" class="warning-text"><i class="fa-solid fa-triangle-exclamation"></i> Invoice belum dapat dikonfirmasi. Periksa pembayaran atau hubungi dukungan.</p>
-          
-          <div class="notice-actions" v-if="qrisUrl || qrisString">
-            <button class="action-btn primary" @click="() => { showQrisModal = true; startPolling(); startQrisTimer() }">
-              <i class="fa-solid fa-qrcode"></i> Buka pembayaran tersimpan / cek ulang
-            </button>
-            <button v-if="!invoiceUncertain" class="action-btn secondary" @click="beginNewTopup">
-              <i class="fa-solid fa-plus"></i> Mulai top-up baru
-            </button>
-          </div>
         </div>
       </div>
       <div class="topup-tabs">
@@ -404,6 +407,15 @@ const openInNewTab = () => {
             <span v-if="isProcessing"><i class="fa-solid fa-spinner fa-spin"></i> Memproses...</span>
             <span v-else>Lanjutkan Pembayaran</span>
           </button>
+          
+          <div class="pending-actions" v-if="qrisUrl || qrisString" style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px;">
+            <button class="action-btn primary" @click="handleOpenQris" style="width: 100%; justify-content: center;">
+              <i class="fa-solid fa-qrcode"></i> Buka pembayaran tersimpan / cek ulang
+            </button>
+            <button v-if="!invoiceUncertain" class="action-btn secondary" @click="beginNewTopup" style="width: 100%; justify-content: center;">
+              <i class="fa-solid fa-plus"></i> Mulai top-up baru
+            </button>
+          </div>
         </div>
       </div>
     </div>
