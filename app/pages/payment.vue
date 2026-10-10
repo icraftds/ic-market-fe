@@ -293,6 +293,16 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+    
+    <!-- Global Loader for Payment -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isVerifying" style="display:flex; flex-direction:column; align-items:center; justify-content:center; position:fixed; inset:0; z-index:99999; background:rgba(255,255,255,0.85); backdrop-filter:blur(4px);">
+          <div style="width: 50px; height: 50px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
+          <div style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">Sedang memasak, bentar yaa..</div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
