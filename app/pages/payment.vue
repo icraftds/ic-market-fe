@@ -27,6 +27,45 @@ const copyTextLabel  = ref('Salin')
 const hasFile        = ref(false)
 const fileName       = ref('')
 
+const showCancelModal = ref(false)
+const isCancelling = ref(false)
+const cancelReason = ref('Ingin mengubah alamat atau metode pembayaran')
+const cancelReasons = [
+  'Ingin mengubah alamat atau metode pembayaran',
+  'Menemukan produk serupa dengan harga lebih murah',
+  'Salah memasukkan jumlah/variasi produk',
+  'Penjual tidak merespon/terlalu lama',
+  'Lainnya (berubah pikiran)'
+]
+
+const confirmCancelPayment = async () => {
+  if (isCancelling.value || isVerifying.value) return
+  isCancelling.value = true
+  
+  try {
+    const config = paymentConfig
+    const token = paymentToken.value
+    await productApi(`${config.public.apiBase}/orders/${orderId.value}/cancel`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { reason: cancelReason.value }
+    })
+    
+    if (import.meta.client) {
+      localStorage.removeItem('icmarket_order_status')
+      window.dispatchEvent(new Event('storage'))
+    }
+    
+    showCancelModal.value = false
+    alert('Pembayaran berhasil dibatalkan.')
+    router.push('/orders')
+  } catch (error) {
+    alert(error.data?.message || error.message || 'Gagal membatalkan pembayaran.')
+  } finally {
+    isCancelling.value = false
+  }
+}
+
 let timerInterval     = null
 let autoPaymentTimer  = null
 let autoRedirectTimer = null
@@ -249,12 +288,15 @@ onUnmounted(() => {
               </div>
             </div>
 
-<button class="flow-cta" @click="paymentPoll.start">Cek status pembayaran</button>
             <!-- Manual confirm button -->
             <div v-if="coinSufficient" style="margin-top: 16px;">
               <button class="flow-cta" :disabled="isVerifying" @click="completePayment">
                 <span v-if="isVerifying">Memproses Pembayaran…</span>
                 <span v-else>Bayar Sekarang <i class="fa-solid fa-arrow-right"></i></span>
+              </button>
+              
+              <button class="flow-cta outline" :disabled="isVerifying" @click="showCancelModal = true" style="margin-top: 12px; border: 1px solid var(--border); background: transparent; color: var(--muted); box-shadow: none;">
+                Batalkan Pembayaran
               </button>
             </div>
 
@@ -293,6 +335,30 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+    
+    <!-- Cancel Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showCancelModal" class="welcome-overlay" style="display:flex; align-items:center; justify-content:center; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);">
+          <div class="welcome-card" style="background:var(--surface); padding:24px; border-radius:12px; width:400px; max-width:90%;">
+            <h3 style="margin-bottom: 16px; color: var(--text);">Pilih Alasan Pembatalan</h3>
+            <p style="margin-bottom: 16px; font-size: 13px; color: var(--muted);">Pesanan yang sudah dibatalkan tidak dapat dikembalikan. Silakan pilih alasan pembatalan Anda:</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+              <label v-for="(reason, idx) in cancelReasons" :key="idx" style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                <input type="radio" name="cancel_reason" :value="reason" v-model="cancelReason" style="margin-top: 3px;" />
+                <span style="font-size: 14px; color: var(--text); line-height: 1.4;">{{ reason }}</span>
+              </label>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+              <button @click="showCancelModal = false" :disabled="isCancelling" style="padding:10px 16px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text); cursor:pointer; font-weight:600;">Kembali</button>
+              <button @click="confirmCancelPayment" :disabled="isCancelling" :style="{ padding:'10px 16px', borderRadius:'8px', border:'none', background: isCancelling ? '#9ca3af' : '#ef4444', color:'#fff', cursor: isCancelling ? 'not-allowed' : 'pointer', fontWeight:'600' }">{{ isCancelling ? 'Memproses...' : 'Batalkan Pembayaran' }}</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
     
     <!-- Global Loader for Payment -->
     <Teleport to="body">
