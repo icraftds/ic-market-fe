@@ -119,6 +119,7 @@ const loadOrders = async () => {
           status: order.status,
           buyer: order.buyer,
           createdAt: order.created_at,
+          cancelReason: order.cancel_reason,
           totals: {
             total: order.total_amount
           },
@@ -155,14 +156,37 @@ const continuePayment = async (order) => {
   await navigateTo('/payment')
 }
 
-const cancelOrder = async (order) => {
-  if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')) return
+const showCancelModal = ref(false)
+const orderToCancel = ref(null)
+const cancelReason = ref('')
+const isCancelling = ref(false)
+
+const cancelReasons = [
+  'Ingin mengubah alamat atau metode pembayaran',
+  'Menemukan produk serupa dengan harga lebih murah',
+  'Salah memasukkan jumlah/variasi produk',
+  'Penjual tidak merespon/terlalu lama',
+  'Lainnya (berubah pikiran)'
+]
+
+const openCancelModal = (order) => {
+  orderToCancel.value = order
+  cancelReason.value = cancelReasons[0]
+  showCancelModal.value = true
+}
+
+const confirmCancelOrder = async () => {
+  if (!orderToCancel.value) return
+  if (isCancelling.value) return
+  isCancelling.value = true
+  
   try {
     const config = useRuntimeConfig()
     const token = useAuthCredential().value
-    await productApi(`${config.public.apiBase}/orders/${order.orderId}/cancel`, {
+    await productApi(`${config.public.apiBase}/orders/${orderToCancel.value.orderId}/cancel`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
+      body: { reason: cancelReason.value }
     })
     
     if (import.meta.client) {
@@ -173,9 +197,12 @@ const cancelOrder = async (order) => {
     }
     
     alert('Pesanan berhasil dibatalkan.')
+    showCancelModal.value = false
     await loadOrders()
   } catch (err) {
     alert(err.data?.message || 'Gagal membatalkan pesanan.')
+  } finally {
+    isCancelling.value = false
   }
 }
 
@@ -297,9 +324,14 @@ const submitReview = async () => {
             <span class="order-id">{{ order.orderId }}</span>
             <strong>{{ formatDate(order.createdAt) }}</strong>
           </div>
-          <span class="status-badge" :class="statusClass(order.status)">
-            {{ statusText(order.status) }}
-          </span>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+            <span class="status-badge" :class="statusClass(order.status)">
+              {{ statusText(order.status) }}
+            </span>
+            <span v-if="order.status === 'cancelled' && order.cancelReason" style="font-size: 11px; color: var(--muted); max-width: 250px; text-align: right; line-height: 1.2;">
+              Alasan: {{ order.cancelReason }}
+            </span>
+          </div>
         </div>
 
         <div class="store-orders">
@@ -357,7 +389,7 @@ const submitReview = async () => {
               class="secondary-button"
               type="button"
               style="padding: 11px 16px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--text); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer;"
-              @click="cancelOrder(order)"
+              @click="openCancelModal(order)"
             >
               Batalkan
             </button>
@@ -403,6 +435,26 @@ const submitReview = async () => {
         <div style="display:flex; gap:12px; justify-content:flex-end;">
           <button @click="showReviewModal = false" :disabled="isSubmitting" style="padding:10px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; font-weight:600;">Batal</button>
           <button @click="submitReview" :disabled="isSubmitting" :style="{ padding:'10px 16px', borderRadius:'8px', border:'none', background: isSubmitting ? '#9ca3af' : 'var(--accent)', color:'#fff', cursor: isSubmitting ? 'not-allowed' : 'pointer', fontWeight:'600' }">{{ isSubmitting ? 'Mengirim...' : 'Kirim Ulasan' }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cancel Modal -->
+    <div v-if="showCancelModal" class="welcome-overlay" style="display:flex; align-items:center; justify-content:center; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5);">
+      <div class="welcome-card" style="background:var(--surface); padding:24px; border-radius:12px; width:400px; max-width:90%;">
+        <h3 style="margin-bottom: 16px; color: var(--text);">Pilih Alasan Pembatalan</h3>
+        <p style="margin-bottom: 16px; font-size: 13px; color: var(--muted);">Pesanan yang sudah dibatalkan tidak dapat dikembalikan. Silakan pilih alasan pembatalan Anda:</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+          <label v-for="(reason, idx) in cancelReasons" :key="idx" style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+            <input type="radio" name="cancel_reason" :value="reason" v-model="cancelReason" style="margin-top: 3px;" />
+            <span style="font-size: 14px; color: var(--text); line-height: 1.4;">{{ reason }}</span>
+          </label>
+        </div>
+        
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+          <button @click="showCancelModal = false" :disabled="isCancelling" style="padding:10px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; font-weight:600;">Kembali</button>
+          <button @click="confirmCancelOrder" :disabled="isCancelling" :style="{ padding:'10px 16px', borderRadius:'8px', border:'none', background: isCancelling ? '#9ca3af' : '#ef4444', color:'#fff', cursor: isCancelling ? 'not-allowed' : 'pointer', fontWeight:'600' }">{{ isCancelling ? 'Memproses...' : 'Batalkan Pesanan' }}</button>
         </div>
       </div>
     </div>

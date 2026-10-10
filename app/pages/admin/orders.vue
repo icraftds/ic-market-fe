@@ -173,6 +173,9 @@ onBeforeUnmount(() => {
           </div>
           <div class="order-head-right">
             <span class="status-badge" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+            <span v-if="order.status === 'cancelled' && order.cancelReason" style="font-size: 11px; color: var(--muted); max-width: 200px; text-align: right; line-height: 1.2;">
+              Alasan: {{ order.cancelReason }}
+            </span>
             <strong>{{ formatCurrency(order.totals?.total) }}</strong>
           </div>
         </div>

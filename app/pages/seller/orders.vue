@@ -230,7 +230,12 @@ onBeforeUnmount(() => {
               <strong>{{ order.buyer?.name || '-' }}</strong>
               <small>{{ order.buyer?.email || '-' }} · {{ formatDate(order.createdAt) }}</small>
             </div>
-            <span class="status-badge" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <span class="status-badge" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+              <span v-if="order.status === 'cancelled' && order.cancelReason" style="font-size: 11px; color: var(--muted); max-width: 200px; text-align: right; line-height: 1.2;">
+                Alasan: {{ order.cancelReason }}
+              </span>
+            </div>
           </div>
 
           <div class="items-list">
