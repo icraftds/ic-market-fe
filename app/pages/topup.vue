@@ -11,6 +11,7 @@ const successMsg = ref('')
 const showTnC = ref(false)
 const showQrisModal = ref(false)
 const showSuccessModal = ref(false)
+const showExpiredModal = ref(false)
 const qrisUrl = ref('')
 const qrisString = ref('')
 const topupAmount = ref(0)
@@ -84,9 +85,16 @@ onMounted(async () => {
     qrisUrl.value = pendingQris || ''
     qrisString.value = pendingQrisString || ''
     topupAmount.value = Number(pendingAmount) || 0
-    showQrisModal.value = true
-    startPolling()
-    startQrisTimer()
+    
+    const expiresAt = Number(sessionStorage.getItem('icmarket_pending_qris_expires_at'))
+    if (expiresAt && Date.now() >= expiresAt) {
+      qrisTimeLeft.value = '00:00'
+      showExpiredModal.value = true
+    } else {
+      showQrisModal.value = true
+      startPolling()
+      startQrisTimer()
+    }
   }
 })
 
@@ -281,8 +289,8 @@ const openInNewTab = () => {
 const handleOpenQris = () => {
   const expiresAt = Number(sessionStorage.getItem('icmarket_pending_qris_expires_at'))
   if (expiresAt && Date.now() >= expiresAt) {
-    alert('Waktu pembayaran telah berakhir. Silakan klik "Mulai top-up baru" untuk melakukan top up lagi.')
     qrisTimeLeft.value = '00:00'
+    showExpiredModal.value = true
     return
   }
   showQrisModal.value = true
@@ -628,6 +636,24 @@ const handleOpenQris = () => {
             <button class="celebration-close" @click="showSuccessModal = false">
               <i class="fa-solid fa-circle-xmark"></i>
             </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Expired Modal -->
+    <Teleport to="body">
+      <Transition name="tnc-modal">
+        <div v-if="showExpiredModal" class="tnc-overlay" @click.self="showExpiredModal = false">
+          <div class="tnc-modal" style="max-width: 400px; text-align: center;">
+            <div style="padding: 32px 24px 24px;">
+              <div style="background: #fee2e2; color: #ef4444; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 20px;">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+              <h3 style="margin: 0 0 12px; font-size: 1.2rem;">Waktu Pembayaran Berakhir</h3>
+              <p style="color: var(--muted); margin: 0 0 24px; line-height: 1.5;">Waktu pembayaran telah berakhir. Silakan klik "Mulai top-up baru" untuk melakukan top up lagi.</p>
+              <button class="primary-button" style="width: 100%; justify-content: center;" @click="showExpiredModal = false">Tutup</button>
+            </div>
           </div>
         </div>
       </Transition>
