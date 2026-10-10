@@ -161,6 +161,16 @@ const orderToCancel = ref(null)
 const cancelReason = ref('')
 const isCancelling = ref(false)
 
+const showNotificationModal = ref(false)
+const notificationMessage = ref('')
+const notificationTitle = ref('')
+
+const openNotification = (title, message) => {
+  notificationTitle.value = title
+  notificationMessage.value = message
+  showNotificationModal.value = true
+}
+
 const cancelReasons = [
   'Ingin mengubah alamat atau metode pembayaran',
   'Menemukan produk serupa dengan harga lebih murah',
@@ -196,11 +206,11 @@ const confirmCancelOrder = async () => {
       }
     }
     
-    alert('Pesanan berhasil dibatalkan.')
+    openNotification('Berhasil', 'Pesanan berhasil dibatalkan.')
     showCancelModal.value = false
     await loadOrders()
   } catch (err) {
-    alert(err.data?.message || 'Gagal membatalkan pesanan.')
+    openNotification('Gagal', err.data?.message || 'Gagal membatalkan pesanan.')
   } finally {
     isCancelling.value = false
   }
@@ -224,7 +234,7 @@ onBeforeUnmount(() => {
 const downloadOrderFiles = (item) => {
   const files = item.product?.digital_files || item.digital_files || []
   if (files.length === 0) {
-    alert('File download belum tersedia. Hubungi seller.')
+    openNotification('Info', 'File download belum tersedia. Hubungi seller.')
     return
   }
   files.forEach((file, i) => {
@@ -283,11 +293,11 @@ const submitReview = async () => {
         comment: reviewForm.value.comment
       }
     })
-    alert('Terima kasih! Ulasan berhasil disimpan.')
+    openNotification('Berhasil', 'Terima kasih! Ulasan berhasil disimpan.')
     showReviewModal.value = false
     await loadOrders() // Refresh orders to get the new reviews state
   } catch (err) {
-    alert(err.data?.message || 'Gagal menyimpan ulasan.')
+    openNotification('Gagal', err.data?.message || 'Gagal menyimpan ulasan.')
   } finally {
     isSubmitting.value = false;
   }
@@ -458,6 +468,16 @@ const submitReview = async () => {
         </div>
       </div>
     </div>
+
+    <!-- Notification Modal -->
+    <div v-if="showNotificationModal" class="welcome-overlay" style="display:flex; align-items:center; justify-content:center; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5);">
+      <div class="welcome-card" style="background:var(--surface); padding:24px; border-radius:12px; width:350px; max-width:90%; text-align: center;">
+        <h3 style="margin-bottom: 12px; color: var(--text);">{{ notificationTitle }}</h3>
+        <p style="margin-bottom: 24px; font-size: 14px; color: var(--muted);">{{ notificationMessage }}</p>
+        <button @click="showNotificationModal = false" style="padding:10px 24px; border-radius:8px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-weight:600; width: 100%;">Tutup</button>
+      </div>
+    </div>
+    
     <ApiPagination :meta="paginationMeta" :busy="pageLoading" @page="changePage" />
   </main>
 </template>

@@ -191,6 +191,7 @@ onBeforeUnmount(() => {
                 <th>Komisi</th>
                 <th>Hak Seller</th>
                 <th>Status</th>
+                <th>Alasan</th>
               </tr>
             </thead>
             <tbody>
@@ -202,6 +203,7 @@ onBeforeUnmount(() => {
                 <td>{{ storeOrder.commissionRate }}% · {{ formatCurrency(storeOrder.platformFee) }}</td>
                 <td>{{ formatCurrency(storeOrder.sellerNet) }}</td>
                 <td><span class="mini-status" :class="statusClass(storeOrder.status)">{{ statusLabel(storeOrder.status) }}</span></td>
+                <td><small style="color: var(--muted); max-width: 150px; display: block; line-height: 1.2;">{{ order.cancelReason || '-' }}</small></td>
               </tr>
             </tbody>
           </table>
