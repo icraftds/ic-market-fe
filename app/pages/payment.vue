@@ -21,6 +21,7 @@ const cart       = ref([])
 const buyer      = ref({})
 
 const isVerifying    = ref(false)
+const isLoading      = useState('global_loader', () => false)
 const paymentError   = ref('')
 const ccProgress     = ref(0)
 const copyTextLabel  = ref('Salin')
@@ -96,10 +97,14 @@ const paymentPoll = usePaymentPoll(async (isCurrent) => {
   if (order && ['completed', 'processing'].includes(order.status)) {
     localStorage.setItem('icmarket_order_status', order.status)
     await fetchWallet()
+    isLoading.value = false
+    isVerifying.value = false
     await router.push('/success')
     return true
   }
   if (order?.status === 'cancelled') {
+    isLoading.value = false
+    isVerifying.value = false
     paymentError.value = 'Pesanan dibatalkan oleh backend.'
     if (import.meta.client) {
       localStorage.removeItem('icmarket_order_status')
@@ -108,7 +113,7 @@ const paymentPoll = usePaymentPoll(async (isCurrent) => {
     return true
   }
   return false
-}, { isAuthenticated: () => !!session.value, onTimeout: () => { paymentError.value = 'Status pembayaran belum pasti. Cek ulang atau buka daftar pesanan.' } })
+}, { isAuthenticated: () => !!session.value, onTimeout: () => { isLoading.value = false; isVerifying.value = false; paymentError.value = 'Status pembayaran belum pasti. Cek ulang atau buka daftar pesanan.' } })
 
 // ── Payment method (now selected here, not in checkout) ───────────────────
 const selectedMethod = ref('coin')
@@ -136,7 +141,7 @@ const handleFileUpload = (event) => {
 
 // ── Complete payment ──────────────────────────────────────────────────────
 const completePayment = async () => {
-  if (isVerifying.value) return
+  if (isVerifying.value || isLoading.value) return
 
   if (walletStatus.value !== 'fresh') { paymentError.value = 'Saldo belum dapat diperbarui. Coba periksa Wallet kembali.'; await fetchWallet(); return }
   if (selectedMethod.value === 'coin' && !coinSufficient.value) {
@@ -145,6 +150,7 @@ const completePayment = async () => {
   }
 
   isVerifying.value = true
+  isLoading.value = true
   paymentError.value = ''
 
   try {
@@ -166,9 +172,11 @@ const completePayment = async () => {
     if (!status || status >= 500) {
       paymentError.value = 'Pembayaran sedang dicocokkan. Cek status pesanan; referensi pembayaran tetap sama.'
       paymentPoll.start()
-    } else paymentError.value = error.data?.message || error.message || 'Pembayaran belum dapat dikonfirmasi. Silakan coba lagi.'
-  } finally {
-    isVerifying.value = false
+    } else {
+      isVerifying.value = false
+      isLoading.value = false
+      paymentError.value = error.data?.message || error.message || 'Pembayaran belum dapat dikonfirmasi. Silakan coba lagi.'
+    }
   }
 }
 
@@ -230,6 +238,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  isLoading.value = false
+  isVerifying.value = false
   paymentPoll.dispose()
   if (timerInterval)     clearInterval(timerInterval)
   if (autoPaymentTimer)  clearTimeout(autoPaymentTimer)
@@ -311,12 +321,12 @@ onUnmounted(() => {
 
             <!-- Manual confirm button -->
             <div v-if="coinSufficient" style="margin-top: 16px;">
-              <button class="flow-cta" :disabled="isVerifying" @click="completePayment">
-                <span v-if="isVerifying">Memproses Pembayaran…</span>
+              <button class="flow-cta" :disabled="isVerifying || isLoading" @click="completePayment">
+                <span v-if="isVerifying || isLoading">Memproses Pembayaran…</span>
                 <span v-else>Bayar Sekarang <i class="fa-solid fa-arrow-right"></i></span>
               </button>
               
-              <button class="flow-cta outline" :disabled="isVerifying" @click="showCancelModal = true" style="margin-top: 12px; border: 1px solid var(--border); background: transparent; color: var(--muted); box-shadow: none;">
+              <button class="flow-cta outline" :disabled="isVerifying || isLoading" @click="showCancelModal = true" style="margin-top: 12px; border: 1px solid var(--border); background: transparent; color: var(--muted); box-shadow: none;">
                 Batalkan Pembayaran
               </button>
             </div>
@@ -381,16 +391,6 @@ onUnmounted(() => {
       </Transition>
     </Teleport>
     
-    <!-- Global Loader for Payment -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="isVerifying" style="display:flex; flex-direction:column; align-items:center; justify-content:center; position:fixed; inset:0; z-index:99999; background:rgba(255,255,255,0.85); backdrop-filter:blur(4px);">
-          <div style="width: 50px; height: 50px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
-          <div style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">Sedang memasak, bentar yaa..</div>
-        </div>
-      </Transition>
-    </Teleport>
-
     <!-- Notification Modal -->
     <Teleport to="body">
       <Transition name="fade">
