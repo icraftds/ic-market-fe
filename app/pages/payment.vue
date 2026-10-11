@@ -38,6 +38,19 @@ const cancelReasons = [
   'Lainnya (berubah pikiran)'
 ]
 
+const showNotificationModal = ref(false)
+const notificationMessage = ref('')
+const notificationIsError = ref(false)
+const onNotificationClose = ref(null)
+
+const handleNotificationClose = () => {
+  showNotificationModal.value = false
+  if (onNotificationClose.value) {
+    onNotificationClose.value()
+    onNotificationClose.value = null
+  }
+}
+
 const confirmCancelPayment = async () => {
   if (isCancelling.value || isVerifying.value) return
   isCancelling.value = true
@@ -57,10 +70,15 @@ const confirmCancelPayment = async () => {
     }
     
     showCancelModal.value = false
-    alert('Pembayaran berhasil dibatalkan.')
-    router.push('/orders')
+    notificationMessage.value = 'Pembayaran berhasil dibatalkan.'
+    notificationIsError.value = false
+    onNotificationClose.value = () => router.push('/orders')
+    showNotificationModal.value = true
   } catch (error) {
-    alert(error.data?.message || error.message || 'Gagal membatalkan pembayaran.')
+    notificationMessage.value = error.data?.message || error.message || 'Gagal membatalkan pembayaran.'
+    notificationIsError.value = true
+    onNotificationClose.value = null
+    showNotificationModal.value = true
   } finally {
     isCancelling.value = false
   }
@@ -161,6 +179,9 @@ const onMethodChange = () => {
 
 onMounted(async () => {
   await syncSession()
+  if (session.value) {
+    fetchWallet()
+  }
   if (!session.value) {
     router.push('/login')
     return
@@ -366,6 +387,20 @@ onUnmounted(() => {
         <div v-if="isVerifying" style="display:flex; flex-direction:column; align-items:center; justify-content:center; position:fixed; inset:0; z-index:99999; background:rgba(255,255,255,0.85); backdrop-filter:blur(4px);">
           <div style="width: 50px; height: 50px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
           <div style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">Sedang memasak, bentar yaa..</div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Notification Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showNotificationModal" class="welcome-overlay" style="display:flex; align-items:center; justify-content:center; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);">
+          <div class="welcome-card" style="background:var(--surface); border-radius:16px; padding:24px; max-width:400px; width:90%; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+            <i :class="notificationIsError ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check'" :style="{ fontSize: '2.5rem', color: notificationIsError ? '#ef4444' : 'var(--accent)', marginBottom: '16px' }"></i>
+            <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:8px; color:var(--text);">{{ notificationIsError ? 'Terjadi Kesalahan' : 'Informasi' }}</h3>
+            <p style="color:var(--muted); font-size:0.95rem; margin-bottom:20px; line-height: 1.5;">{{ notificationMessage }}</p>
+            <button @click="handleNotificationClose" style="padding:10px 24px; border-radius:8px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-weight:600; width: 100%;">Tutup</button>
+          </div>
         </div>
       </Transition>
     </Teleport>

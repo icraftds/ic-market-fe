@@ -4,7 +4,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const { session, syncSession, walletBalance, walletStatus } = useDemoAuth()
+const { session, syncSession, fetchWallet, walletBalance, walletStatus } = useDemoAuth()
 
 const form = ref({
   name: '',
@@ -16,8 +16,11 @@ const form = ref({
 
 const successMsg = ref('')
 
-onMounted(() => {
-  syncSession()
+onMounted(async () => {
+  await syncSession()
+  if (session.value) {
+    fetchWallet()
+  }
   if (!session.value) {
     router.push('/login')
     return

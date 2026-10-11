@@ -1,8 +1,18 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 const config = useRuntimeConfig()
 
-const { session, syncSession, logout, isSultan, walletBalance, walletStatus } = useDemoAuth()
+const {
+  session,
+  syncSession,
+  fetchWallet,
+  initializeWallet,
+  walletInitializationPending,
+  logout,
+  isSultan,
+  walletBalance,
+  walletStatus
+} = useDemoAuth()
 
 const role = computed(() => session.value?.role || null)
 const isLoggedIn = computed(() => Boolean(session.value))
@@ -53,11 +63,33 @@ const checkPendingOrder = () => {
   }
 }
 
-const refreshNavigation = () => {
-  syncSession()
+const syncWallet = async () => {
+  if (!import.meta.client || !session.value) return
+  try {
+    if (walletInitializationPending?.value) {
+      await initializeWallet()
+    } else {
+      await fetchWallet()
+    }
+  } catch {
+    // Handled gracefully in auth state
+  }
+}
+
+const refreshNavigation = async () => {
+  await syncSession()
+  if (isLoggedIn.value) {
+    syncWallet()
+  }
   readCartCount()
   checkPendingOrder()
 }
+
+watch(isLoggedIn, (logged) => {
+  if (logged) {
+    syncWallet()
+  }
+})
 
 const handleLogout = async () => {
   await logout()
@@ -66,6 +98,9 @@ const handleLogout = async () => {
 
 onMounted(() => {
   refreshNavigation()
+  if (isLoggedIn.value) {
+    syncWallet()
+  }
   window.addEventListener('icmarket-cart-updated', readCartCount)
   window.addEventListener('icmarket-auth-updated', refreshNavigation)
   window.addEventListener('storage', refreshNavigation)
