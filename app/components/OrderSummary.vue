@@ -6,7 +6,8 @@ const props = defineProps({
   overrideSubtotal: { type: Number, default: -1 },
   overrideDiscount: { type: Number, default: -1 },
   overrideTotal: { type: Number, default: -1 },
-  overrideItemCount: { type: Number, default: -1 }
+  overrideItemCount: { type: Number, default: -1 },
+  overrideCart: { type: Array, default: null }
 })
 
 const cart = ref([])
@@ -18,18 +19,23 @@ const formatCoin = (n) => Number(n || 0).toLocaleString('id-ID')
 
 const { fetchCart } = useCart()
 
+import { computed } from 'vue'
+
+const displayedCart = computed(() => (Array.isArray(props.overrideCart) ? props.overrideCart : cart.value))
+
 const refresh = async () => {
   const fetchedCart = await fetchCart()
   cart.value = fetchedCart
   
   let newSubtotal = 0
-  cart.value.forEach(item => {
-    newSubtotal += item.price * (item.quantity || 1)
+  const itemsToSum = Array.isArray(props.overrideCart) ? props.overrideCart : cart.value
+  itemsToSum.forEach(item => {
+    newSubtotal += (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || 1))
   })
   localSubtotal.value = newSubtotal
   
   localDiscount.value = Number(localStorage.getItem('icmarket_discount')) || 0
-  localTotal.value = localSubtotal.value - localDiscount.value
+  localTotal.value = Math.max(0, localSubtotal.value - localDiscount.value)
 }
 
 onMounted(() => {
@@ -38,11 +44,19 @@ onMounted(() => {
 
 defineExpose({ refresh })
 
-import { computed } from 'vue'
-const subtotal = computed(() => props.overrideSubtotal >= 0 ? props.overrideSubtotal : localSubtotal.value)
+const subtotal = computed(() => {
+  if (props.overrideSubtotal >= 0) return props.overrideSubtotal
+  if (Array.isArray(props.overrideCart)) {
+    return props.overrideCart.reduce((sum, item) => sum + (item.isFree ? 0 : Number(item.price || 0) * Number(item.quantity || 1)), 0)
+  }
+  return localSubtotal.value
+})
 const discount = computed(() => props.overrideDiscount >= 0 ? props.overrideDiscount : localDiscount.value)
-const total = computed(() => props.overrideTotal >= 0 ? props.overrideTotal : localTotal.value)
-const itemCount = computed(() => props.overrideItemCount >= 0 ? props.overrideItemCount : cart.value.length)
+const total = computed(() => {
+  if (props.overrideTotal >= 0) return props.overrideTotal
+  return Math.max(0, subtotal.value - discount.value)
+})
+const itemCount = computed(() => props.overrideItemCount >= 0 ? props.overrideItemCount : displayedCart.value.length)
 
 const resolveImage = (item) => {
   if (item.img) return item.img
@@ -72,7 +86,7 @@ const resolveImage = (item) => {
     </div>
     <div class="flow-box-body">
       <div v-if="props.showItems" style="display:flex;flex-direction:column;gap:8px;">
-        <div v-for="item in cart" :key="item.id" style="display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+        <div v-for="item in displayedCart" :key="item.id || item.cart_id || item.name" style="display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
           <img :src="resolveImage(item)" style="width:44px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;" :alt="item.name">
           <div style="flex:1;min-width:0;">
             <div style="font-size:0.83rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.name }}</div>

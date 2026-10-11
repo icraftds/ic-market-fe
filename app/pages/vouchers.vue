@@ -1,13 +1,14 @@
 <script setup>
 const productApi = useProductApi()
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const { session } = useDemoAuth()
 const config = useRuntimeConfig()
 const vouchers = ref([])
 const loading = ref(true)
-const copiedCode = ref(null)
-let copyTimeout = null
+const applyingCode = ref(null)
 
 const fetchVouchers = async () => {
   try {
@@ -28,13 +29,27 @@ const fetchVouchers = async () => {
   }
 }
 
-const copyCode = (code) => {
-  navigator.clipboard?.writeText(code)
-  copiedCode.value = code
-  if (copyTimeout) clearTimeout(copyTimeout)
-  copyTimeout = setTimeout(() => {
-    copiedCode.value = null
-  }, 2000)
+const useVoucher = async (v) => {
+  if (applyingCode.value) return
+  applyingCode.value = v.code
+  try {
+    // Simpan kode voucher agar otomatis terpasang saat checkout
+    localStorage.setItem('icmarket_pending_voucher', v.code)
+
+    const { fetchCart } = useCart()
+    const cart = await fetchCart()
+
+    if (Array.isArray(cart) && cart.length > 0) {
+      router.push('/cart')
+    } else {
+      router.push('/')
+    }
+  } catch (error) {
+    console.error('Gagal menggunakan voucher:', error)
+    router.push('/')
+  } finally {
+    applyingCode.value = null
+  }
 }
 
 const voucherLabel = (v) => {
@@ -103,8 +118,8 @@ onMounted(() => {
           v-for="v in vouchers" 
           :key="v.id" 
           class="voucher-card" 
-          @click="copyCode(v.code)"
-          :title="`Klik untuk salin kode ${v.code}`"
+          @click="useVoucher(v)"
+          :title="`Klik untuk gunakan voucher ${v.code}`"
         >
           <div class="vc-left">
             <div class="vc-deco"></div>
@@ -127,11 +142,12 @@ onMounted(() => {
             <button 
               type="button" 
               class="vc-use-btn" 
-              :class="{ copied: copiedCode === v.code }"
-              @click.stop="copyCode(v.code)"
+              :disabled="applyingCode === v.code"
+              @click.stop="useVoucher(v)"
             >
-              <i :class="copiedCode === v.code ? 'fa-solid fa-circle-check' : 'fa-regular fa-copy'"></i>
-              <span>{{ copiedCode === v.code ? 'Tersalin!' : 'Salin Kode' }}</span>
+              <i v-if="applyingCode === v.code" class="fa-solid fa-spinner fa-spin"></i>
+              <i v-else class="fa-solid fa-ticket"></i>
+              <span>{{ applyingCode === v.code ? 'Memproses...' : 'Gunakan' }}</span>
             </button>
           </div>
         </div>

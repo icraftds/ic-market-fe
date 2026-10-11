@@ -88,6 +88,9 @@ const removePromo = () => {
   promoMsg.value = ''
   promoSuccess.value = false
   appliedVoucher.value = null
+  localStorage.removeItem('icmarket_pending_voucher')
+  localStorage.removeItem('icmarket_voucher_code')
+  localStorage.removeItem('icmarket_discount')
   updateTotals(null)
 }
 
@@ -95,6 +98,7 @@ const removePromo = () => {
 const useVoucherCard = (v) => {
   if (promoPending.value || isSubmitting.value) return
   promoCode.value = v.code
+  localStorage.setItem('icmarket_pending_voucher', v.code)
   applyPromo()
 }
 
@@ -193,7 +197,19 @@ const buildGroupsFromCart = (cart) => {
 const loadCheckoutData = async () => {
   const { fetchCart } = useCart()
   const cart = await fetchCart()
-  checkoutCart.value = Array.isArray(cart) ? cart : []
+  const rawCart = Array.isArray(cart) ? cart : []
+
+  const savedSelectedIds = readJson('icmarket_selected_item_ids', null)
+  if (Array.isArray(savedSelectedIds) && savedSelectedIds.length > 0) {
+    const filtered = rawCart.filter(item => {
+      const idKey = item.cart_id || item.id || item.productId || item.product_id
+      const pKey = item.product_id || item.productId
+      return savedSelectedIds.some(sid => String(sid) === String(idKey) || (pKey && String(sid) === String(pKey)))
+    })
+    checkoutCart.value = filtered.length > 0 ? filtered : rawCart
+  } else {
+    checkoutCart.value = rawCart
+  }
   checkoutGroups.value = buildGroupsFromCart(checkoutCart.value)
 }
 
@@ -265,6 +281,8 @@ const placeOrder = async () => {
 
     localStorage.removeItem('icmarket_cart')
     localStorage.removeItem('icmarket_checkout_groups')
+    localStorage.removeItem('icmarket_selected_item_ids')
+    localStorage.removeItem('icmarket_pending_voucher')
 
     await syncSession()
 
@@ -325,9 +343,16 @@ onMounted(async () => {
     myVouchers.value = res.data || []
   } catch { myVouchers.value = [] }
 
-  // Reset discount on fresh checkout
-  localStorage.setItem('icmarket_discount', '0')
-  updateTotals(null)
+  // Check if a voucher was selected (e.g. from /vouchers or /cart)
+  const pendingVoucher = localStorage.getItem('icmarket_pending_voucher')
+  if (pendingVoucher) {
+    promoCode.value = pendingVoucher
+    await applyPromo()
+  } else {
+    // Reset discount on fresh checkout without voucher
+    localStorage.setItem('icmarket_discount', '0')
+    updateTotals(null)
+  }
   
   isLoading.value = false
 })
@@ -477,7 +502,7 @@ onMounted(async () => {
 
       <!-- RIGHT: Summary -->
       <div class="sticky-sidebar">
-        <OrderSummary ref="orderSummaryRef">
+        <OrderSummary ref="orderSummaryRef" :overrideCart="checkoutCart">
           <template #footer>
             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.75rem;color:var(--muted);margin-top:16px;margin-bottom:12px;line-height:1.4;">
               <input v-model="agreeTerms" type="checkbox" style="margin-top:2px;accent-color:var(--accent);flex-shrink:0;">
