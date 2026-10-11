@@ -43,13 +43,17 @@ const canDownload = (item) =>
   paymentStatus.value === 'paid' &&
   (Boolean(item.isFree) || String(item.type || 'Digital') === 'Digital')
 
+const showNotificationModal = ref(false)
+const notificationMessage = ref('')
+
 const downloadItem = (item) => {
   if (!canDownload(item)) return
   
   const files = item.product?.digital_files || item.digital_files || []
   
   if (files.length === 0) {
-    alert('File download belum tersedia. Hubungi seller untuk mendapatkan link download.')
+    notificationMessage.value = 'File download belum tersedia. Hubungi seller untuk mendapatkan link download.'
+    showNotificationModal.value = true
     return
   }
   
@@ -71,7 +75,32 @@ const copyOrderId = () => {
 
 const confettiPieces = ref([])
 
+const triggerConfetti = () => {
+  const colors = ['#1472FF','#00f0ff','#22c55e','#f59e0b','#a855f7','#ef4444','#111110']
+  const pieces = []
+
+  for (let i = 0; i < 80; i++) {
+    const size = Math.random() * 8 + 5
+    pieces.push({
+      left: Math.random() * 100 + '%',
+      top: -Math.random() * 200 + 'px',
+      width: size + 'px',
+      height: size + 'px',
+      background: colors[Math.floor(Math.random() * colors.length)],
+      borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+      animationDuration: (Math.random() * 2 + 2) + 's',
+      animationDelay: (Math.random() * 1.5) + 's'
+    })
+  }
+
+  confettiPieces.value = pieces
+  setTimeout(() => { confettiPieces.value = [] }, 5000)
+}
+
 onMounted(async () => {
+  triggerConfetti()
+  clearCheckoutState()
+
   const tId = localStorage.getItem('icmarket_order_id')
   
   if (!tId) {
@@ -117,28 +146,6 @@ onMounted(async () => {
     rated.value = true
     litStars.value = savedRating
   }
-
-  const colors = ['#1472FF','#00f0ff','#22c55e','#f59e0b','#a855f7','#ef4444','#111110']
-  const pieces = []
-
-  for (let i = 0; i < 80; i++) {
-    const size = Math.random() * 8 + 5
-    pieces.push({
-      left: Math.random() * 100 + '%',
-      top: -Math.random() * 200 + 'px',
-      width: size + 'px',
-      height: size + 'px',
-      background: colors[Math.floor(Math.random() * colors.length)],
-      borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-      animationDuration: (Math.random() * 2 + 2) + 's',
-      animationDelay: (Math.random() * 1.5) + 's'
-    })
-  }
-
-  confettiPieces.value = pieces
-  setTimeout(() => { confettiPieces.value = [] }, 5000)
-
-  clearCheckoutState()
 })
 </script>
 
@@ -242,6 +249,20 @@ onMounted(async () => {
         </div>
       </div>
     </main>
+
+    <!-- Notification Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showNotificationModal" class="welcome-overlay" style="display:flex; align-items:center; justify-content:center; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);">
+          <div class="welcome-card" style="background:var(--surface); border-radius:16px; padding:24px; max-width:400px; width:90%; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+            <i class="fa-solid fa-circle-info" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 16px;"></i>
+            <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:8px; color:var(--text);">Informasi</h3>
+            <p style="color:var(--muted); font-size:0.95rem; margin-bottom:20px; line-height: 1.5;">{{ notificationMessage }}</p>
+            <button @click="showNotificationModal = false" style="padding:10px 24px; border-radius:8px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-weight:600; width: 100%;">Tutup</button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
