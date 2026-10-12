@@ -1,6 +1,6 @@
 <script setup>
 const productApi = useProductApi()
-import { nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 definePageMeta({ layout: 'default' })
 
@@ -57,6 +57,53 @@ const catalogImages = (product) => {
         imgs = [FALLBACK_PRODUCT_IMAGE];
     }
     return imgs;
+};
+
+const fallbackHotItems = [
+  { id: 1, name: 'Template E-Commerce Super', category: 'Web Template', price: 350000, images: ['https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80'], is_hot: true },
+  { id: 2, name: 'UI/UX Startup Kit', category: 'UI Kit', price: 150000, images: ['https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80'], is_hot: true },
+  { id: 3, name: '100+ Minimalist Logo Templates', category: 'Grafis', price: 0, images: ['https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=800&q=80'], is_hot: true },
+  { id: 4, name: 'Lofi Chill Beats Pack', category: 'Audio', price: 45000, images: ['https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80'], is_hot: true }
+];
+
+const heroFannedCards = computed(() => {
+  const hot = (hotProducts.value && hotProducts.value.length)
+    ? hotProducts.value.filter(p => p && p.id)
+    : fallbackHotItems;
+
+  // 7 cards in the fanned deck matching the reference image
+  const targetCount = 7;
+  const result = [];
+  for (let i = 0; i < targetCount; i++) {
+    const product = hot[i % hot.length];
+    result.push({
+      ...product,
+      fanKey: `${product.id}-${i}`,
+      bubble: i === 1 
+        ? { text: '@coplin', color: 'blue' } 
+        : (i === 5 ? { text: '@andrea', color: 'green' } : null)
+    });
+  }
+  return result;
+});
+
+const fanSlots = [
+  { rot: -13, y: 18 },
+  { rot: -8,  y: 8 },
+  { rot: -4,  y: 2 },
+  { rot: 0,   y: 0 },
+  { rot: 4,   y: 2 },
+  { rot: 8,   y: 8 },
+  { rot: 13,  y: 18 }
+];
+
+const getFanCardStyle = (idx) => {
+  const slot = fanSlots[idx] || { rot: 0, y: 0 };
+  return {
+    '--rot': `${slot.rot}deg`,
+    '--y': `${slot.y}px`,
+    '--z': `${idx + 1}`
+  };
 };
 
 const catalogTags = (product) => {
@@ -394,101 +441,160 @@ onMounted(async () => {
     <!-- ======= HEADER ======= -->
     
 
-    <!-- ======= HERO ======= -->
-    <section class="hero-strip">
-        <div class="hero-inner">
-        <div class="hero-text">
-            <div class="hero-label">IC Market · Open Store</div>
-            <h1>Aset Digital<br><em>Premium,</em><br>Harga Terjangkau.</h1>
-            <p>Template, UI Kit, dan Source Code siap pakai yang dirancang untuk mempercepat pengembangan project Anda—dari ide hingga produksi.</p>
-            
-            <!-- Stats pindah ke kiri -->
-            <div class="hero-stats">
-                <div class="stat-item">
-                    <span class="num">50+</span>
-                    <span class="lbl">Produk Digital</span>
-                </div>
-                <div class="stat-item">
-                    <span class="num">2k+</span>
-                    <span class="lbl">Pembeli Puas</span>
-                </div>
-                <div class="stat-item">
-                    <span class="num">4.9</span>
-                    <span class="lbl">Rating Rata-rata</span>
-                </div>
-            </div>
+    <!-- ======= PROMO MARQUEE (ABOVE HERO) ======= -->
+    <div class="hero-promo-marquee" aria-label="Pengumuman & Promo">
+      <div class="marquee-track">
+        <div class="marquee-group">
+          <NuxtLink to="/topup" class="marquee-item">
+            <span class="m-tag"><img src="/icoinz.svg" alt="iCoinz" class="m-tag-icon" /> Top Up</span>
+            <span class="m-text">Bonus saldo ekstra hingga <strong>+25% iCoin</strong> setiap isi ulang hari ini</span>
+          </NuxtLink>
+          <span class="m-sep">•</span>
+
+          <a href="#catalog-section" class="marquee-item">
+            <span class="m-tag">Flash Sale</span>
+            <span class="m-text">Template E-Commerce Super cuma <strong class="m-price"><img src="/icoinz.svg" alt="iCoinz" class="m-coin-img" /> 199.000 iCoin</strong> <del class="m-del">350.000</del></span>
+          </a>
+          <span class="m-sep">•</span>
+
+          <a href="#catalog-section" class="marquee-item">
+            <span class="m-tag">Best Seller</span>
+            <span class="m-text">UI/UX Startup Kit Figma hanya <strong class="m-price"><img src="/icoinz.svg" alt="iCoinz" class="m-coin-img" /> 150.000 iCoin</strong></span>
+          </a>
+          <span class="m-sep">•</span>
+
+          <div class="marquee-item">
+            <span class="m-tag">Voucher</span>
+            <span class="m-text">Cashback 20% pembelian pertama dengan kode: <code class="m-code">ICMARKETNEW</code></span>
+          </div>
+          <span class="m-sep">•</span>
+
+          <NuxtLink to="/seller/register" class="marquee-item">
+            <span class="m-tag">Buka Toko</span>
+            <span class="m-text">Jual aset digital Anda — <strong>0% biaya komisi</strong> untuk seller baru</span>
+          </NuxtLink>
+          <span class="m-sep">•</span>
+
+          <a href="#catalog-section" class="marquee-item">
+            <span class="m-tag">Source Code</span>
+            <span class="m-text">Laravel Point of Sales Kasir cuma <strong class="m-price"><img src="/icoinz.svg" alt="iCoinz" class="m-coin-img" /> 450.000 iCoin</strong></span>
+          </a>
+          <span class="m-sep">•</span>
         </div>
 
-        <div class="hero-right">
-            <!-- Label Produk Terpanas -->
-            <div class="hot-label">🔥 Produk Terpanas</div>
+        <!-- DUPLICATE FOR SEAMLESS 100% INFINITE LOOP -->
+        <div class="marquee-group" aria-hidden="true">
+          <NuxtLink to="/topup" class="marquee-item">
+            <span class="m-tag"><img src="/icoinz.svg" alt="iCoinz" class="m-tag-icon" /> Top Up</span>
+            <span class="m-text">Bonus saldo ekstra hingga <strong>+25% iCoin</strong> setiap isi ulang hari ini</span>
+          </NuxtLink>
+          <span class="m-sep">•</span>
 
-            <!-- Hot Products Grid (2x2) -->
-            <div class="hero-card-grid" id="hero-card-grid">
+          <a href="#catalog-section" class="marquee-item">
+            <span class="m-tag">Flash Sale</span>
+            <span class="m-text">Template E-Commerce Super cuma <strong class="m-price"><img src="/icoinz.svg" alt="iCoinz" class="m-coin-img" /> 199.000 iCoin</strong> <del class="m-del">350.000</del></span>
+          </a>
+          <span class="m-sep">•</span>
 
-                <template v-if="isLoading">
-                    <article v-for="i in 4" :key="'skel-hot-'+i" class="product-card" style="pointer-events: none; opacity: 0.8; display: flex; flex-direction: column;">
-                        <div class="card-thumb skeleton-box" style="flex: 1; min-height: 120px; border-radius: 0;"></div>
-                        <div class="card-body" style="padding: 12px;">
-                            <div class="skeleton-box" style="height: 12px; width: 50%; margin-bottom: 6px;"></div>
-                            <div class="skeleton-box" style="height: 16px; width: 80%; margin-bottom: 8px;"></div>
-                            <div style="text-align: center; padding-top: 8px; font-size: 0.75rem; font-weight: 600; color: var(--muted); border-top: 1px solid var(--border); margin-top: 8px;">
-                                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 4px;"></i> Memuat..
-                            </div>
-                        </div>
-                    </article>
-                </template>
+          <a href="#catalog-section" class="marquee-item">
+            <span class="m-tag">Best Seller</span>
+            <span class="m-text">UI/UX Startup Kit Figma hanya <strong class="m-price"><img src="/icoinz.svg" alt="iCoinz" class="m-coin-img" /> 150.000 iCoin</strong></span>
+          </a>
+          <span class="m-sep">•</span>
 
-                <template v-else>
-                    <article v-for="product in hotProducts.slice(0, 4)" :key="product.id"
-                        class="product-card" @click="openPreview(product)"
-                        style="cursor: pointer;">
-                        <div class="card-thumb">
-                            <img :src="catalogImage(product)" :alt="product.name">
-                            <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
-                                {{ product.price === 0 ? 'Gratis' : 'Premium' }}
-                            </span>
-                        </div>
-                        <div class="card-body">
-                            <span class="card-category">{{ product.category }}</span>
-                            <h3 class="card-title">{{ product.name }}</h3>
-                            <div class="card-footer">
-                                <span class="card-price" :class="{ 'free-price': product.price === 0 }">
-                                    <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
-                                </span>
-                            </div>
-                        </div>
-                    </article>
-                </template>
-            </div>
+          <div class="marquee-item">
+            <span class="m-tag">Voucher</span>
+            <span class="m-text">Cashback 20% pembelian pertama dengan kode: <code class="m-code">ICMARKETNEW</code></span>
+          </div>
+          <span class="m-sep">•</span>
+
+          <NuxtLink to="/seller/register" class="marquee-item">
+            <span class="m-tag">Buka Toko</span>
+            <span class="m-text">Jual aset digital Anda — <strong>0% biaya komisi</strong> untuk seller baru</span>
+          </NuxtLink>
+          <span class="m-sep">•</span>
+
+          <a href="#catalog-section" class="marquee-item">
+            <span class="m-tag">Source Code</span>
+            <span class="m-text">Laravel Point of Sales Kasir cuma <strong class="m-price"><img src="/icoinz.svg" alt="iCoinz" class="m-coin-img" /> 450.000 iCoin</strong></span>
+          </a>
+          <span class="m-sep">•</span>
         </div>
-        </div>
-    </section>
-
-    <!-- ======= TICKER ======= -->
-    <div class="ticker-bar" aria-hidden="true">
-        <div class="ticker-track">
-            <span>E-Commerce Template</span>
-            <span>UI/UX Starter Kit</span>
-            <span>Laravel Point of Sales</span>
-            <span>Admin Dashboard</span>
-            <span>Mobile App UI</span>
-            <span>Free Wireframe Pack</span>
-            <span>Food Delivery App</span>
-            <span>Landing Page Kit</span>
-            <span>E-Commerce Template</span>
-            <span>UI/UX Starter Kit</span>
-            <span>Laravel Point of Sales</span>
-            <span>Admin Dashboard</span>
-            <span>Mobile App UI</span>
-            <span>Free Wireframe Pack</span>
-            <span>Food Delivery App</span>
-            <span>Landing Page Kit</span>
-        </div>
+      </div>
     </div>
 
+    <!-- ======= HERO (FANNED DECK SHOWCASE) ======= -->
+    <section class="hero-strip">
+      <div class="hero-container">
+
+        <!-- TOP CONTENT (TITLE) -->
+        <div class="hero-top-content">
+          <div class="hero-label">IC Market · Open Store</div>
+          <h1 class="hero-display-title">
+            Aset Digital <em>Premium</em>,<br />Harga Terjangkau.
+          </h1>
+        </div>
+
+        <!-- MIDDLE: FANNED OVERLAPPING CARDS (MATCHING REFERENCE IMAGE) -->
+        <div class="hero-fan-deck" aria-label="Showcase Hot Products">
+          <div
+            v-for="(product, idx) in heroFannedCards"
+            :key="product.fanKey || idx"
+            class="hero-fan-card"
+            :style="getFanCardStyle(idx)"
+            @click="openPreview(product)"
+            :title="`Lihat detail hot product: ${product.name}`"
+          >
+            <!-- Floating Speech Bubble (@coplin & @andrea style) -->
+            <div v-if="product.bubble" class="fan-speech-bubble" :class="product.bubble.color">
+              {{ product.bubble.text }}
+            </div>
+
+            <div class="fan-card-inner">
+              <div class="fan-card-thumb">
+                <img :src="catalogImage(product)" :alt="product.name" loading="lazy" />
+                <span class="fan-card-badge">
+                  <i class="fa-solid fa-fire"></i> Hot
+                </span>
+              </div>
+              <div class="fan-card-overlay">
+                <span class="fan-card-cat">{{ product.category || 'Asset' }}</span>
+                <h4 class="fan-card-title">{{ product.name }}</h4>
+                <div class="fan-card-price">
+                  <template v-if="product.price === 0">
+                    <span class="price-free">Gratis</span>
+                  </template>
+                  <template v-else>
+                    <img src="/icoinz.svg" alt="iCoinz" class="fan-coin-icon" />
+                    <span>{{ Number(product.price).toLocaleString('id-ID') }} iCoin</span>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM CONTENT (SUBTITLE & CTA BUTTONS) -->
+        <div class="hero-bottom-content">
+          <p class="hero-desc">
+            Kreator dapat memamerkan karya terbaiknya, dan pembeli dapat menemukan serta membeli aset digital terverifikasi yang siap pakai.
+          </p>
+          <div class="hero-cta-group">
+            <a href="#catalog-section" class="hero-btn-primary">
+              <span>Eksplor Katalog Hot</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <NuxtLink to="/seller/register" class="hero-btn-secondary">
+              Buka Toko
+            </NuxtLink>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
     <!-- ======= MAIN LAYOUT ======= -->
-    <div class="main-layout">
+    <div class="main-layout" id="catalog-section">
 
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
