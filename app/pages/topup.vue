@@ -314,6 +314,17 @@ const handleOpenQris = () => {
         <div class="balance-content">
           <span>Saldo iCoin-Z Anda Saat Ini</span>
           <h2><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" style="width: 1.4em; height: 1.4em; vertical-align: -0.2em; margin-right: 8px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));" /> {{ walletBalance === null ? '—' : formatCoin(walletBalance) }}</h2>
+          <div class="balance-actions">
+            <button 
+              type="button" 
+              class="withdraw-disabled-btn" 
+              disabled 
+              aria-disabled="true"
+              title="Fitur Tarik Dana belum tersedia"
+            >
+              <i class="fa-solid fa-money-bill-transfer"></i> Tarik Dana
+            </button>
+          </div>
         </div>
         <div class="balance-decoration"></div>
       </div>
@@ -913,6 +924,47 @@ h1 {
   font-size: 38px;
   color: white;
   text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.balance-actions {
+  margin-top: 14px;
+}
+
+.withdraw-disabled-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 9999px;
+  padding: 7px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: not-allowed !important;
+  opacity: 0.85;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.withdraw-disabled-btn:disabled {
+  cursor: not-allowed !important;
+  pointer-events: auto;
+}
+
+.withdraw-disabled-btn:hover {
+  cursor: not-allowed !important;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.withdraw-disabled-btn * {
+  cursor: not-allowed !important;
+  pointer-events: none;
 }
 
 h3 {
