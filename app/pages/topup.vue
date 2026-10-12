@@ -21,6 +21,19 @@ const config = useRuntimeConfig()
 const token = useAuthCredential()
 const historyPage = ref(1)
 const loadHistory = async (page) => { historyPage.value = page; await fetchWallet(page) }
+const isRefreshingWallet = ref(false)
+const handleRetryWallet = async () => {
+  if (isRefreshingWallet.value || walletInitializationPending.value) return
+  isRefreshingWallet.value = true
+  try {
+    await initializeWallet(true)
+    await fetchWallet(historyPage.value)
+  } catch (err) {
+    console.warn('Gagal menyinkronkan saldo:', err)
+  } finally {
+    isRefreshingWallet.value = false
+  }
+}
 const qrisTimerInterval = ref(null)
 const qrisTimeLeft = ref('15:00')
 let successTimer = null
@@ -329,8 +342,57 @@ const handleOpenQris = () => {
         <div class="balance-decoration"></div>
       </div>
       
-      <p v-if="walletStatus !== 'fresh' || walletInitializationPending" role="status">Saldo belum dapat diperbarui. <button @click="async () => { await initializeWallet(true); await fetchWallet() }">Coba lagi</button></p>
-      <p v-if="rewardMessage" role="status">{{ rewardMessage }} <button :disabled="rewardRefreshing" @click="reward.retry">{{ rewardRefreshing ? 'Memperbarui...' : 'Cek reward' }}</button></p>
+      <!-- Wallet Status Alert -->
+      <div 
+        v-if="walletStatus !== 'fresh' || walletInitializationPending" 
+        class="wallet-status-alert" 
+        role="status"
+      >
+        <div class="wallet-alert-content">
+          <div class="wallet-alert-icon warning">
+            <i class="fa-solid fa-arrows-rotate" :class="{ 'fa-spin': isRefreshingWallet || walletInitializationPending }"></i>
+          </div>
+          <div class="wallet-alert-text">
+            <span class="wallet-alert-title">Saldo Belum Dapat Diperbarui</span>
+            <span class="wallet-alert-desc">Sistem belum dapat menyinkronkan saldo terbaru. Silakan klik coba lagi untuk memperbarui.</span>
+          </div>
+        </div>
+        <button 
+          type="button" 
+          class="wallet-retry-btn" 
+          :disabled="isRefreshingWallet || walletInitializationPending" 
+          @click="handleRetryWallet"
+        >
+          <i class="fa-solid fa-rotate-right" :class="{ 'fa-spin': isRefreshingWallet || walletInitializationPending }"></i>
+          <span>{{ isRefreshingWallet || walletInitializationPending ? 'Memperbarui...' : 'Coba Lagi' }}</span>
+        </button>
+      </div>
+
+      <!-- Reward Status Alert -->
+      <div 
+        v-if="rewardMessage" 
+        class="wallet-status-alert info" 
+        role="status"
+      >
+        <div class="wallet-alert-content">
+          <div class="wallet-alert-icon info">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <div class="wallet-alert-text">
+            <span class="wallet-alert-title">Status Reward</span>
+            <span class="wallet-alert-desc">{{ rewardMessage }}</span>
+          </div>
+        </div>
+        <button 
+          type="button" 
+          class="wallet-retry-btn" 
+          :disabled="rewardRefreshing" 
+          @click="reward.retry"
+        >
+          <i class="fa-solid fa-rotate-right" :class="{ 'fa-spin': rewardRefreshing }"></i>
+          <span>{{ rewardRefreshing ? 'Memperbarui...' : 'Cek Reward' }}</span>
+        </button>
+      </div>
       <div class="topup-notice">
         <div class="notice-icon"><i class="fa-solid fa-circle-info"></i></div>
         <div class="notice-content">
@@ -965,6 +1027,123 @@ h1 {
 .withdraw-disabled-btn * {
   cursor: not-allowed !important;
   pointer-events: none;
+}
+
+/* Wallet Status Alert */
+.wallet-status-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 14px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px -2px rgba(245, 158, 11, 0.08);
+  transition: all 0.2s ease;
+}
+
+.wallet-status-alert.info {
+  background: #eff6ff;
+  border-color: #dbeafe;
+  border-left-color: #3b82f6;
+  box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.08);
+}
+
+.wallet-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.wallet-alert-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fde68a;
+  color: #b45309;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.wallet-alert-icon.info {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.wallet-alert-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wallet-alert-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.wallet-alert-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.wallet-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.wallet-retry-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.wallet-retry-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  .wallet-status-alert {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .wallet-alert-content {
+    align-items: flex-start;
+  }
+
+  .wallet-retry-btn {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 h3 {
