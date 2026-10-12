@@ -374,6 +374,7 @@ onBeforeUnmount(() => {
   transition: background 0.2s;
 }
 .nav-pending-btn:hover { background: #c2410c; }
+
 /* ═══════════════════════════════════════
    NAV ROOT — Light, clean, airy
 ═══════════════════════════════════════ */

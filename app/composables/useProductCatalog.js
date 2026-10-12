@@ -402,7 +402,7 @@ export const useProductCatalog = () => {
         if (!import.meta.client) return []
         try {
             const config = useRuntimeConfig()
-            const response = await productApi(`${config.public.apiBase}/products?limit=3&is_hot=true`)
+            const response = await productApi(`${config.public.apiBase}/products?limit=20&is_hot=true`)
             if (response.success) {
                 hotProducts.value = response.data.map(p => {
                     let rawImages = []
