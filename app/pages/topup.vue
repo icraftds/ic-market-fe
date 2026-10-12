@@ -377,11 +377,12 @@ const handleOpenQris = () => {
         </div>
       </div>
 
-      <div v-if="activeTab === 'history' && walletMeta">
-        <button :disabled="historyPage <= 1" @click="loadHistory(historyPage - 1)">Sebelumnya</button>
-        <span>{{ historyPage }} / {{ walletMeta.last_page }}</span>
-        <button :disabled="historyPage >= walletMeta.last_page" @click="loadHistory(historyPage + 1)">Berikutnya</button>
-      </div>
+      <ApiPagination 
+        v-if="activeTab === 'history' && walletMeta"
+        :meta="{ ...walletMeta, current_page: historyPage }" 
+        :busy="isProcessing" 
+        @page="loadHistory" 
+      />
       <div v-if="activeTab === 'topup'" id="topup-form" style="padding-top: 32px;">
         <h3>Pilih Nominal Top Up</h3>
       <div class="amount-grid">
