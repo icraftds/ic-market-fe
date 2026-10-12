@@ -389,21 +389,35 @@ onMounted(async () => {
           <div class="flow-box-body">
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Nama Lengkap</label>
-                <input v-model="buyerName" class="form-input" type="text" placeholder="cth. Budi Santoso" autocomplete="name" disabled title="Berdasarkan data akun Anda">
+                <label class="form-label">
+                  Nama Lengkap
+                  <span class="label-badge-disabled"><i class="fa-solid fa-lock"></i> Dari Akun</span>
+                </label>
+                <div class="input-disabled-wrap">
+                  <input v-model="buyerName" class="form-input form-input-disabled" type="text" placeholder="cth. Budi Santoso" autocomplete="name" disabled title="Terkunci berdasarkan data akun Anda">
+                  <i class="fa-solid fa-lock input-lock-icon"></i>
+                </div>
               </div>
               <div class="form-group">
-                <label class="form-label">No. WhatsApp</label>
-                <input v-model="buyerPhone" class="form-input" type="tel" placeholder="Belum diatur" autocomplete="tel" disabled title="Berdasarkan data akun Anda">
+                <label class="form-label">
+                  No. WhatsApp
+                  <span class="label-badge-disabled"><i class="fa-solid fa-lock"></i> Dari Akun</span>
+                </label>
+                <div class="input-disabled-wrap">
+                  <input v-model="buyerPhone" class="form-input form-input-disabled" type="tel" placeholder="Belum diatur" autocomplete="tel" disabled title="Terkunci berdasarkan data akun Anda">
+                  <i class="fa-solid fa-lock input-lock-icon"></i>
+                </div>
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Alamat Email</label>
-              <input v-model="buyerEmail" class="form-input" type="email" placeholder="cth. budi@email.com" autocomplete="email" disabled title="Berdasarkan data akun Anda">
-              <span style="font-size:0.75rem;color:var(--muted);margin-top:3px;">
-                <i class="fa-solid fa-circle-info" style="color:var(--accent-2);"></i>
-                Link download produk akan dikirim ke email ini.
-              </span>
+              <label class="form-label">
+                Alamat Email
+                <span class="label-badge-disabled"><i class="fa-solid fa-lock"></i> Dari Akun</span>
+              </label>
+              <div class="input-disabled-wrap">
+                <input v-model="buyerEmail" class="form-input form-input-disabled" type="email" placeholder="cth. budi@email.com" autocomplete="email" disabled title="Terkunci berdasarkan data akun Anda">
+                <i class="fa-solid fa-lock input-lock-icon"></i>
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label">Catatan (opsional)</label>
@@ -816,5 +830,50 @@ onMounted(async () => {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Disabled input fields styling */
+.label-badge-disabled {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 1px 7px;
+  border-radius: 4px;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+}
+.input-disabled-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.form-input-disabled,
+.form-input:disabled {
+  background: var(--subtle, rgba(255, 255, 255, 0.04)) !important;
+  color: var(--muted) !important;
+  cursor: not-allowed !important;
+  border: 1.5px dashed var(--border) !important;
+  opacity: 0.85;
+  padding-right: 36px;
+}
+.form-input-disabled:focus,
+.form-input:disabled:focus {
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+.input-lock-icon {
+  position: absolute;
+  right: 12px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  pointer-events: none;
+  opacity: 0.65;
 }
 </style>

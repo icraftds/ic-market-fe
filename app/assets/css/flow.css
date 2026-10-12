@@ -415,6 +415,15 @@
 }
 .form-input::placeholder,
 .form-textarea::placeholder { color: var(--muted); }
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+    background: var(--subtle);
+    color: var(--muted);
+    cursor: not-allowed;
+    border-color: var(--border);
+    opacity: 0.8;
+}
 .form-select { cursor: pointer; }
 .form-textarea { resize: vertical; min-height: 80px; }
 
