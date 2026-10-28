@@ -131,30 +131,39 @@ const storeAliases = {
 
 const slug = computed(() => storeAliases[requestedSlug.value] || requestedSlug.value)
 
-const normalizeDynamicProduct = (product) => ({
-  id: product.catalogId || product.id,
-  productId: product.id,
-  catalogId: product.catalogId,
-  name: product.name,
-  category: product.category || 'Digital Product',
-  price: Number(product.price || 0),
-  image:
-    product.image_url ||
-    product.thumbnailUrl ||
-    product.images?.[0]?.imageUrl ||
-    'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=600&q=80',
-  tags:
-    typeof product.tags === 'string' 
-      ? product.tags.split(',').map(t => t.trim()).filter(Boolean)
-      : (Array.isArray(product.tags) && product.tags.length
-          ? product.tags
-          : [product.category, product.type].filter(Boolean)),
-  storeId: product.storeId || '',
-  storeApplicationId: product.storeApplicationId || '',
-  tenantSchema: product.tenantSchema || '',
-  type: product.type || 'Digital',
-  digitalFiles: Array.isArray(product.digitalFiles) ? product.digitalFiles : []
-})
+const normalizeDynamicProduct = (product) => {
+  const rawImg = Array.isArray(product.images) ? product.images[0] : null
+  const firstImgUrl = typeof rawImg === 'string' ? rawImg : rawImg?.imageUrl
+  const storeName = dynamicStore.value?.name || product.seller?.store?.name || product.seller?.name || product.storeName || 'Seller'
+  const storeSlug = dynamicStore.value?.slug || product.seller?.store?.slug || slug.value
+  return {
+    ...product,
+    id: product.catalogId || product.id,
+    productId: product.id,
+    catalogId: product.catalogId,
+    name: product.name,
+    category: product.category || 'Digital Product',
+    price: Number(product.price || 0),
+    image:
+      product.image_url ||
+      product.thumbnailUrl ||
+      firstImgUrl ||
+      'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=600&q=80',
+    tags:
+      typeof product.tags === 'string' 
+        ? product.tags.split(',').map(t => t.trim()).filter(Boolean)
+        : (Array.isArray(product.tags) && product.tags.length
+            ? product.tags
+            : [product.category, product.type].filter(Boolean)),
+    storeName,
+    storeSlug,
+    storeId: product.storeId || dynamicStore.value?.id || '',
+    storeApplicationId: product.storeApplicationId || '',
+    tenantSchema: product.tenantSchema || '',
+    type: product.type || 'Digital',
+    digitalFiles: Array.isArray(product.digitalFiles) ? product.digitalFiles : (Array.isArray(product.digital_files) ? product.digital_files : [])
+  }
+}
 
 const store = computed(() => {
   /*

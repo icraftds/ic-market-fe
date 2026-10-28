@@ -412,8 +412,8 @@ export const useProductCatalog = () => {
                     }
                     const imageUrls = rawImages.map(img => typeof img === 'string' ? img : (img?.imageUrl || img?.url || '')).filter(Boolean)
                     const thumbnailUrl = p.thumbnailUrl || imageUrls[0] || ''
-                    const sellerName = p.seller?.name || 'Seller IC Market'
-                    const storeSlug = sellerName.toLowerCase().replace(/\s+/g, '-')
+                    const sellerName = p.seller?.store?.name || p.seller?.name || 'Seller IC Market'
+                    const storeSlug = p.seller?.store?.slug || normalizeSlug(sellerName)
                     return {
                         ...p,
                         images: imageUrls.map(url => ({ imageUrl: url })),
@@ -460,8 +460,8 @@ export const useProductCatalog = () => {
 
                     const thumbnailUrl = p.thumbnailUrl || imageUrls[0] || ''
 
-                    const sellerName = p.seller?.name || 'Seller IC Market'
-                    const storeSlug = sellerName.toLowerCase().replace(/\s+/g, '-')
+                    const sellerName = p.seller?.store?.name || p.seller?.name || 'Seller IC Market'
+                    const storeSlug = p.seller?.store?.slug || normalizeSlug(sellerName)
 
                     return {
                         ...p,
