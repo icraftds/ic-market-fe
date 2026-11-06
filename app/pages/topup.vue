@@ -35,13 +35,15 @@ const handleRetryWallet = async () => {
   }
 }
 const qrisTimerInterval = ref(null)
-const qrisTimeLeft = ref('15:00')
+const qrisTimeLeft = ref('30:00')
+const pendingTransactionId = ref('')
 let successTimer = null
 
 const paymentMethods = [
-  { id: 'qris', name: 'QRIS (Otomatis)', sub: 'GoPay, OVO, DANA, LinkAja, ShopeePay', icon: 'fa-solid fa-qrcode' }
+  { id: 'doku', name: 'DOKU Checkout', sub: 'QRIS, Virtual Account (BCA, Mandiri, BRI, BNI), E-Wallet & Kartu', icon: 'fa-solid fa-credit-card', badge: 'Semua Metode' },
+  { id: 'qris', name: 'QRIS (DOKU)', sub: 'GoPay, OVO, DANA, LinkAja, ShopeePay, Mobile Banking', icon: 'fa-solid fa-qrcode', badge: 'Instan' }
 ]
-const selectedMethod = ref('qris')
+const selectedMethod = ref('doku')
 const activeTab = ref('topup')
 
 const filterType = ref('all')
@@ -89,15 +91,17 @@ onMounted(async () => {
     return
   }
 
-  // Restore pending QRIS if any
+  // Restore pending DOKU / QRIS payment if any
   const pendingQris = sessionStorage.getItem('icmarket_pending_qris')
   const pendingQrisString = sessionStorage.getItem('icmarket_pending_qris_string')
   const pendingAmount = sessionStorage.getItem('icmarket_pending_qris_amount')
+  const pendingTx = sessionStorage.getItem('icmarket_pending_qris_transaction')
   
   if (owner === String(session.value?.id) && (pendingQris || pendingQrisString)) {
     qrisUrl.value = pendingQris || ''
     qrisString.value = pendingQrisString || ''
     topupAmount.value = Number(pendingAmount) || 0
+    pendingTransactionId.value = pendingTx || ''
     
     const expiresAt = Number(sessionStorage.getItem('icmarket_pending_qris_expires_at'))
     if (expiresAt && Date.now() >= expiresAt) {
@@ -112,6 +116,10 @@ onMounted(async () => {
 })
 
 const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
+const topupPriceForAmount = (val) => {
+  const found = amounts.find(a => a.value === Number(val))
+  return found ? found.price : Number(val || 0)
+}
 
 const processTopup = async () => {
   if (isProcessing.value || !session.value || invoiceUncertain.value || qrisUrl.value || qrisString.value) return
@@ -123,7 +131,7 @@ const processTopup = async () => {
     sessionStorage.setItem(`icmarket_topup_uncertain:${session.value.id}`, 'true')
     invoiceUncertain.value = true
     
-    // Memanggil API Backend Laravel
+    // Memanggil API Backend Laravel (DOKU Payment Gateway)
     const response = await productApi(`${config.public.apiBase}/topup`, {
       method: 'POST',
       headers: {
@@ -135,23 +143,30 @@ const processTopup = async () => {
       }
     })
     
-    if (response.success && (response.data?.payment_url || response.data?.qr_string)) {
+    const paymentLink = response.data?.payment_url || response.data?.checkout_url || ''
+    const qrCodeString = response.data?.qr_string || ''
+    const txId = response.data?.transactionId || response.data?.order_id || ''
+
+    if (response.success && (paymentLink || qrCodeString)) {
       invoiceUncertain.value = false
       sessionStorage.removeItem(`icmarket_topup_uncertain:${session.value.id}`)
       sessionStorage.setItem('icmarket_pending_qris_owner', String(session.value.id))
-      sessionStorage.setItem('icmarket_pending_qris_transaction', response.data.transactionId || '')
-      qrisUrl.value = response.data.payment_url || ''
-      qrisString.value = response.data.qr_string || ''
+      sessionStorage.setItem('icmarket_pending_qris_transaction', txId)
+      pendingTransactionId.value = txId
+      qrisUrl.value = paymentLink
+      qrisString.value = qrCodeString
       topupAmount.value = selectedAmount.value.value
       
       sessionStorage.setItem('icmarket_pending_qris', qrisUrl.value)
       sessionStorage.setItem('icmarket_pending_qris_string', qrisString.value)
       sessionStorage.setItem('icmarket_pending_qris_amount', topupAmount.value)
       
-      // Initialize expiration time if not present
-      if (!sessionStorage.getItem('icmarket_pending_qris_expires_at')) {
-        sessionStorage.setItem('icmarket_pending_qris_expires_at', Date.now() + (15 * 60 * 1000))
-      }
+      // Initialize expiration time from backend expires_at or 30 minutes default
+      const backendExpiresAt = response.data?.expires_at ? new Date(response.data.expires_at).getTime() : 0
+      const resolvedExpiresAt = backendExpiresAt && !Number.isNaN(backendExpiresAt)
+        ? backendExpiresAt
+        : Date.now() + (30 * 60 * 1000)
+      sessionStorage.setItem('icmarket_pending_qris_expires_at', String(resolvedExpiresAt))
       
       showQrisModal.value = true
       startPolling()
@@ -168,8 +183,8 @@ const processTopup = async () => {
     const status = error.response?.status
     const errorMsg = error.data?.message || error.message || ''
     
-    if (status === 500 || status === 502 || status === 504 || status === 522 || errorMsg.includes('522') || errorMsg.toLowerCase().includes('pakasir')) {
-      alert('Maaf Server Pembayaran sedang sibuk, silakan coba dalam beberapa menit,')
+    if (status === 500 || status === 502 || status === 503 || status === 504 || status === 522 || errorMsg.includes('522') || errorMsg.toLowerCase().includes('doku')) {
+      alert('Maaf Server Pembayaran DOKU sedang sibuk, silakan coba dalam beberapa saat.')
     } else {
       alert('Terjadi kesalahan saat memproses top up. Pastikan server backend berjalan.')
     }
@@ -220,6 +235,7 @@ const poll = usePaymentPoll(async (isCurrent) => {
   if (qrisTimerInterval.value) clearInterval(qrisTimerInterval.value)
   qrisUrl.value = ''
   qrisString.value = ''
+  pendingTransactionId.value = ''
   invoiceUncertain.value = false
   sessionStorage.removeItem(`icmarket_topup_uncertain:${owner}`)
   for (const suffix of ['', '_string', '_amount', '_expires_at', '_owner', '_transaction']) sessionStorage.removeItem(`icmarket_pending_qris${suffix}`)
@@ -230,7 +246,7 @@ const poll = usePaymentPoll(async (isCurrent) => {
     showSuccessModal.value = true
   }, 2000)
   return true
-}, { isAuthenticated: () => !!session.value, onTimeout: () => { successMsg.value = 'Pembayaran masih diproses. Buka kembali QR untuk memeriksa status top-up.' } })
+}, { isAuthenticated: () => !!session.value, onTimeout: () => { successMsg.value = 'Pembayaran masih diproses. Buka kembali detail pembayaran DOKU untuk memeriksa status top-up.' } })
 const startPolling = () => poll.start()
 const closeQrisModal = () => {
   showQrisModal.value = false
@@ -252,7 +268,7 @@ const startQrisTimer = () => {
     if (diff <= 0) {
       qrisTimeLeft.value = '00:00'
       clearInterval(qrisTimerInterval.value)
-      successMsg.value = 'Waktu QRIS berakhir. Periksa saldo dan voucher sebelum membuat transaksi baru.'
+      successMsg.value = 'Waktu pembayaran berakhir. Periksa saldo dan voucher sebelum membuat transaksi baru.'
       return
     }
     
@@ -266,6 +282,18 @@ const startQrisTimer = () => {
 }
 
 const newTopupError = ref('')
+const isManualChecking = ref(false)
+
+const checkPaymentManually = async () => {
+  if (isManualChecking.value || !session.value) return
+  isManualChecking.value = true
+  try {
+    startPolling()
+    await fetchWallet(historyPage.value)
+  } finally {
+    setTimeout(() => { isManualChecking.value = false }, 800)
+  }
+}
 
 const beginNewTopup = () => {
   if (invoiceUncertain.value || isProcessing.value) return
@@ -289,13 +317,20 @@ const beginNewTopup = () => {
   closeQrisModal()
   qrisUrl.value = ''
   qrisString.value = ''
+  pendingTransactionId.value = ''
   for (const suffix of ['', '_string', '_amount', '_expires_at', '_owner', '_transaction']) sessionStorage.removeItem(`icmarket_pending_qris${suffix}`)
   newTopupError.value = ''
 }
 
 const openInNewTab = () => {
   if (qrisUrl.value) {
-    window.open(qrisUrl.value, '_blank')
+    window.open(qrisUrl.value, '_blank', 'noopener,noreferrer')
+  }
+}
+
+const goToDokuCheckout = () => {
+  if (qrisUrl.value) {
+    window.location.href = qrisUrl.value
   }
 }
 
@@ -472,7 +507,7 @@ const handleOpenQris = () => {
         </div>
       </div>
 
-      <h3 style="margin-top: 24px;">Metode Pembayaran</h3>
+      <h3 style="margin-top: 24px;">Metode Pembayaran (DOKU Payment Gateway)</h3>
       <div class="payment-methods-grid" style="margin-bottom: 32px;">
         <div v-for="method in paymentMethods" :key="method.id" 
              class="pm-card" 
@@ -480,10 +515,40 @@ const handleOpenQris = () => {
              @click="selectedMethod = method.id">
           <div class="pm-radio"></div>
           <div class="pm-icon"><i :class="method.icon"></i></div>
-          <div class="pm-info">
-            <div class="pm-name">{{ method.name }}</div>
+          <div class="pm-info" style="flex: 1;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <div class="pm-name">{{ method.name }}</div>
+              <span v-if="method.badge" class="pm-badge">{{ method.badge }}</span>
+            </div>
             <div class="pm-sub">{{ method.sub }}</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Pending DOKU Invoice Banner -->
+      <div v-if="qrisUrl || qrisString" class="doku-pending-banner">
+        <div class="doku-pending-left">
+          <div class="doku-pending-icon">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+          <div class="doku-pending-info">
+            <div class="doku-pending-title">
+              <span>Menunggu Pembayaran DOKU</span>
+              <span class="doku-timer-pill"><i class="fa-regular fa-clock"></i> {{ qrisTimeLeft }}</span>
+            </div>
+            <p class="doku-pending-desc">
+              Top Up <strong>{{ formatCoin(topupAmount) }} iCoin-Z</strong> (Rp {{ formatCoin(topupPriceForAmount(topupAmount)) }})
+              <span v-if="pendingTransactionId" class="doku-tx-code">• #{{ pendingTransactionId }}</span>
+            </p>
+          </div>
+        </div>
+        <div class="doku-pending-actions">
+          <button type="button" class="action-btn primary" @click="handleOpenQris">
+            <i class="fa-solid fa-credit-card"></i> Lanjutkan / Cek Pembayaran
+          </button>
+          <button v-if="!invoiceUncertain" type="button" class="action-btn secondary" @click="beginNewTopup">
+            <i class="fa-solid fa-rotate"></i> Ganti Nominal / Baru
+          </button>
         </div>
       </div>
 
@@ -495,7 +560,7 @@ const handleOpenQris = () => {
         
         <div class="checkout-actions">
           <p class="tnc-text">
-            Dengan melanjutkan, Anda menyetujui <a href="#" @click.prevent="showTnC = true">Syarat & Ketentuan</a> Top Up.
+            Dengan melanjutkan, Anda menyetujui <a href="#" @click.prevent="showTnC = true">Syarat & Ketentuan</a> Top Up via DOKU.
           </p>
           <button 
             class="primary-button" 
@@ -503,20 +568,11 @@ const handleOpenQris = () => {
             @click="processTopup"
           >
             <span v-if="isProcessing"><i class="fa-solid fa-spinner fa-spin"></i> Memproses...</span>
-            <span v-else>Lanjutkan Pembayaran</span>
+            <span v-else><i class="fa-solid fa-shield-halved" style="margin-right: 6px;"></i> Lanjutkan Pembayaran DOKU</span>
           </button>
           
           <div v-if="newTopupError" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 12px 16px; border-radius: 12px; font-weight: 600; font-size: 13px; margin-top: 16px; display: flex; align-items: center; gap: 8px;">
             <i class="fa-solid fa-triangle-exclamation"></i> {{ newTopupError }}
-          </div>
-          
-          <div class="pending-actions" v-if="qrisUrl || qrisString" style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px;">
-            <button class="action-btn primary" @click="handleOpenQris" style="width: 100%; justify-content: center;">
-              <i class="fa-solid fa-qrcode"></i> Buka pembayaran tersimpan / cek ulang
-            </button>
-            <button v-if="!invoiceUncertain" class="action-btn secondary" @click="beginNewTopup" style="width: 100%; justify-content: center;">
-              <i class="fa-solid fa-plus"></i> Mulai top-up baru
-            </button>
           </div>
         </div>
       </div>
@@ -625,15 +681,20 @@ const handleOpenQris = () => {
       </div>
     </div>
 
-    <!-- QRIS Payment Modal -->
+    <!-- DOKU / QRIS Payment Modal -->
     <Teleport to="body">
       <Transition name="tnc-modal">
         <div v-if="showQrisModal" class="tnc-overlay" @click.self="closeQrisModal">
-          <div class="tnc-modal" style="max-width: 500px; height: 90vh;">
+          <div class="tnc-modal doku-payment-modal">
             <div class="tnc-header" style="justify-content: space-between;">
               <div class="tnc-title-area" style="display: flex; align-items: center; gap: 12px;">
-                <img src="/icoinz.svg" alt="iCoinz" style="width: 24px; height: 24px;" />
-                <h3 style="margin: 0; font-size: 18px;">Pembayaran QRIS</h3>
+                <div class="doku-modal-icon">
+                  <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                  <h3 style="margin: 0; font-size: 18px;">Instruksi Pembayaran DOKU</h3>
+                  <p style="margin: 2px 0 0; font-size: 12px; color: var(--muted);">Gateway Pembayaran Resmi Terenkripsi</p>
+                </div>
               </div>
               <div style="display: flex; gap: 8px;">
                 <button v-if="qrisUrl" class="tnc-close-btn" @click="openInNewTab" title="Buka di Tab Baru">
@@ -645,41 +706,81 @@ const handleOpenQris = () => {
               </div>
             </div>
             
-            <div class="tnc-body" style="padding: 0; overflow: hidden; position: relative;">
-              <iframe v-if="qrisUrl && !qrisString" :src="qrisUrl" style="width: 100%; height: 100%; border: none; position: relative; z-index: 2; background: white;"></iframe>
-              
-              <div v-else style="width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; z-index: 2; background: white; overflow-y: auto;">
-                <!-- Payment Info Bar -->
-                <div style="background: var(--surface); padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <p style="margin: 0; font-size: 13px; color: var(--muted);">Total Pembayaran</p>
-                    <h3 style="margin: 4px 0 0; color: #10b981; font-size: 20px;">Rp {{ Number(topupAmount).toLocaleString('id-ID') }}</h3>
+            <div class="tnc-body custom-scrollbar" style="padding: 0; gap: 0;">
+              <!-- Payment Info Bar -->
+              <div class="doku-summary-bar">
+                <div>
+                  <p class="doku-summary-label">Total Tagihan</p>
+                  <h3 class="doku-summary-price">Rp {{ formatCoin(topupPriceForAmount(topupAmount)) }}</h3>
+                </div>
+                <div style="text-align: right;">
+                  <p class="doku-summary-label">Saldo Diterima</p>
+                  <div class="doku-summary-coin">
+                    <img src="/icoinz.svg" alt="iCoinz" style="width: 18px; height: 18px;" />
+                    <span>+{{ formatCoin(topupAmount) }} iCoin-Z</span>
                   </div>
-                  <div style="text-align: right;">
-                    <p style="margin: 0; font-size: 13px; color: var(--muted);">Item</p>
-                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                      <img src="/icoinz.svg" alt="iCoinz" style="width: 16px; height: 16px;" />
-                      <span style="font-weight: 600;">{{ Number(topupAmount).toLocaleString('id-ID') }} iCoinZ</span>
-                    </div>
+                </div>
+              </div>
+
+              <div class="doku-modal-body">
+                <!-- Timer & Invoice Meta -->
+                <div class="doku-meta-row">
+                  <div class="doku-countdown-badge">
+                    <i class="fa-regular fa-clock"></i> Berlaku {{ qrisTimeLeft }}
+                  </div>
+                  <div v-if="pendingTransactionId" class="doku-invoice-badge">
+                    <i class="fa-solid fa-receipt"></i> {{ pendingTransactionId }}
                   </div>
                 </div>
 
-                <div style="padding: 24px; display: flex; flex-direction: column; align-items: center;">
-                  <!-- Timer -->
-                  <div style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-regular fa-clock"></i> Selesaikan pembayaran dalam {{ qrisTimeLeft }}
+                <!-- Direct QRIS View (if qr_string is returned) -->
+                <template v-if="qrisString">
+                  <p class="doku-instruction-title">Scan QRIS DOKU di bawah untuk membayar</p>
+                  <div class="doku-qr-box">
+                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrisString)" alt="QRIS Code" style="width: 220px; height: 220px; display: block;" />
                   </div>
-
-                  <p style="margin: 0 0 16px; color: var(--text); font-weight: 600; font-size: 16px;">Scan QR Code di bawah untuk membayar</p>
-                  
-                  <div style="padding: 16px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--border);">
-                    <img v-if="qrisString" :src="'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrisString)" alt="QRIS Code" style="width: 220px; height: 220px;" />
-                    <iframe v-else-if="qrisUrl" :src="qrisUrl" style="width: 220px; height: 220px; border: none;"></iframe>
-                  </div>
-
-                  <p style="margin: 24px 0 0; color: var(--muted); font-size: 14px; max-width: 85%; text-align: center; line-height: 1.5;">
-                    Mendukung <strong style="color:var(--text)">GoPay, OVO, DANA, ShopeePay, LinkAja</strong>, dan Mobile Banking lainnya yang memiliki fitur QRIS.
+                  <p class="doku-instruction-sub">
+                    Mendukung <strong>GoPay, OVO, DANA, ShopeePay, LinkAja</strong>, dan seluruh aplikasi Mobile Banking berstandar QRIS Nasional.
                   </p>
+                </template>
+
+                <!-- DOKU Checkout Redirect View (when payment_url is returned) -->
+                <template v-else-if="qrisUrl">
+                  <div class="doku-checkout-card">
+                    <div class="doku-checkout-badge">
+                      <i class="fa-solid fa-lock"></i> DOKU CHECKOUT PORTAL
+                    </div>
+                    <h4>Selesaikan Pembayaran di Halaman Resmi DOKU</h4>
+                    <p>
+                      Pilih channel pembayaran favorit Anda (<strong>QRIS, Virtual Account BCA / Mandiri / BRI / BNI / Permata, E-Wallet, atau Kartu</strong>) langsung di halaman DOKU.
+                    </p>
+                    <div class="doku-cta-group">
+                      <button type="button" class="doku-pay-btn" @click="goToDokuCheckout">
+                        <span>Buka Halaman Pembayaran DOKU</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                      </button>
+                      <button type="button" class="doku-newtab-btn" @click="openInNewTab">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka di Tab Baru
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Auto-detection & Manual Check Box -->
+                <div class="doku-status-box">
+                  <div class="doku-status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span>Otomatis mendeteksi pembayaran masuk...</span>
+                  </div>
+                  <div class="doku-status-actions">
+                    <button type="button" class="doku-check-btn" :disabled="isManualChecking" @click="checkPaymentManually">
+                      <i class="fa-solid fa-rotate" :class="{ 'fa-spin': isManualChecking }"></i>
+                      <span>{{ isManualChecking ? 'Memeriksa...' : 'Cek Status Pembayaran' }}</span>
+                    </button>
+                    <button v-if="!invoiceUncertain" type="button" class="doku-cancel-btn" @click="beginNewTopup">
+                      <i class="fa-solid fa-xmark"></i> Ganti Metode / Top-Up Baru
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1688,5 +1789,415 @@ html.dark .tnc-alert.warning {
 }
 .filter-select:focus {
   border-color: var(--accent);
+}
+
+/* DOKU Theme Integration */
+.pm-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(20, 114, 255, 0.1);
+  color: var(--accent-2);
+  border: 1px solid rgba(20, 114, 255, 0.2);
+}
+
+.doku-pending-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+  border: 1.5px solid #bfdbfe;
+  box-shadow: 0 8px 20px -8px rgba(20, 114, 255, 0.16);
+  flex-wrap: wrap;
+}
+
+.doku-pending-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.doku-pending-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1463ff, #1e3a8a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(20, 99, 255, 0.25);
+}
+
+.doku-pending-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doku-pending-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #0f172a;
+  flex-wrap: wrap;
+}
+
+.doku-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.doku-pending-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+.doku-tx-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.doku-pending-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.doku-payment-modal {
+  max-width: 520px;
+}
+
+.doku-modal-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1463ff, #1e3a8a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.doku-summary-bar {
+  background: var(--surface-2, #f8fafc);
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.doku-summary-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doku-summary-price {
+  margin: 4px 0 0;
+  color: var(--accent-2, #1463ff);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.doku-summary-coin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.doku-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.doku-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.doku-countdown-badge {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.doku-invoice-badge {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.doku-instruction-title {
+  margin: 0;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+}
+
+.doku-qr-box {
+  padding: 16px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
+}
+
+.doku-instruction-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.5;
+  max-width: 90%;
+}
+
+.doku-checkout-card {
+  width: 100%;
+  background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+  border: 1.5px solid #dbeafe;
+  border-radius: 16px;
+  padding: 22px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.doku-checkout-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #1d4ed8;
+  background: #dbeafe;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.doku-checkout-card h4 {
+  margin: 4px 0 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.doku-checkout-card p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.doku-cta-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.doku-pay-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #1463ff, #1e3a8a);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 8px 20px -6px rgba(20, 99, 255, 0.45);
+  transition: all 0.2s ease;
+}
+
+.doku-pay-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px -6px rgba(20, 99, 255, 0.55);
+}
+
+.doku-newtab-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.doku-newtab-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.doku-status-box {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doku-status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulseDot 1.6s infinite;
+}
+
+@keyframes pulseDot {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.doku-status-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.doku-check-btn,
+.doku-cancel-btn {
+  flex: 1;
+  min-width: 160px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.doku-check-btn {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.doku-check-btn:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.doku-check-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.doku-cancel-btn {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.doku-cancel-btn:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+@media (max-width: 640px) {
+  .payment-methods-grid {
+    grid-template-columns: 1fr;
+  }
+  .doku-pending-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .doku-pending-actions {
+    width: 100%;
+  }
+  .doku-pending-actions .action-btn {
+    flex: 1;
+    justify-content: center;
+  }
 }
 </style>

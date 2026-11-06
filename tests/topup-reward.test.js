@@ -98,3 +98,49 @@ test('Confirmed topup fulfillment refreshes wallet, voucher list, and badge prof
   profileResult = null
   await assert.rejects(refresh(), /Data reward belum dapat diperbarui/)
 })
+
+test('DOKU topup checkout creates invoice with selected method, stores expires_at, and supports opening DOKU portal', async () => {
+  const storage = new Map()
+  let postPayload = null
+  let redirectedUrl = null
+  const context = vm.createContext({
+    ref, computed: fn => ({ get value() { return fn() } }), onMounted() {}, onUnmounted() {},
+    Date, Number, String, JSON, setTimeout() {}, clearTimeout() {}, setInterval() { return 1 }, clearInterval() {},
+    window: { location: { set href(val) { redirectedUrl = val } }, open() {} },
+    sessionStorage: {
+      getItem: k => storage.get(k) ?? null,
+      setItem: (k, v) => storage.set(k, String(v)),
+      removeItem: k => storage.delete(k)
+    },
+    useRouter: () => ({ push() {} }), useRuntimeConfig: () => ({ public: { apiBase: 'https://market/api' } }),
+    useAuthCredential: () => ref('bff-session'),
+    useDemoAuth: () => ({ session: ref({ id: 7 }), syncSession: async () => ({ id: 7 }), fetchWallet: async () => true, walletBalance: ref(50000), walletStatus: ref('fresh'), walletHistories: ref([]), walletMeta: ref(null), initializeWallet: async () => true, walletInitializationPending: ref(false) }),
+    useProductApi: () => async (url, options) => {
+      postPayload = { url, body: options.body }
+      return {
+        success: true,
+        data: {
+          payment_url: 'https://sandbox.doku.com/checkout-link-v2/INV-ICZ-DOKU01',
+          checkout_url: 'https://sandbox.doku.com/checkout-link-v2/INV-ICZ-DOKU01',
+          qr_string: null,
+          transactionId: 'INV-ICZ-DOKU01',
+          order_id: 'INV-ICZ-DOKU01',
+          expires_at: new Date(Date.now() + 1800000).toISOString(),
+          provider: 'doku'
+        }
+      }
+    },
+    useTopupReward: () => ({ message: ref(''), busy: ref(false), restore() {}, start() {}, dispose() {} }),
+    usePaymentPoll: () => ({ start() {}, stop() {}, dispose() {} })
+  })
+  const script = fs.readFileSync(new URL('../app/pages/topup.vue', import.meta.url), 'utf8').split('<script setup>')[1].split('</script>')[0].replace(/^import .*$/gm, '')
+  vm.runInContext(script + '\nglobalThis.topupPage = { processTopup, selectedMethod, qrisUrl, pendingTransactionId, showQrisModal, goToDokuCheckout }', context)
+  assert.equal(context.topupPage.selectedMethod.value, 'doku')
+  await context.topupPage.processTopup()
+  assert.equal(postPayload.body.method, 'doku')
+  assert.equal(context.topupPage.qrisUrl.value, 'https://sandbox.doku.com/checkout-link-v2/INV-ICZ-DOKU01')
+  assert.equal(context.topupPage.pendingTransactionId.value, 'INV-ICZ-DOKU01')
+  assert.equal(context.topupPage.showQrisModal.value, true)
+  context.topupPage.goToDokuCheckout()
+  assert.equal(redirectedUrl, 'https://sandbox.doku.com/checkout-link-v2/INV-ICZ-DOKU01')
+})
