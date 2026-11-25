@@ -15,7 +15,8 @@ const props = defineProps({
   placeholder: { type: String, default: 'Pilih…' },
   disabled: { type: Boolean, default: false },
   ariaLabel: { type: String, default: '' },
-  size: { type: String, default: 'md' }
+  size: { type: String, default: 'md' },
+  width: { type: String, default: '' }
 })
 const emit = defineEmits(['update:modelValue', 'change'])
 
@@ -121,7 +122,7 @@ watch(() => props.disabled, (value) => { if (value) close() })
 </script>
 
 <template>
-  <div ref="root" class="tw:relative tw:w-full">
+  <div ref="root" class="tw:relative tw:w-full" :style="width ? { width, flex: 'none' } : undefined">
     <button
       ref="trigger"
       type="button"

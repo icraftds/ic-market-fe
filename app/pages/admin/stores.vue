@@ -70,11 +70,7 @@ onMounted(() => {
 
     <div class="filters">
       <input type="text" v-model="search" placeholder="Cari nama toko..." />
-      <select v-model="statusFilter">
-        <option value="all">Semua Status</option>
-        <option value="pending">Menunggu Persetujuan</option>
-        <option value="active">Aktif</option>
-      </select>
+      <UiSelect v-model="statusFilter" :options="[{ value: 'all', label: 'Semua Status' }, { value: 'pending', label: 'Menunggu Persetujuan' }, { value: 'active', label: 'Aktif' }]" width="min(100%, 220px)" />
     </div>
 
     <table class="stores-table">

@@ -121,14 +121,7 @@ onMounted(loadApplications)
     <div v-if="notice" class="notice">{{ notice }}</div>
 
     <section class="toolbar">
-      <select v-model="selectedFilter">
-        <option value="all">Pengajuan Aktif</option>
-        <option value="Submitted">Menunggu Review</option>
-        <option value="Approved">Disetujui</option>
-        <option value="Rejected">Ditolak</option>
-        <option value="Cancelled">Dibatalkan</option>
-        <option value="Archived">Arsip</option>
-      </select>
+      <UiSelect v-model="selectedFilter" :options="[{ value: 'all', label: 'Pengajuan Aktif' }, { value: 'Submitted', label: 'Menunggu Review' }, { value: 'Approved', label: 'Disetujui' }, { value: 'Rejected', label: 'Ditolak' }, { value: 'Cancelled', label: 'Dibatalkan' }, { value: 'Archived', label: 'Arsip' }]" width="min(100%, 220px)" />
     </section>
 
     <section v-if="filteredApplications.length" class="application-list">
