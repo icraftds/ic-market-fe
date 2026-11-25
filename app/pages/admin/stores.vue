@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const stores = ref([])
 const search = ref('')
@@ -96,7 +96,7 @@ onMounted(() => {
             <span class="badge" :class="store.status">{{ store.status === 'active' ? 'Aktif' : 'Menunggu' }}</span>
           </td>
           <td>
-            <button v-if="store.status === 'pending'" @click="approveStore(store)" class="btn-approve">Setujui</button>
+            <button v-if="store.status === 'pending'" type="button" class="ic-icon-btn ok" title="Setujui" aria-label="Setujui" @click="approveStore(store)"><i class="fa-solid fa-check"></i></button>
           </td>
         </tr>
       </tbody>

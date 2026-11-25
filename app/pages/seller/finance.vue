@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const SETTINGS_KEY = 'icmarket_system_settings'
 const LEGACY_FINANCE_KEY = 'icmarket_seller_finance'

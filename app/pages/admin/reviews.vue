@@ -43,14 +43,17 @@
                 </td>
                 <td style="max-width: 300px; white-space: normal; line-height: 1.4;">{{ review.comment }}</td>
                 <td>
-                  <button 
-                    class="btn-action" 
-                    :class="review.is_featured ? 'btn-remove' : 'btn-add'"
-                    @click="toggleFeatured(review)"
+                  <button
+                    type="button"
+                    class="ic-icon-btn"
+                    :class="{ on: review.is_featured }"
+                    :title="review.is_featured ? 'Hapus dari unggulan' : 'Tampilkan sebagai unggulan'"
+                    :aria-label="review.is_featured ? 'Hapus dari unggulan' : 'Tampilkan sebagai unggulan'"
                     :disabled="toggling[review.id]"
+                    @click="toggleFeatured(review)"
                   >
-                    <span v-if="toggling[review.id]">Processing...</span>
-                    <span v-else>{{ review.is_featured ? 'Hapus' : 'Tampilkan' }}</span>
+                    <i v-if="toggling[review.id]" class="fa-solid fa-spinner fa-spin"></i>
+                    <i v-else :class="review.is_featured ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
                   </button>
                 </td>
               </tr>
@@ -68,7 +71,7 @@ const productApi = useProductApi()
 import { ref, onMounted } from 'vue'
 
 definePageMeta({ 
-  layout: 'default'
+  layout: 'dashboard'
 })
 
 const config = useRuntimeConfig()

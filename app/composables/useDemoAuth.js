@@ -211,6 +211,15 @@ export const useDemoAuth = () => {
             })
             signal?.throwIfAborted()
             if (response.success && response.data?.token) {
+                // Dev only: the local backend issues market tokens directly, no SSO service to sync with.
+                if (import.meta.dev && config.public.authApiBase.includes('localhost') && response.data.user?.role) {
+                    await acceptMarketSession(response.data)
+                    if (import.meta.client) {
+                        window.dispatchEvent(new CustomEvent('icmarket-auth-updated'))
+                    }
+                    return { success: true }
+                }
+
                 // Sync SSO token with backend to get backend token and role
                 const syncRes = await productApi(`${config.public.apiBase}/sso/sync`, {
                     method: 'POST', signal,

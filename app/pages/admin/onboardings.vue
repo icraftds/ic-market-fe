@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const config = useRuntimeConfig()
 const authToken = useAuthCredential()
@@ -177,39 +177,47 @@ onMounted(loadApplications)
           <template v-if="!application.archived">
             <button
               v-if="application.status === 'Submitted'"
-              class="approve-button"
+              class="ic-icon-btn ok"
               type="button"
+              title="Approve"
+              aria-label="Approve"
               @click="updateStatus(application, 'Approved', { historyNote: 'Pengajuan disetujui admin.' })"
             >
-              Approve
+              <i class="fa-solid fa-check"></i>
             </button>
 
             <button
               v-if="application.status === 'Submitted'"
-              class="reject-button"
+              class="ic-icon-btn danger"
               type="button"
+              title="Reject"
+              aria-label="Reject"
               @click="startReject(application)"
             >
-              Reject
+              <i class="fa-solid fa-xmark"></i>
             </button>
 
             <button
               v-if="application.status === 'Rejected' || application.status === 'Cancelled'"
-              class="archive-button"
+              class="ic-icon-btn"
               type="button"
+              title="Arsipkan"
+              aria-label="Arsipkan"
               @click="archiveApplication(application)"
             >
-              Arsipkan
+              <i class="fa-solid fa-box-archive"></i>
             </button>
           </template>
 
           <button
             v-else
-            class="secondary-button"
+            class="ic-icon-btn"
             type="button"
+            title="Keluarkan dari Arsip"
+            aria-label="Keluarkan dari Arsip"
             @click="restoreApplication(application)"
           >
-            Keluarkan dari Arsip
+            <i class="fa-solid fa-rotate-left"></i>
           </button>
         </div>
       </article>
