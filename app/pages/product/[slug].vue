@@ -45,12 +45,12 @@ const { data: related } = await useAsyncData(
   { watch: [slug], default: () => [] }
 )
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80'
-const images = computed(() => {
+const productImageUrls = computed(() => {
   let raw = product.value?.images
   if (typeof raw === 'string') { try { raw = JSON.parse(raw) } catch { raw = [] } }
-  const urls = (Array.isArray(raw) ? raw : []).map(img => typeof img === 'string' ? img : (img?.imageUrl || img?.url || '')).filter(Boolean)
-  return urls.length ? urls : [FALLBACK_IMAGE]
+  return (Array.isArray(raw) ? raw : []).map(img => typeof img === 'string' ? img : (img?.imageUrl || img?.url || '')).filter(Boolean)
 })
+const images = computed(() => productImageUrls.value.length ? productImageUrls.value : [FALLBACK_IMAGE])
 const activeImage = ref(0)
 const descOpen = ref(false)
 const descLong = computed(() => String(product.value?.description || '').length > 380)
@@ -99,13 +99,15 @@ const formatCoin = value => Number(value || 0).toLocaleString('id-ID')
 const canonical = `${siteUrl}/product/${product.value.slug || slug.value}`
 const plainDescription = String(product.value.description || '').replace(/\s+/g, ' ').trim()
 const metaDescription = (plainDescription ? plainDescription : `${product.value.name} oleh ${storeName.value} di IC Market.`).slice(0, 155)
-const ogImage = images.value[0]
+// Foto stok pengganti tidak boleh jadi gambar OG/schema: pakai gambar produk asli, atau gambar brand.
+const ogImage = productImageUrls.value[0] || `${siteUrl}/og-default.png`
 useSeoMeta({
   title: `${product.value.name} – ${product.value.category || 'Aset Digital'}`,
   description: metaDescription,
   ogTitle: product.value.name,
   ogDescription: metaDescription,
   ogImage,
+  ogImageAlt: product.value.name,
   ogUrl: canonical,
   ogType: 'website',
   twitterCard: 'summary_large_image',
@@ -113,6 +115,8 @@ useSeoMeta({
   twitterDescription: metaDescription,
   twitterImage: ogImage
 })
+const genuineCount = Number(product.value.genuine_reviews_count || 0)
+const genuineReviews = (product.value.reviews || []).filter(r => !r.is_auto_generated && r.comment).slice(0, 5)
 useHead({
   link: [{ rel: 'canonical', href: canonical }],
   script: [{
@@ -123,12 +127,15 @@ useHead({
       '@type': 'Product',
       name: product.value.name,
       description: plainDescription || undefined,
-      image: images.value,
+      ...(productImageUrls.value.length ? { image: productImageUrls.value } : {}),
       category: product.value.category || undefined,
       sku: String(product.value.id),
       brand: { '@type': 'Brand', name: storeName.value },
-      ...(reviewCount.value > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: rating.value.toFixed(1), reviewCount: reviewCount.value } } : {}),
-      offers: { '@type': 'Offer', url: canonical, price: price.value, priceCurrency: 'IDR', availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition' }
+      // Hanya ulasan asli; ulasan otomatis dari sistem tidak boleh masuk structured data.
+      ...(genuineCount > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: Number(product.value.genuine_reviews_avg_rating).toFixed(1), reviewCount: genuineCount } } : {}),
+      ...(genuineReviews.length ? { review: genuineReviews.map(r => ({ '@type': 'Review', reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 }, author: { '@type': 'Person', name: r.user?.name || 'Pembeli' }, reviewBody: r.comment, datePublished: r.created_at ? new Date(r.created_at).toISOString().slice(0, 10) : undefined })) } : {}),
+      // Asumsi: 1 iCoin = Rp1. Sesuaikan jika kurs berbeda.
+      offers: { '@type': 'Offer', url: canonical, price: price.value, priceCurrency: 'IDR', availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition', seller: { '@type': 'Organization', name: storeName.value } }
     }).replace(/</g, '\\u003c')
   }, {
     type: 'application/ld+json',
