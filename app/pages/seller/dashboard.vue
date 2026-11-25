@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const config = useRuntimeConfig()
 const authToken = useAuthCredential()
@@ -10,6 +10,7 @@ const authToken = useAuthCredential()
 const store = ref(null)
 const products = ref([])
 const recentOrders = ref([])
+const isLoading = ref(true)
 const commissionRate = ref(10)
 
 const application = computed(() => store.value)
@@ -19,7 +20,7 @@ const isRejected = computed(() => store.value?.status === 'rejected')
 const isCancelled = computed(() => false)
 const hasApplication = computed(() => Boolean(store.value))
 
-const storeName = computed(() => store.value?.name || 'Toko Seller')
+const storeName = computed(() => store.value?.name || (isLoading.value ? 'Memuat toko…' : 'Toko Seller'))
 
 const activeProducts = computed(() => products.value.filter((product) => ['active', 'published'].includes(product.status)).length)
 const totalProducts = computed(() => products.value.length)
@@ -34,6 +35,7 @@ const estimatedNetRevenue = computed(() => {
 })
 
 const approvalLabel = computed(() => {
+  if (isLoading.value) return 'Memuat…'
   if (isSuspended.value) return 'Toko Ditangguhkan'
   if (isApproved.value) return 'Toko Disetujui'
   if (isRejected.value) return 'Pengajuan Ditolak'
@@ -92,6 +94,8 @@ const loadDashboard = async () => {
     }
   } catch (error) {
     console.error(error)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -102,17 +106,17 @@ onMounted(() => {
 <template>
   <main class="seller-dashboard-page">
     <section class="dashboard-hero">
-      <div>
-        <p class="eyebrow">SELLER CENTER</p>
-        <h1>{{ storeName }}</h1>
-        <p class="hero-description">
-          Pantau performa produk dan pesanan khusus toko yang sedang aktif.
-        </p>
+      <div class="hero-store">
+        <span class="store-avatar">{{ isLoading ? '' : storeName.charAt(0).toUpperCase() }}</span>
+        <div>
+          <h2 class="store-name">{{ storeName }}</h2>
+          <p class="hero-description">
+            Pantau performa produk dan pesanan toko Anda.
+          </p>
+        </div>
       </div>
 
       <div class="hero-actions">
-
-
         <span
           class="approval-badge"
           :class="{
@@ -127,7 +131,7 @@ onMounted(() => {
       </div>
     </section>
 
-    <section v-if="!isApproved" class="approval-state">
+    <section v-if="!isLoading && !isApproved" class="approval-state">
       <div class="state-icon">!</div>
       <div>
         <h2 v-if="!hasApplication">Toko belum diajukan</h2>
@@ -201,27 +205,39 @@ onMounted(() => {
     <template v-else>
       <section class="metrics-grid" aria-label="Ringkasan performa toko">
         <article class="metric-card">
-          <span class="metric-label">Total Produk</span>
-          <strong>{{ totalProducts }}</strong>
-          <small>{{ activeProducts }} produk aktif di {{ storeName }}</small>
+          <span class="metric-icon tone-blue"><i class="fa-solid fa-box-open"></i></span>
+          <div class="metric-body">
+            <span class="metric-label">Total Produk</span>
+            <strong>{{ isLoading ? '—' : totalProducts }}</strong>
+            <small>{{ isLoading ? 'Memuat…' : activeProducts + ' produk aktif' }}</small>
+          </div>
         </article>
 
         <article class="metric-card">
-          <span class="metric-label">Total Order</span>
-          <strong>{{ totalOrders }}</strong>
-          <small>Pesanan khusus toko aktif</small>
+          <span class="metric-icon tone-violet"><i class="fa-solid fa-receipt"></i></span>
+          <div class="metric-body">
+            <span class="metric-label">Total Order</span>
+            <strong>{{ isLoading ? '—' : totalOrders }}</strong>
+            <small>Pesanan masuk toko</small>
+          </div>
         </article>
 
         <article class="metric-card">
-          <span class="metric-label">Total Penjualan</span>
-          <strong>{{ formatCurrency(totalSales) }}</strong>
-          <small>Akumulasi nilai order toko aktif</small>
+          <span class="metric-icon tone-green"><i class="fa-solid fa-chart-line"></i></span>
+          <div class="metric-body">
+            <span class="metric-label">Total Penjualan</span>
+            <strong>{{ isLoading ? '—' : formatCurrency(totalSales) }}</strong>
+            <small>Akumulasi nilai order</small>
+          </div>
         </article>
 
         <article class="metric-card">
-          <span class="metric-label">Estimasi Pendapatan</span>
-          <strong>{{ formatCurrency(estimatedNetRevenue) }}</strong>
-          <small>Setelah komisi {{ commissionRate }}%</small>
+          <span class="metric-icon tone-amber"><i class="fa-solid fa-coins"></i></span>
+          <div class="metric-body">
+            <span class="metric-label">Estimasi Pendapatan</span>
+            <strong>{{ isLoading ? '—' : formatCurrency(estimatedNetRevenue) }}</strong>
+            <small>Setelah komisi {{ commissionRate }}%</small>
+          </div>
         </article>
       </section>
 
@@ -234,7 +250,9 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-if="recentOrders.length" class="orders-wrap">
+          <div v-if="isLoading" class="table-loading" aria-busy="true" aria-label="Memuat data"><div class="sk-line"></div><div class="sk-line"></div><div class="sk-line"></div><div class="sk-line"></div></div>
+
+          <div v-else-if="recentOrders.length" class="orders-wrap">
             <table class="orders-table">
               <thead>
                 <tr>
@@ -330,378 +348,129 @@ onMounted(() => {
 
 <style scoped>
 .seller-dashboard-page {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 48px 32px 80px;
-  color: var(--text);
+  --card: #ffffff;
+  --line: #e5e9f0;
+  --ink: #0f172a;
+  --sub: #64748b;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 
 .dashboard-hero {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 30px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  color: var(--accent-2);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: .12em;
-}
-
-.dashboard-hero h1 {
-  margin: 0;
-  font-size: clamp(32px, 5vw, 52px);
-  letter-spacing: -1.5px;
-}
-
-.hero-description {
-  max-width: 620px;
-  margin: 10px 0 0;
-  color: var(--muted);
-  line-height: 1.65;
-}
-
-.approval-badge {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: #fef3c7;
-  color: #92400e;
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.approval-badge.approved {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.approval-badge.rejected {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.approval-badge.cancelled {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.approval-badge.suspended {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.approval-state {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  padding: 28px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--surface);
-}
-
-.state-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #fef3c7;
-  color: #92400e;
-  font-weight: 900;
-}
-
-.approval-state h2 {
-  margin: 0 0 8px;
-}
-
-.approval-state p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.rejection-reason {
-  display: grid;
-  gap: 5px;
-  margin-top: 14px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: #fff1f2;
-  color: #9f1239;
-}
-
-.rejection-reason strong {
-  font-size: 13px;
-}
-
-.rejection-reason span {
-  line-height: 1.55;
-}
-
-.suspended-hint {
-  margin-top: 10px !important;
-}
-
-.state-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.primary-button,
-.secondary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  padding: 11px 15px;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.primary-button {
-  background: var(--accent);
-  color: #fff;
-}
-
-.secondary-button {
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.metric-card {
-  padding: 22px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--surface);
-}
-
-.metric-label {
-  display: block;
-  margin-bottom: 12px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.metric-card strong {
-  display: block;
-  font-size: clamp(22px, 3vw, 30px);
-  letter-spacing: -.6px;
-}
-
-.metric-card small {
-  display: block;
-  margin-top: 7px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(280px, .7fr);
-  gap: 18px;
-}
-
-.panel {
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.panel-heading {
-  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 22px 22px 18px;
+  padding: 18px 20px;
+  background: linear-gradient(120deg, #1e3a8a, #2563eb);
+  border-radius: 16px;
+  color: #fff;
 }
-
-.panel-heading .eyebrow {
-  margin-bottom: 5px;
+.hero-store { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.store-avatar {
+  width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex-shrink: 0;
+  background: rgba(255, 255, 255, .18); font-size: 20px; font-weight: 800; font-family: 'Outfit', sans-serif;
 }
+.store-name { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+.hero-description { margin: 3px 0 0; color: rgba(255, 255, 255, .78); font-size: 13px; }
+.hero-actions { display: flex; align-items: center; gap: 10px; }
 
-.panel-heading h2 {
-  margin: 0;
-  font-size: 20px;
+.approval-badge {
+  padding: 6px 12px; border-radius: 999px; background: #fef3c7; color: #92400e;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
 }
+.approval-badge.approved { background: #dcfce7; color: #166534; }
+.approval-badge.rejected, .approval-badge.suspended { background: #fee2e2; color: #991b1b; }
+.approval-badge.cancelled { background: #f1f5f9; color: #475569; }
 
-.orders-wrap {
-  overflow-x: auto;
+.approval-state {
+  display: flex; align-items: flex-start; gap: 16px; padding: 24px;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--card);
 }
+.state-icon {
+  display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%;
+  background: #fef3c7; color: #92400e; font-weight: 900;
+}
+.approval-state h2 { margin: 0 0 6px; font-size: 17px; }
+.approval-state p { margin: 0 0 12px; color: var(--sub); font-size: 14px; line-height: 1.6; }
+.rejection-reason {
+  display: flex; flex-direction: column; gap: 4px; margin: 10px 0 14px; padding: 12px 14px;
+  border-radius: 10px; background: #fef2f2; color: #991b1b; font-size: 13px;
+}
+.suspended-hint { font-size: 13px; }
+.state-actions { display: flex; gap: 10px; }
+.primary-button, .secondary-button {
+  display: inline-flex; align-items: center; padding: 9px 16px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.primary-button { background: #2563eb; color: #fff; border: 0; }
+.secondary-button { background: #fff; color: var(--ink); border: 1px solid var(--line); }
 
+/* KPI cards */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.metric-card {
+  display: flex; align-items: center; gap: 14px; padding: 18px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04); transition: box-shadow .15s, transform .15s;
+}
+.metric-card:hover { box-shadow: 0 8px 24px rgba(15, 23, 42, .07); transform: translateY(-1px); }
+.metric-icon { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+.tone-blue { background: #dbeafe; color: #1d4ed8; }
+.tone-violet { background: #ede9fe; color: #6d28d9; }
+.tone-green { background: #dcfce7; color: #15803d; }
+.tone-amber { background: #fef3c7; color: #b45309; }
+.metric-body { display: flex; flex-direction: column; min-width: 0; }
+.metric-label { font-size: 12px; font-weight: 600; color: var(--sub); }
+.metric-card strong { font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metric-card small { font-size: 12px; color: var(--sub); }
+
+/* Panels */
+.dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); overflow: hidden; }
+.panel-heading { padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.panel-heading h2 { margin: 0; font-size: 15px; font-weight: 800; }
+
+.orders-wrap { overflow-x: auto; }
 .orders-empty-state {
-  display: grid;
-  gap: 6px;
-  padding: 34px 22px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 56px 20px; text-align: center; color: var(--sub); font-size: 13px;
 }
-
-.orders-empty-state strong {
-  color: var(--text);
-  font-size: 14px;
-}
-
-.orders-empty-state span {
-  font-size: 12px;
-}
-
-
-.orders-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 720px;
-}
-
-.orders-table th,
-.orders-table td {
-  padding: 15px 18px;
-  border-top: 1px solid var(--border);
-  text-align: left;
-  font-size: 12px;
-}
-
+.orders-empty-state strong { color: var(--ink); font-size: 15px; }
+.orders-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .orders-table th {
-  background: var(--subtle);
-  color: var(--muted);
-  font-size: 11px;
+  padding: 10px 20px; text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--sub); background: #f8fafc; border-bottom: 1px solid var(--line);
 }
+.orders-table td { padding: 13px 20px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.orders-table tr:last-child td { border-bottom: 0; }
+.orders-table td strong, .orders-table td small { display: block; }
+.orders-table td small { color: var(--sub); font-size: 11px; margin-top: 2px; }
+.order-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fef3c7; color: #92400e; }
+.order-status.completed { background: #dcfce7; color: #166534; }
+.order-status.processing { background: #dbeafe; color: #1d4ed8; }
 
-.orders-table td strong,
-.orders-table td small {
-  display: block;
-}
-
-.orders-table td small {
-  margin-top: 4px;
-  color: var(--muted);
-}
-
-.order-status {
-  display: inline-flex;
-  border-radius: 999px;
-  padding: 5px 8px;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.order-status.completed {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.order-status.processing {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.quick-links {
-  display: grid;
-  padding: 0 14px 14px;
-}
-
+.quick-links { display: flex; flex-direction: column; padding: 8px; }
 .quick-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 15px 10px;
-  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px;
+  border-radius: 10px; text-decoration: none; color: var(--ink); transition: background .15s;
 }
+.quick-link:hover { background: #f1f5f9; }
+.quick-link strong { display: block; font-size: 13.5px; }
+.quick-link div span { display: block; margin-top: 2px; font-size: 12px; color: var(--sub); }
+.quick-link > span { color: #94a3b8; }
 
-.quick-link strong,
-.quick-link span {
-  display: block;
+.table-loading { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+.sk-line { height: 44px; border-radius: 10px; background: linear-gradient(90deg, #e9edf3 25%, #f4f6fa 50%, #e9edf3 75%); background-size: 200% 100%; animation: sk-shimmer 1.2s infinite linear; }
+@keyframes sk-shimmer { to { background-position: -200% 0; } }
+
+@media (max-width: 1180px) {
+  .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-grid { grid-template-columns: 1fr; }
 }
-
-.quick-link strong {
-  font-size: 13px;
-}
-
-.quick-link div span {
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.quick-link > span {
-  color: var(--muted);
-  font-size: 18px;
-}
-
-.quick-link:hover {
-  background: var(--subtle);
-}
-
-
-.hero-actions {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.store-switcher {
-  display: grid;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.store-switcher select {
-  min-width: 180px;
-  padding: 9px 11px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-}
-
-@media (max-width: 980px) {
-  .metrics-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 640px) {
-  .seller-dashboard-page {
-    padding: 30px 16px 56px;
-  }
-
-  .dashboard-hero {
-    flex-direction: column;
-  }
-
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .approval-state {
-    flex-direction: column;
-    padding: 22px;
-  }
+  .metrics-grid { grid-template-columns: 1fr; }
+  .dashboard-hero { flex-direction: column; align-items: flex-start; }
 }
 </style>

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const STORES_KEY = 'icmarket_admin_stores'
 const SETTINGS_KEY = 'icmarket_system_settings'

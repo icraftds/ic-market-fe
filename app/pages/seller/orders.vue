@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const {
   activeStore,
@@ -259,11 +259,11 @@ onBeforeUnmount(() => {
             <span v-if="order.financialStatus === 'held'" class="escrow-note">Dana berada di Holding</span>
             <span v-if="order.financialStatus === 'released'" class="escrow-note released">Dana sudah Available</span>
 
-            <button v-if="order.status === 'paid'" type="button" class="secondary-button" @click="changeStatus(order, 'processing')">
-              Proses Pesanan
+            <button v-if="order.status === 'paid'" type="button" class="ic-icon-btn" title="Proses Pesanan" aria-label="Proses Pesanan" @click="changeStatus(order, 'processing')">
+              <i class="fa-solid fa-gears"></i>
             </button>
-            <button v-if="order.status === 'paid' || order.status === 'processing'" type="button" class="primary-button" @click="changeStatus(order, 'completed')">
-              Tandai Selesai
+            <button v-if="order.status === 'paid' || order.status === 'processing'" type="button" class="ic-icon-btn ok" title="Tandai Selesai" aria-label="Tandai Selesai" @click="changeStatus(order, 'completed')">
+              <i class="fa-solid fa-circle-check"></i>
             </button>
           </div>
         </article>

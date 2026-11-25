@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, ref, onMounted } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const config = useRuntimeConfig()
 const token  = useAuthCredential()

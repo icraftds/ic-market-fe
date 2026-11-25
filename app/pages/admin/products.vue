@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const products = ref([])
 const search = ref('')
@@ -96,8 +96,8 @@ onMounted(() => {
             <span class="badge" :class="product.is_hot ? 'active' : 'pending'">{{ product.is_hot ? 'Ya (Hot)' : 'Bukan' }}</span>
           </td>
           <td>
-            <button @click="toggleHotProduct(product)" class="btn-approve" :class="{'btn-remove': product.is_hot}">
-              {{ product.is_hot ? 'Hapus Hot' : 'Jadikan Hot' }}
+            <button type="button" class="ic-icon-btn" :class="{ hot: product.is_hot }" :title="product.is_hot ? 'Hapus Hot' : 'Jadikan Hot'" :aria-label="product.is_hot ? 'Hapus Hot' : 'Jadikan Hot'" @click="toggleHotProduct(product)">
+              <i class="fa-solid fa-fire"></i>
             </button>
           </td>
         </tr>
