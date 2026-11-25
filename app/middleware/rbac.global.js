@@ -12,7 +12,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
         }
         return navigateTo('/auth/start?return_to=' + encodeURIComponent(target), { external: true, redirectCode: 303 })
     }
-    await syncSession()
+    try {
+        await syncSession()
+    } catch (error) {
+        // Halaman publik (katalog, produk, toko, konten) tidak boleh ikut mati kalau SSO bermasalah.
+        // Anggap pengunjung tamu; rute privat tetap diarahkan ke login di bawah.
+        if (import.meta.server) console.error('[sso] session sync failed:', error?.statusCode || error?.response?.status || '', error?.data?.code || error?.message || '')
+    }
 
     if (config.public.ssoEnabled) {
         if (!session.value && (path.startsWith('/admin/') || path.startsWith('/seller/') || ['/profile', '/cart', '/checkout', '/orders', '/payment', '/success', '/topup', '/vouchers'].includes(path))) {
