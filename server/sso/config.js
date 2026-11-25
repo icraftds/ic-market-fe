@@ -1,7 +1,7 @@
 import { SsoError } from './security.js'
 
 export const MARKET_CONTRACT = Object.freeze({
-    issuer: 'https://ic-auth.unikom.my.id',
+    issuer: 'https://auth.icraftds.id',
     clientId: '01a113e2-70ab-7071-8e04-536025ee8459',
     redirectUri: 'https://market.icraftds.id/auth/callback',
     appOrigin: 'https://market.icraftds.id',

@@ -396,7 +396,7 @@ onBeforeUnmount(() => {
                   <button type="button" class="dd-item danger" @click="handleLogout">
                     <i class="fa-solid fa-right-from-bracket"></i><span>Keluar</span>
                   </button>
-                  <a v-if="config.public.ssoEnabled && config.public.ssoGlobalLogoutEnabled" href="https://ic-auth.unikom.my.id/logout" class="dd-item danger">Keluar dari semua aplikasi</a>
+                  <a v-if="config.public.ssoEnabled && config.public.ssoGlobalLogoutEnabled" href="https://auth.icraftds.id/logout" class="dd-item danger">Keluar dari semua aplikasi</a>
                 </div>
               </div>
             </div>

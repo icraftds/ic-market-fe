@@ -50,7 +50,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     sso: {
       enabled: process.env.SSO_ENABLED === 'true',
-      issuer: process.env.SSO_ISSUER || 'https://ic-auth.unikom.my.id',
+      issuer: process.env.SSO_ISSUER || 'https://auth.icraftds.id',
       clientId: process.env.SSO_CLIENT_ID || '01a113e2-70ab-7071-8e04-536025ee8459',
       redirectUri: process.env.SSO_REDIRECT_URI || 'https://market.icraftds.id/auth/callback',
       appOrigin: process.env.APP_ORIGIN || 'https://market.icraftds.id',

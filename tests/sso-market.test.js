@@ -215,7 +215,7 @@ test('BFF start uses separate HttpOnly transaction cookies and validates redirec
         calls++
         assert.equal(target, '/orders')
         assert.match(binding, /^[A-Za-z0-9_-]{43}$/)
-        return { url: new URL('https://ic-auth.unikom.my.id/oauth/authorize'), transaction: { state: 's'.repeat(43) } }
+        return { url: new URL('https://auth.icraftds.id/oauth/authorize'), transaction: { state: 's'.repeat(43) } }
     } } }
     assert.equal((await handleSso(new Request('https://market.icraftds.id/auth/start?return_to=%2F%2Fevil.test'), runtime)).status, 400)
     assert.equal(calls, 0)
