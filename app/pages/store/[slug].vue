@@ -14,10 +14,12 @@ const {
 } = useProductCatalog()
 
 const config = useRuntimeConfig()
-const isLoading = ref(true)
 
-const dynamicStore = ref(null)
-const dynamicProducts = ref([])
+const slugKey = String(route.params.slug || '').trim().toLowerCase()
+const dynamicStore = useState(`store-${slugKey}`, () => null)
+const dynamicProducts = useState(`store-products-${slugKey}`, () => [])
+const paginationMeta = useState(`store-meta-${slugKey}`, () => null)
+const isLoading = ref(!dynamicStore.value)
 
 /*
  * Data dummy dari file ZIP tetap dipertahankan sebagai seed/test.
@@ -189,6 +191,29 @@ const store = computed(() => {
   return stores[slug.value] || null
 })
 
+const siteUrl = String(config.public.siteUrl).replace(/\/$/, '')
+useSeoMeta({
+  title: () => store.value ? `Toko ${store.value.name}` : 'Toko',
+  description: () => (`${store.value?.name || 'Seller'} di IC Market: ${store.value?.description || 'koleksi aset digital berkualitas'}. Akses instan dan garansi 30 hari.`).slice(0, 158),
+  ogTitle: () => store.value ? `Toko ${store.value.name} | IC Market` : 'IC Market',
+  ogUrl: () => `${siteUrl}/store/${slug.value}`,
+  robots: () => store.value || isLoading.value ? 'index, follow' : 'noindex'
+})
+useHead(() => ({
+  link: [{ rel: 'canonical', href: `${siteUrl}/store/${slug.value}` }],
+  script: store.value?.isDynamic ? [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: `Toko ${store.value.name}`,
+      url: `${siteUrl}/store/${slug.value}`,
+      description: store.value.description,
+      mainEntity: { '@type': 'ItemList', itemListElement: store.value.products.filter(item => item.slug).map((item, i) => ({ '@type': 'ListItem', position: i + 1, url: `${siteUrl}/product/${item.slug}`, name: item.name })) }
+    }).replace(/</g, '\\u003c')
+  }] : []
+}))
+
 const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
 
 const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart()
@@ -262,7 +287,6 @@ const handleAddCart = async (product, e) => {
 
 
 
-const paginationMeta = ref(null)
 const currentPage = ref(1)
 const changePage = async (page) => { currentPage.value = page; await fetchStoreData() }
 const fetchStoreData = async () => {
@@ -285,15 +309,22 @@ const fetchStoreData = async () => {
   }
 }
 
+// SEO: ambil data toko + produk di server supaya HTML awal sudah berisi konten.
+if (import.meta.server) {
+  await useAsyncData(`store-ssr-${slugKey}`, async () => { await fetchStoreData(); return true })
+  if (!store.value) setResponseStatus(useRequestEvent(), 404)
+}
+
 onMounted(() => {
-  fetchStoreData()
+  if (!dynamicStore.value) fetchStoreData()
 })
 </script>
 
 <template>
+  <div>
   <main class="store-page">
     <div v-if="store" class="store-container">
-      <button class="back-link" type="button" @click="router.push('/')">← Kembali ke toko</button>
+      <NuxtLink to="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Kembali ke toko</NuxtLink>
 
       <section class="store-hero">
         <div class="store-avatar">{{ store.name.charAt(0) }}</div>
@@ -346,12 +377,16 @@ onMounted(() => {
     </div>
     <ApiPagination :meta="paginationMeta" :busy="isLoading" @page="changePage" />
   </main>
+  <SiteFooter />
+  </div>
 </template>
 
 <style scoped>
 .store-page { min-height: 100vh; padding: 42px 24px 72px; background: #f7f7f5; color: #171717; }
 .store-container { max-width: 1120px; margin: 0 auto; }
-.back-link { border: 0; background: transparent; color: #777; font-weight: 700; cursor: pointer; margin-bottom: 24px; }
+.back-link { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; margin-bottom: 20px; border: 1px solid #e8e8e4; border-radius: 8px; background: #fff; color: #111110; font-size: 14px; font-weight: 600; text-decoration: none; transition: border-color .15s, background .15s; }
+.back-link:hover { border-color: #111110; }
+.back-link i { font-size: 12px; }
 .store-hero { display: flex; gap: 24px; align-items: center; background: #fff; border: 1px solid #e8e8e4; border-radius: 24px; padding: 32px; }
 .store-avatar { width: 88px; height: 88px; display: grid; place-items: center; border-radius: 22px; background: #1463ff; color: white; font-size: 38px; font-weight: 800; }
 .eyebrow, .product-category { margin: 0 0 8px; font-size: 12px; letter-spacing: 2px; color: #888; font-weight: 800; }

@@ -1,4 +1,5 @@
 <script setup>
+useSeoMeta({ title: 'FAQ – Pertanyaan Umum Pembeli & Seller', description: 'Jawaban atas pertanyaan umum tentang pembelian, pembayaran iCoin, dan penjualan di IC Market.' })
 definePageMeta({ layout: 'default' })
 import { ref } from 'vue'
 

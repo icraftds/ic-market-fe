@@ -4,16 +4,16 @@
     <footer class="site-footer">
         <div class="footer-inner">
             <div class="footer-brand">
-                <img src="/logo-market.png" alt="IC Market" style="height: 32px; width: auto; margin-bottom: 12px; display: block;" />
+                <img src="/logo-market.webp" alt="IC Market" width="168" height="32" loading="lazy" style="height: 32px; width: auto; margin-bottom: 12px; display: block;" />
                 <p class="footer-tagline">Platform aset digital premium untuk developer dan desainer Indonesia.</p>
             </div>
             <div>
                 <div class="footer-col-title">Produk</div>
                 <ul class="footer-links">
-                    <li><a href="#">Web Template</a></li>
-                    <li><a href="#">UI Kit</a></li>
-                    <li><a href="#">Source Code</a></li>
-                    <li><a href="#">Gratis</a></li>
+                    <li><NuxtLink to="/kategori/web-template">Web Template</NuxtLink></li>
+                    <li><NuxtLink to="/kategori/ui-kit">UI Kit</NuxtLink></li>
+                    <li><NuxtLink to="/kategori/software">Software</NuxtLink></li>
+                    <li><NuxtLink to="/?q=gratis">Gratis</NuxtLink></li>
                 </ul>
             </div>
             <div>

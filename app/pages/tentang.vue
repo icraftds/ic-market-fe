@@ -1,4 +1,5 @@
 <script setup>
+useSeoMeta({ title: 'Tentang Kami', description: 'Kenali IC Market, marketplace aset digital Indonesia untuk kreator dan pembeli.' })
 definePageMeta({ layout: 'default' })
 </script>
 

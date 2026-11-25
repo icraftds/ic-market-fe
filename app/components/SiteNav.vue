@@ -108,10 +108,60 @@ onMounted(() => {
 })
 
 const searchQuery = ref('')
+const suggestions = ref({ products: [], categories: [] })
+const suggestState = ref('idle') // idle | loading | ready | unavailable
+const activeSuggestion = ref(-1)
+let suggestTimer
+let suggestSeq = 0
+
+const slugify = value => String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const formatCoin = value => Number(value || 0).toLocaleString('id-ID')
+const trimmedQuery = computed(() => searchQuery.value.trim())
+const showSuggestions = computed(() => trimmedQuery.value.length >= 2 && suggestState.value !== 'unavailable' && suggestState.value !== 'idle')
+
+watch(searchQuery, (value) => {
+  clearTimeout(suggestTimer)
+  activeSuggestion.value = -1
+  const q = value.trim()
+  if (q.length < 2) {
+    suggestState.value = 'idle'
+    suggestions.value = { products: [], categories: [] }
+    return
+  }
+  suggestState.value = 'loading'
+  const seq = ++suggestSeq
+  suggestTimer = setTimeout(async () => {
+    try {
+      const res = await $fetch(`${config.public.apiBase}/search/suggest`, { query: { q }, retry: 0, timeout: 5000 })
+      if (seq !== suggestSeq) return
+      suggestions.value = res?.data || { products: [], categories: [] }
+      suggestState.value = 'ready'
+    } catch {
+      if (seq !== suggestSeq) return
+      suggestState.value = 'unavailable'
+    }
+  }, 200)
+})
+
+const closeSearch = () => { isSearchOpen.value = false }
 const handleSearchSubmit = () => {
-  if (searchQuery.value.trim()) {
+  if (trimmedQuery.value) {
     isSearchOpen.value = false
-    navigateTo({ path: '/', query: { q: searchQuery.value.trim() } })
+    navigateTo({ path: '/', query: { q: trimmedQuery.value } })
+  }
+}
+const moveSuggestion = (step) => {
+  const total = suggestions.value.products.length
+  if (!showSuggestions.value || !total) return
+  activeSuggestion.value = (activeSuggestion.value + step + total + 1) % (total + 1) - 1
+}
+const handleSearchEnter = () => {
+  const item = suggestions.value.products[activeSuggestion.value]
+  if (showSuggestions.value && item) {
+    isSearchOpen.value = false
+    navigateTo(`/product/${item.slug}`)
+  } else {
+    handleSearchSubmit()
   }
 }
 
@@ -138,7 +188,7 @@ onBeforeUnmount(() => {
 
         <!-- Logo -->
         <NuxtLink to="/" class="nav-logo">
-          <img src="/logo-market.png" alt="IC Market" class="nav-logo-img" />
+          <img src="/logo-market.webp" alt="IC Market" class="nav-logo-img" width="147" height="28" />
         </NuxtLink>
 
         <!-- Search -->
@@ -153,8 +203,14 @@ onBeforeUnmount(() => {
               placeholder="Cari template, UI kit, source code, dan lainnya…"
               autocomplete="off"
               aria-label="Cari produk"
+              role="combobox"
+              :aria-expanded="isSearchOpen && showSuggestions"
+              aria-controls="search-suggestions"
               @focus="isSearchOpen = true"
-              @keyup.enter="handleSearchSubmit"
+              @keydown.down.prevent="moveSuggestion(1)"
+              @keydown.up.prevent="moveSuggestion(-1)"
+              @keydown.esc="closeSearch"
+              @keyup.enter="handleSearchEnter"
             />
             <button class="nav-search-btn" aria-label="Cari" @click="handleSearchSubmit">
               <i class="fa-solid fa-magnifying-glass"></i>
@@ -164,6 +220,34 @@ onBeforeUnmount(() => {
           
           <!-- Search Dropdown -->
           <div v-if="isSearchOpen" class="search-dropdown">
+            <div v-if="showSuggestions" id="search-suggestions" class="sg-wrap">
+              <div v-if="suggestState === 'loading' && !suggestions.products.length" class="sg-empty">Mencari…</div>
+              <template v-else-if="suggestions.products.length || suggestions.categories.length">
+                <div v-if="suggestions.products.length" class="search-title">Produk</div>
+                <ul class="sg-list" role="listbox">
+                  <li v-for="(item, i) in suggestions.products" :key="item.id" role="option" :aria-selected="i === activeSuggestion">
+                    <NuxtLink :to="`/product/${item.slug}`" class="sg-item" :class="{ active: i === activeSuggestion }" @click="closeSearch">
+                      <img v-if="item.thumbnail" :src="item.thumbnail" alt="" class="sg-thumb" loading="lazy">
+                      <span v-else class="sg-thumb sg-thumb-empty"><i class="fa-regular fa-image"></i></span>
+                      <span class="sg-text">
+                        <span class="sg-name">{{ item.name }}</span>
+                        <span class="sg-meta">{{ item.category }}<template v-if="item.store_name"> · {{ item.store_name }}</template></span>
+                      </span>
+                      <span class="sg-price">{{ Number(item.price) === 0 ? 'Gratis' : formatCoin(item.price) }}</span>
+                    </NuxtLink>
+                  </li>
+                </ul>
+                <template v-if="suggestions.categories.length">
+                  <div class="search-title sg-cat-title">Kategori terkait</div>
+                  <div class="search-tags">
+                    <NuxtLink v-for="cat in suggestions.categories" :key="cat" :to="`/kategori/${slugify(cat)}`" class="search-tag" @click="closeSearch">{{ cat }}</NuxtLink>
+                  </div>
+                </template>
+                <button type="button" class="sg-all" @click="handleSearchSubmit">Lihat semua hasil untuk “{{ trimmedQuery }}” <i class="fa-solid fa-arrow-right"></i></button>
+              </template>
+              <div v-else class="sg-empty">Tidak ada hasil untuk “{{ trimmedQuery }}”.</div>
+            </div>
+            <template v-else>
             <div class="search-section">
               <div class="search-title">Pencarian Populer</div>
               <div class="search-tags">
@@ -182,6 +266,7 @@ onBeforeUnmount(() => {
                 <li><NuxtLink to="/?category=source-code" @click="isSearchOpen = false"><i class="fa-solid fa-code"></i> Source Code</NuxtLink></li>
               </ul>
             </div>
+            </template>
           </div>
         </div>
 
@@ -540,6 +625,19 @@ onBeforeUnmount(() => {
   animation: dd-in 0.18s cubic-bezier(0.34,1.56,0.64,1) forwards;
   box-sizing: border-box;
 }
+.sg-wrap { display: flex; flex-direction: column; gap: 10px; }
+.sg-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.sg-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 10px; text-decoration: none; color: inherit; transition: background .12s; }
+.sg-item:hover, .sg-item.active { background: #f3f6fb; }
+.sg-thumb { width: 48px; height: 36px; border-radius: 6px; object-fit: cover; flex: none; background: #f0f0ec; }
+.sg-thumb-empty { display: grid; place-items: center; color: #b0b0b0; }
+.sg-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.sg-name { font-size: .88rem; font-weight: 600; color: #111110; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-meta { font-size: .74rem; color: #888880; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-price { font-size: .85rem; font-weight: 700; color: #111110; flex: none; }
+.sg-cat-title { margin-top: 6px; }
+.sg-all { margin-top: 4px; padding: 10px 12px; border: 0; border-top: 1px solid #ebebeb; background: transparent; text-align: left; font: inherit; font-size: .85rem; font-weight: 600; color: #1472ff; cursor: pointer; }
+.sg-empty { padding: 14px 6px; font-size: .88rem; color: #888880; }
 .nav-search-wrap {
   position: relative;
   flex: 1;
@@ -705,22 +803,20 @@ onBeforeUnmount(() => {
 .nav-btn-ghost:hover { border-color: #1472ff; color: #1472ff; background: #f5f9ff; }
 
 .nav-btn-primary {
-  display: flex; align-items: center; gap: 7px;
-  padding: 9px 18px;
-  border-radius: 10px;
-  font-size: 0.86rem; font-weight: 700;
-  background: linear-gradient(135deg, #1472ff, #0f5fcb);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 0 20px;
+  min-height: 48px;
+  border-radius: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.84rem; font-weight: 700;
+  background: #1472ff;
   color: #fff;
   text-decoration: none;
   border: none; cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(20,114,255,0.30);
-  transition: transform 0.18s, box-shadow 0.18s;
+  transition: background 0.2s;
 }
-.nav-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(20,114,255,0.40);
-}
+.nav-btn-primary:hover { background: #1060d0; }
 
 /* Coin chip */
 .nav-coin-chip {

@@ -1,4 +1,5 @@
 <script setup>
+useSeoMeta({ title: 'Panduan Membeli Aset Digital dengan iCoin', description: 'Panduan langkah demi langkah membeli aset digital di IC Market, dari top up iCoin sampai download.' })
 definePageMeta({ layout: 'default' })
 
 const steps = [

@@ -399,7 +399,6 @@ export const useProductCatalog = () => {
      * Buyer Catalog
      */
     const refreshHotProducts = async () => {
-        if (!import.meta.client) return []
         try {
             const config = useRuntimeConfig()
             const response = await productApi(`${config.public.apiBase}/products?limit=20&is_hot=true`)
@@ -434,12 +433,6 @@ export const useProductCatalog = () => {
     }
 
     const refreshCatalog = async (params = {}, append = false) => {
-        if (!import.meta.client) {
-            if (!append) products.value = []
-            stores.value = []
-            return { data: [], meta: null }
-        }
-
         try {
             const config = useRuntimeConfig()
             const query = new URLSearchParams(params).toString()
