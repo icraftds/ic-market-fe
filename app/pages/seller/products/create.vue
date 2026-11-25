@@ -689,20 +689,11 @@ onMounted(async () => {
         <div class="two-columns">
           <label>
             Kategori
-            <select v-model="form.category">
-              <option>Template</option>
-              <option>Design Asset</option>
-              <option>Software</option>
-              <option>Course</option>
-              <option>Lainnya</option>
-            </select>
+            <UiSelect v-model="form.category" :options="['Template', 'Design Asset', 'Software', 'Course', 'Lainnya']" aria-label="Kategori" />
           </label>
           <label>
             Jenis Produk
-            <select v-model="form.type">
-              <option>Digital</option>
-              <option>Fisik</option>
-            </select>
+            <UiSelect v-model="form.type" :options="['Digital', 'Fisik']" aria-label="Jenis produk" />
           </label>
         </div>
 
@@ -832,13 +823,7 @@ onMounted(async () => {
 
             <label>
               Lisensi
-              <select v-model="form.specifications.license">
-                <option>Personal</option>
-                <option>Commercial</option>
-                <option>Extended</option>
-                <option>Open Source</option>
-                <option>Custom</option>
-              </select>
+              <UiSelect v-model="form.specifications.license" :options="['Personal', 'Commercial', 'Extended', 'Open Source', 'Custom']" aria-label="Lisensi" />
             </label>
           </div>
         </div>
@@ -918,9 +903,7 @@ onMounted(async () => {
         <div class="two-columns">
           <label>
             Jenis Proyek
-            <select v-model="previewProfile">
-              <option v-for="profile in PREVIEW_PROFILES" :key="profile.value" :value="profile.value">{{ profile.label }}</option>
-            </select>
+            <UiSelect v-model="previewProfile" :options="PREVIEW_PROFILES" aria-label="Profil build preview" />
           </label>
         </div>
 
@@ -938,11 +921,7 @@ onMounted(async () => {
           <h3>Publikasi</h3>
           <label>
             Status
-            <select v-model="form.status">
-              <option value="draft">Draft</option>
-              <option value="published">Dipublikasikan</option>
-              <option value="inactive">Nonaktif</option>
-            </select>
+            <UiSelect v-model="form.status" :options="[{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Dipublikasikan' }, { value: 'inactive', label: 'Nonaktif' }]" aria-label="Status produk" />
           </label>
 
           <dl class="summary-list">
