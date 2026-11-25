@@ -22,7 +22,7 @@ if (!category.value) throw createError({ statusCode: 404, statusMessage: 'Katego
 const { data: listing, pending } = await useAsyncData(
   () => `kategori-${slug.value}-${page.value}`,
   async () => {
-    const response = await $fetch(`${config.public.apiBase}/products`, { query: { category: category.value, page: page.value, limit: 12, sort: 'newest' }, retry: 0, timeout: 10000 }).catch(() => null)
+    const response = await $fetch(`${config.public.apiBase}/products`, { query: { category: category.value, exact: 1, page: page.value, limit: 12, sort: 'newest' }, retry: 0, timeout: 10000 }).catch(() => null)
     return response?.success ? { items: response.data, meta: response.meta } : { items: [], meta: null }
   },
   { watch: [slug, page], default: () => ({ items: [], meta: null }) }
@@ -82,6 +82,10 @@ const changePage = (next) => router.push({ path: route.path, query: next > 1 ? {
       <header class="cat-head">
         <h1>{{ category }}</h1>
         <p>{{ total }} produk · akses instan · garansi 30 hari</p>
+        <p v-if="products.length" class="cat-intro">
+          Jelajahi {{ total }} produk {{ category.toLowerCase() }} di IC Market, mulai dari {{ products.slice(0, 3).map(p => p.name).join(', ') }}{{ total > 3 ? ' dan lainnya' : '' }}.
+          Semua produk dijual langsung oleh seller terverifikasi, dibayar dengan iCoin, dan bisa diakses seketika setelah pembayaran dengan garansi 30 hari.
+        </p>
       </header>
 
       <div v-if="products.length" class="cat-grid">
@@ -102,6 +106,7 @@ const changePage = (next) => router.push({ path: route.path, query: next > 1 ? {
 .cat-head { margin-bottom: 24px; }
 .cat-head h1 { margin: 0 0 6px; font-size: clamp(1.6rem, 3vw, 2.2rem); }
 .cat-head p { margin: 0; color: var(--muted); }
+.cat-intro { max-width: 760px; margin: 12px 0 0; line-height: 1.65; color: var(--text); font-size: .95rem; }
 .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; align-items: start; }
 .cat-empty { color: var(--muted); padding: 48px 0; text-align: center; }
 </style>

@@ -19,7 +19,7 @@ const privateScreen = computed(() => route.path.startsWith('/admin/') || route.p
 const noindexPaths = ['/login', '/register', '/auto-login', '/access-denied']
 const siteUrl = String(config.public.siteUrl || '').replace(/\/$/, '')
 useHead(() => ({
-  meta: [{ name: 'robots', content: privateScreen.value || noindexPaths.includes(route.path) ? 'noindex, nofollow' : 'index, follow' }],
+  meta: [{ name: 'robots', content: privateScreen.value || noindexPaths.includes(route.path) ? 'noindex, nofollow' : (route.path === '/' && (route.query.q || route.query.category) ? 'noindex, follow' : 'index, follow') }],
   link: [{ rel: 'canonical', href: siteUrl + (route.path === '/' ? '/' : route.path.replace(/\/$/, '')), key: 'canonical' }]
 }))
 const { pending: authPending, pendingError, run: runAuth, redirect: redirectAuth, reset: resetAuth } = useAuthPending()

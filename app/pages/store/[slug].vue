@@ -194,7 +194,7 @@ const store = computed(() => {
 const siteUrl = String(config.public.siteUrl).replace(/\/$/, '')
 useSeoMeta({
   title: () => store.value ? `Toko ${store.value.name}` : 'Toko',
-  description: () => (store.value?.description || `Koleksi aset digital dari ${store.value?.name || 'seller'} di IC Market.`).slice(0, 155),
+  description: () => (`${store.value?.name || 'Seller'} di IC Market: ${store.value?.description || 'koleksi aset digital berkualitas'}. Akses instan dan garansi 30 hari.`).slice(0, 158),
   ogTitle: () => store.value ? `Toko ${store.value.name} | IC Market` : 'IC Market',
   ogUrl: () => `${siteUrl}/store/${slug.value}`,
   robots: () => store.value || isLoading.value ? 'index, follow' : 'noindex'

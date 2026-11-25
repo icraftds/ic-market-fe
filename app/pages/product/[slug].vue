@@ -102,7 +102,7 @@ const metaDescription = (plainDescription ? plainDescription : `${product.value.
 // Foto stok pengganti tidak boleh jadi gambar OG/schema: pakai gambar produk asli, atau gambar brand.
 const ogImage = productImageUrls.value[0] || `${siteUrl}/og-default.png`
 useSeoMeta({
-  title: `${product.value.name} – ${product.value.category || 'Aset Digital'}`,
+  title: `${product.value.name.length > 52 ? product.value.name.slice(0, 50).trimEnd() + '…' : product.value.name} – ${product.value.category || 'Aset Digital'}`,
   description: metaDescription,
   ogTitle: product.value.name,
   ogDescription: metaDescription,

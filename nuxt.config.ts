@@ -36,6 +36,10 @@ export default defineNuxtConfig({
     }
   },
 
+  routeRules: {
+    '/**': { headers: { 'x-content-type-options': 'nosniff', 'permissions-policy': 'camera=(), microphone=(), geolocation=()' } }
+  },
+
   runtimeConfig: {
     sso: {
       enabled: process.env.SSO_ENABLED === 'true',

@@ -1,5 +1,5 @@
 <script setup>
-useSeoMeta({ title: 'Kebijakan Layanan', description: 'Syarat, ketentuan, dan kebijakan layanan IC Market.' })
+useSeoMeta({ title: 'Kebijakan Layanan & Syarat Ketentuan', description: 'Syarat, ketentuan, kebijakan pengembalian dana, dan aturan penggunaan layanan marketplace aset digital IC Market.' })
 definePageMeta({ layout: 'default' })
 </script>
 
