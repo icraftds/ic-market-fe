@@ -66,7 +66,9 @@ const PREVIEW_PROFILES = [
 const MAX_PREVIEW_ZIP_BYTES = 50 * 1024 * 1024
 const previewProfile = ref('static')
 const previewFile = ref(null)
-const previewState = ref({ status: null, deploymentId: null, profile: null, log: [] })
+const previewState = ref({ status: null, deploymentId: null, profile: null, running: null, pending: null, log: [] })
+const isStoppingPreview = ref(false)
+const isBuilding = state => ['queued', 'building'].includes(state?.status) || ['queued', 'building'].includes(state?.pending?.status)
 const isPreviewBusy = ref(false)
 let previewTimer = null
 
@@ -110,9 +112,11 @@ const refreshPreviewStatus = async (productId) => {
         status: res.data.status,
         deploymentId: res.data.deployment_id,
         profile: res.data.profile,
+        running: res.data.running ?? null,
+        pending: res.data.pending || null,
         log: res.data.log || []
       }
-      if (!['queued', 'building'].includes(res.data.status)) stopPreviewPolling()
+      if (!isBuilding(previewState.value)) stopPreviewPolling()
     }
   } catch {
     stopPreviewPolling()
@@ -140,6 +144,8 @@ const deployPreview = async (productId) => {
     status: res.data.status,
     deploymentId: res.data.deployment_id,
     profile: res.data.profile,
+    running: res.data.running ?? null,
+    pending: res.data.pending || null,
     log: []
   }
   previewFile.value = null
@@ -155,6 +161,25 @@ const openPreview = async () => {
   if (!result.ok && result.message) errorMessage.value = result.message
 }
 
+const stopPreview = async () => {
+  if (!route.query.id || isStoppingPreview.value) return
+  isStoppingPreview.value = true
+  errorMessage.value = ''
+  try {
+    const config = useRuntimeConfig()
+    const authToken = useAuthCredential()
+    const res = await productApi(`${config.public.apiBase}/seller/products/${route.query.id}/preview/stop`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    previewState.value = { ...previewState.value, running: res?.data?.running ?? false }
+  } catch (error) {
+    errorMessage.value = error?.data?.message || 'Preview gagal dihentikan.'
+  } finally {
+    isStoppingPreview.value = false
+  }
+}
+
 const removePreview = async () => {
   if (!route.query.id || isPreviewBusy.value) return
   isPreviewBusy.value = true
@@ -167,7 +192,7 @@ const removePreview = async () => {
       headers: { Authorization: `Bearer ${authToken.value}` }
     })
     stopPreviewPolling()
-    previewState.value = { status: null, deploymentId: null, profile: null, log: [] }
+    previewState.value = { status: null, deploymentId: null, profile: null, running: null, pending: null, log: [] }
   } catch (error) {
     errorMessage.value = error?.data?.message || 'Preview gagal dihapus.'
   } finally {
@@ -253,9 +278,12 @@ const loadProduct = async () => {
           status: data.preview_status,
           deploymentId: null,
           profile: data.preview_profile,
+          running: null,
+          pending: data.preview_pending_status ? { status: data.preview_pending_status, profile: data.preview_pending_profile } : null,
           log: []
         }
-        if (['queued', 'building'].includes(data.preview_status)) startPreviewPolling(route.query.id)
+        refreshPreviewStatus(route.query.id)
+        if (isBuilding(previewState.value)) startPreviewPolling(route.query.id)
       }
       form.value = {
           ...createEmptyForm(),
@@ -881,19 +909,34 @@ onMounted(async () => {
             }"></i>
             <div>
               <strong>{{ previewStatusLabel }}</strong>
-              <small>Profil: {{ previewState.profile }}</small>
+              <small>
+                Profil: {{ previewState.profile }}
+                <template v-if="previewState.status === 'ready' && previewState.running === true"> · berjalan</template>
+                <template v-else-if="previewState.status === 'ready' && previewState.running === false"> · tidak berjalan (menyala otomatis saat dibuka)</template>
+              </small>
             </div>
           </div>
           <div v-if="isEditing" class="preview-status-actions">
             <button v-if="previewState.status === 'ready'" type="button" class="ic-icon-btn ok" title="Buka preview" aria-label="Buka preview" :disabled="isOpeningPreview" @click="openPreview">
               <i class="fa-solid" :class="isOpeningPreview ? 'fa-spinner fa-spin' : 'fa-arrow-up-right-from-square'"></i>
             </button>
+            <UiButton v-if="previewState.status === 'ready' && previewState.running === true" size="sm" variant="outline" :loading="isStoppingPreview" @click="stopPreview">Hentikan</UiButton>
             <button type="button" class="ic-icon-btn" title="Perbarui status" aria-label="Perbarui status" @click="refreshPreviewStatus(route.query.id)">
               <i class="fa-solid fa-rotate"></i>
             </button>
             <button type="button" class="ic-icon-btn danger" title="Hapus preview" aria-label="Hapus preview" :disabled="isPreviewBusy" @click="removePreview">
               <i class="fa-solid fa-trash"></i>
             </button>
+          </div>
+        </div>
+
+        <div v-if="previewState.pending" class="preview-pending" :class="previewState.pending.status" role="status">
+          <i class="fa-solid" :class="previewState.pending.status === 'failed' ? 'fa-triangle-exclamation' : 'fa-spinner fa-spin'"></i>
+          <div>
+            <strong v-if="previewState.pending.status === 'failed'">Build versi baru gagal</strong>
+            <strong v-else>Versi baru sedang dibangun ({{ previewState.pending.status === 'queued' ? 'antre' : 'build' }})</strong>
+            <small>Preview saat ini tetap aktif sampai versi baru siap.</small>
+            <pre v-if="previewState.pending.status === 'failed' && previewState.log.length" class="preview-log">{{ previewState.log.slice(-12).join('\n') }}</pre>
           </div>
         </div>
 
@@ -909,7 +952,7 @@ onMounted(async () => {
           <strong>{{ previewFile ? previewFile.name : 'Pilih source ZIP' }}</strong>
           <span>{{ previewFile ? formatBytes(previewFile.size) : 'Maks. 50 MB. Jangan sertakan node_modules atau file rahasia (.env).' }}</span>
         </label>
-        <p class="helper-text">ZIP akan di-build otomatis di sandbox setelah produk disimpan. Prosesnya bisa memakan beberapa menit.</p>
+        <p class="helper-text">ZIP akan di-build otomatis di sandbox setelah produk disimpan. Prosesnya bisa memakan beberapa menit.<template v-if="previewState.status === 'ready'"> Mengunggah ZIP baru membuat versi baru; preview yang sekarang tetap aktif sampai versi baru siap.</template></p>
       </section>
       </div>
 
@@ -1104,4 +1147,11 @@ textarea { resize: vertical; min-height: 110px; line-height: 1.55; }
   .section-heading p { text-align: left; }
 }
 
+
+.preview-pending { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; }
+.preview-pending.failed { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+.preview-pending i { margin-top: 3px; }
+.preview-pending strong { display: block; font-size: 13px; }
+.preview-pending small { display: block; margin-top: 2px; font-size: 12px; font-weight: 500; opacity: .85; }
+.preview-log { margin: 8px 0 0; max-height: 140px; overflow: auto; padding: 8px 10px; border-radius: 8px; background: #0f172a; color: #e2e8f0; font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; }
 </style>
