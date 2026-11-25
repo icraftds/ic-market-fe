@@ -4,6 +4,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const { session, syncSession } = useDemoAuth()
 
     const path = to.path
+    // Katalog komponen UI hanya ada di mode dev; lewati pemeriksaan peran (import.meta.dev dibuang di build produksi).
+    if (import.meta.dev && path.startsWith('/dev/')) return
     if (config.public.ssoEnabled && ['/login', '/register'].includes(path)) {
         const target = typeof to.query.redirect === 'string' ? to.query.redirect : '/'
         if (import.meta.client) {

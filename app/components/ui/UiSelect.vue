@@ -121,89 +121,70 @@ watch(() => props.disabled, (value) => { if (value) close() })
 </script>
 
 <template>
-  <div ref="root" class="ui-select" :class="[`is-${size}`, { 'is-open': open, 'is-disabled': disabled }]">
+  <div ref="root" class="tw:relative tw:w-full">
     <button
       ref="trigger"
       type="button"
-      class="ui-select__trigger"
       role="combobox"
       aria-haspopup="listbox"
       :aria-expanded="open"
       :aria-controls="`${uid}-list`"
       :aria-label="ariaLabel || undefined"
       :disabled="disabled"
+      class="tw:flex tw:w-full tw:cursor-pointer tw:items-center tw:justify-between tw:gap-2.5 tw:rounded-field tw:border tw:bg-white tw:text-left tw:font-medium tw:text-ink tw:transition tw:hover:border-slate-400 tw:focus-visible:border-brand tw:focus-visible:ring-4 tw:focus-visible:ring-brand/15 tw:focus-visible:outline-none tw:disabled:cursor-not-allowed tw:disabled:bg-slate-100 tw:disabled:text-slate-400"
+      :class="[
+        size === 'sm' ? 'tw:px-2.5 tw:py-1.5 tw:text-[13px]' : 'tw:px-3 tw:py-2.5 tw:text-sm',
+        open ? 'tw:border-brand tw:ring-4 tw:ring-brand/15' : 'tw:border-line'
+      ]"
       @click.prevent="toggle"
       @keydown="onKeydown"
     >
-      <span class="ui-select__value" :class="{ 'is-placeholder': !selectedLabel }">{{ selectedLabel || placeholder }}</span>
-      <svg class="ui-select__chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <span class="tw:truncate" :class="selectedLabel ? '' : 'tw:text-slate-400'">{{ selectedLabel || placeholder }}</span>
+      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" class="tw:shrink-0 tw:text-muted tw:transition-transform tw:duration-200" :class="open ? 'tw:rotate-180' : ''">
+        <path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
     </button>
 
-    <Transition name="ui-select-pop">
-      <ul v-if="open" :id="`${uid}-list`" ref="list" class="ui-select__menu" :class="{ 'is-up': openUp }" role="listbox" tabindex="-1">
+    <Transition
+      enter-active-class="tw:transition tw:duration-100 tw:ease-out"
+      enter-from-class="tw:-translate-y-1 tw:opacity-0"
+      leave-active-class="tw:transition tw:duration-100 tw:ease-in"
+      leave-to-class="tw:-translate-y-1 tw:opacity-0"
+    >
+      <ul
+        v-if="open"
+        :id="`${uid}-list`"
+        ref="list"
+        role="listbox"
+        tabindex="-1"
+        class="tw:absolute tw:inset-x-0 tw:z-60 tw:m-0 tw:max-h-66 tw:list-none tw:overflow-y-auto tw:rounded-xl tw:border tw:border-slate-200 tw:bg-white tw:p-1.5 tw:shadow-pop"
+        :class="openUp ? 'tw:bottom-[calc(100%+6px)]' : 'tw:top-[calc(100%+6px)]'"
+      >
         <li
           v-for="(item, i) in items"
           :key="String(item.value)"
-          class="ui-select__option"
-          :class="{ 'is-active': i === active, 'is-selected': i === selectedIndex, 'is-disabled': item.disabled }"
           role="option"
           :data-index="i"
           :aria-selected="i === selectedIndex"
           :aria-disabled="item.disabled || undefined"
+          class="tw:flex tw:cursor-pointer tw:items-center tw:gap-2.5 tw:rounded-lg tw:px-2.5 tw:py-2 tw:text-sm tw:font-medium tw:select-none"
+          :class="[
+            i === active ? 'tw:bg-slate-100' : '',
+            i === selectedIndex ? 'tw:font-bold tw:text-brand' : 'tw:text-slate-800',
+            item.disabled ? 'tw:cursor-not-allowed tw:opacity-45' : ''
+          ]"
           @mouseenter="!item.disabled && (active = i)"
           @pointerdown.prevent
           @click.prevent="choose(i)"
         >
-          <span class="ui-select__label">{{ item.label }}</span>
-          <span v-if="item.hint" class="ui-select__hint">{{ item.hint }}</span>
-          <svg v-if="i === selectedIndex" class="ui-select__check" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span class="tw:min-w-0 tw:flex-1 tw:truncate">{{ item.label }}</span>
+          <span v-if="item.hint" class="tw:text-xs tw:font-medium tw:text-slate-400">{{ item.hint }}</span>
+          <svg v-if="i === selectedIndex" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" class="tw:shrink-0">
+            <path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
         </li>
-        <li v-if="!items.length" class="ui-select__empty">Tidak ada pilihan</li>
+        <li v-if="!items.length" class="tw:p-2.5 tw:text-[13px] tw:text-slate-400">Tidak ada pilihan</li>
       </ul>
     </Transition>
   </div>
 </template>
-
-<style scoped>
-.ui-select { position: relative; width: 100%; }
-.ui-select__trigger {
-  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 10px 12px; border: 1px solid var(--ui-border, #d5dbe5); border-radius: var(--ui-radius, 10px);
-  background: var(--ui-surface, #fff); color: var(--ui-text, #0f172a);
-  font: inherit; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer;
-  transition: border-color .15s, box-shadow .15s, background .15s;
-}
-.is-sm .ui-select__trigger { padding: 7px 10px; font-size: 13px; }
-.ui-select__trigger:hover:not(:disabled) { border-color: #b6c0d0; }
-.ui-select__trigger:focus-visible,
-.is-open .ui-select__trigger { outline: none; border-color: var(--ui-brand, var(--brand, #2563eb)); box-shadow: 0 0 0 3px rgba(37, 99, 235, .14); }
-.ui-select__trigger:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
-.ui-select__value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ui-select__value.is-placeholder { color: #94a3b8; }
-.ui-select__chevron { flex: none; color: #64748b; transition: transform .18s; }
-.is-open .ui-select__chevron { transform: rotate(180deg); }
-
-.ui-select__menu {
-  position: absolute; z-index: 60; left: 0; right: 0; top: calc(100% + 6px);
-  margin: 0; padding: 6px; list-style: none; max-height: 264px; overflow-y: auto;
-  background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, .14), 0 2px 6px rgba(15, 23, 42, .06);
-  transform-origin: top center;
-}
-.ui-select__menu.is-up { top: auto; bottom: calc(100% + 6px); transform-origin: bottom center; }
-.ui-select__option {
-  display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px;
-  font-size: 14px; font-weight: 500; color: #1e293b; cursor: pointer; user-select: none;
-}
-.ui-select__option.is-active { background: #f1f5f9; }
-.ui-select__option.is-selected { color: var(--ui-brand, var(--brand, #2563eb)); font-weight: 700; }
-.ui-select__option.is-disabled { opacity: .45; cursor: not-allowed; }
-.ui-select__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ui-select__hint { font-size: 12px; font-weight: 500; color: #94a3b8; }
-.ui-select__check { flex: none; }
-.ui-select__empty { padding: 10px; font-size: 13px; color: #94a3b8; }
-
-.ui-select-pop-enter-active, .ui-select-pop-leave-active { transition: opacity .12s, transform .12s; }
-.ui-select-pop-enter-from, .ui-select-pop-leave-to { opacity: 0; transform: translateY(-4px) scale(.98); }
-@media (prefers-reduced-motion: reduce) { .ui-select-pop-enter-active, .ui-select-pop-leave-active, .ui-select__chevron { transition: none; } }
-</style>

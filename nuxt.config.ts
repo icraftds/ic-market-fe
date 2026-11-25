@@ -1,13 +1,20 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import process from 'node:process'
+import tailwindcss from '@tailwindcss/vite'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   
   css: [
     '~/assets/css/style.css',
-    '~/assets/css/flow.css'
+    '~/assets/css/flow.css',
+    '~/assets/css/tailwind.css'
   ],
+
+  vite: {
+    plugins: [tailwindcss()]
+  },
 
   app: {
     head: {

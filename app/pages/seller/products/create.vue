@@ -698,10 +698,7 @@ onMounted(async () => {
         </div>
 
         <div class="two-columns">
-          <label>
-            Harga (Rupiah)
-            <input v-model.number="form.price" type="number" min="0" />
-          </label>
+          <UiMoneyInput v-model="form.price" label="Harga (Rupiah)" :empty-value="0" hint="Isi 0 untuk produk gratis." />
           <label>
             Stok
             <input v-model.number="form.stock" type="number" min="0" />
