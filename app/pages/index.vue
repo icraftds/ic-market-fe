@@ -1,5 +1,6 @@
 <script setup>
 const productApi = useProductApi()
+const NuxtLinkComponent = resolveComponent('NuxtLink')
 const siteUrl = String(useRuntimeConfig().public.siteUrl).replace(/\/$/, '')
 useSeoMeta({
   title: 'IC Market – Jual Beli Aset Digital: Template, UI Kit, Source Code',
@@ -10,7 +11,7 @@ useSeoMeta({
   ogUrl: siteUrl + '/'
 })
 useHead({ script: [{ type: 'application/ld+json', innerHTML: JSON.stringify([
-  { '@context': 'https://schema.org', '@type': 'Organization', name: 'IC Market', url: siteUrl + '/', logo: siteUrl + '/logo-market.png' },
+  { '@context': 'https://schema.org', '@type': 'Organization', name: 'IC Market', url: siteUrl + '/', logo: siteUrl + '/logo-512.png' },
   { '@context': 'https://schema.org', '@type': 'WebSite', name: 'IC Market', url: siteUrl + '/', inLanguage: 'id' }
 ]) }] })
 import { computed, nextTick, onMounted, ref } from 'vue';
@@ -139,52 +140,6 @@ const getFanCardStyle = (idx) => {
   };
 };
 
-const catalogTags = (product) => {
-    if (Array.isArray(product?.tags) && product.tags.length) return product.tags;
-    return [product?.category, product?.type].filter(Boolean);
-};
-
-const catalogFeatures = (product) => {
-    if (Array.isArray(product?.features) && product.features.length) return product.features;
-    return [
-        `Dijual oleh ${product?.storeName || 'Seller IC Market'}`,
-        product?.type === 'Digital' ? 'Produk digital' : 'Produk marketplace',
-        'Dukungan seller'
-    ];
-};
-
-
-const catalogSpecifications = (product) => ({
-    lastUpdated:
-        product?.specifications?.lastUpdated ||
-        new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' })
-            .format(new Date(product?.updatedAt || product?.createdAt || Date.now())),
-    support: product?.specifications?.support || '30 Hari',
-    fileFormat:
-        product?.specifications?.fileFormat ||
-        (product?.type === 'Digital' ? 'File Digital' : 'Produk Fisik'),
-    license: product?.specifications?.license || 'Personal'
-});
-
-const catalogRating = (product) => Number(product?.reviews_avg_rating ?? product?.rating ?? 0);
-const catalogReviews = (product) => Number(product?.reviews_count ?? product?.review_count ?? 0);
-
-const selectedProduct = ref(null)
-const reviewMeta = ref(null)
-const reviewsLoading = ref(false)
-const reviewsConfig = useRuntimeConfig()
-const loadProductReviews = async (page = 1) => {
-    if (!selectedProduct.value || reviewsLoading.value) return
-    const id = selectedProduct.value.id
-    reviewsLoading.value = true
-    try {
-        const response = await productApi(`${reviewsConfig.public.apiBase}/products/${id}/reviews`, { query: { page, limit: 20 } })
-        if (selectedProduct.value?.id !== id) return
-        selectedProduct.value = { ...selectedProduct.value, reviews: response.data || [] }
-        reviewMeta.value = response.meta
-    } finally { reviewsLoading.value = false }
-};
-const activeImageIndex = ref(0);
 
 
 
@@ -262,78 +217,6 @@ const openPreview = (product) => {
     if (product?.slug) return navigateTo(`/product/${product.slug}`);
 };
 
-const closePreview = () => {
-    if (import.meta.client) {
-        const modal = document.getElementById('preview-modal');
-        if (modal) {
-            modal.style.transform = '';
-            modal.close();
-        }
-        document.body.style.overflow = '';
-    }
-    setTimeout(() => { selectedProduct.value = null; }, 300);
-};
-
-const handleModalClick = (e) => {
-    if (e.target.id === 'preview-modal') {
-        closePreview();
-    }
-};
-
-let isDragging = false;
-let touchStartY = 0;
-let touchCurrentY = 0;
-
-const handleDragStart = (y) => {
-    isDragging = true;
-    touchStartY = y;
-    touchCurrentY = y;
-    const modal = document.getElementById('preview-modal');
-    if (modal) modal.style.transition = 'none';
-    
-    // Attach global events for mouse dragging
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    window.addEventListener('mouseup', handleGlobalMouseUp);
-};
-
-const handleDragMove = (y) => {
-    if (!isDragging) return;
-    const modal = document.getElementById('preview-modal');
-    if (!modal) return;
-    touchCurrentY = y;
-    const diff = touchCurrentY - touchStartY;
-    if (diff > 0) {
-        modal.style.transform = `translateY(${diff}px)`;
-    }
-};
-
-const handleDragEnd = () => {
-    if (!isDragging) return;
-    isDragging = false;
-    
-    // Detach global events
-    window.removeEventListener('mousemove', handleGlobalMouseMove);
-    window.removeEventListener('mouseup', handleGlobalMouseUp);
-
-    const modal = document.getElementById('preview-modal');
-    if (!modal) return;
-    modal.style.transition = '';
-    const diff = touchCurrentY - touchStartY;
-    if (diff > 100) {
-        modal.style.transform = '';
-        closePreview();
-    } else {
-        modal.style.transform = 'translateY(0)';
-    }
-};
-
-const handleTouchStart = (e) => handleDragStart(e.touches[0].clientY);
-const handleTouchMove = (e) => handleDragMove(e.touches[0].clientY);
-const handleTouchEnd = (e) => handleDragEnd();
-
-const handleMouseDown = (e) => handleDragStart(e.clientY);
-const handleGlobalMouseMove = (e) => handleDragMove(e.clientY);
-const handleGlobalMouseUp = (e) => handleDragEnd();
 
 
 
@@ -559,12 +442,13 @@ onMounted(async () => {
 
         <!-- MIDDLE: FANNED OVERLAPPING CARDS (MATCHING REFERENCE IMAGE) -->
         <div class="hero-fan-deck" aria-label="Showcase Hot Products">
-          <div
+          <component
+            :is="product.slug ? NuxtLinkComponent : 'div'"
             v-for="(product, idx) in heroFannedCards"
             :key="product.fanKey || idx"
             class="hero-fan-card"
+            :to="product.slug ? `/product/${product.slug}` : undefined"
             :style="getFanCardStyle(idx)"
-            @click="openPreview(product)"
             :title="`Lihat detail hot product: ${product.name}`"
           >
             <!-- Floating Speech Bubble (@coplin & @andrea style) -->
@@ -574,7 +458,7 @@ onMounted(async () => {
 
             <div class="fan-card-inner">
               <div class="fan-card-thumb">
-                <img :src="catalogImage(product)" :alt="product.name" loading="lazy" />
+                <img :src="catalogImage(product)" :alt="product.name" width="195" height="150" loading="lazy" decoding="async" />
                 <span class="fan-card-badge">
                   <i class="fa-solid fa-fire"></i> Hot
                 </span>
@@ -593,7 +477,7 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
-          </div>
+          </component>
         </div>
 
         <!-- BOTTOM CONTENT (SUBTITLE & CTA BUTTONS) -->
@@ -745,132 +629,7 @@ onMounted(async () => {
     <SiteFooter />
 
         <!-- ======= PREVIEW MODAL ======= -->
-    <dialog id="preview-modal" class="preview-modal" @click="handleModalClick">
-        <button class="modal-close-btn" id="close-preview" aria-label="Tutup" @click="closePreview">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-        <div class="modal-drag-bar" 
-             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd"
-             @mousedown.prevent="handleMouseDown">
-            <div class="drag-handle"></div>
-        </div>
-        <div class="modal-inner" v-if="selectedProduct">
-            <!-- Gallery -->
-            <div class="modal-gallery">
-                <div class="gallery-main">
-                    <img :src="catalogImages(selectedProduct)[activeImageIndex]" :alt="selectedProduct.name" id="modal-img">
-                </div>
-                <div class="gallery-thumbs" v-if="catalogImages(selectedProduct).length > 1">
-                    <button v-for="(img, idx) in catalogImages(selectedProduct)" :key="idx" 
-                            class="thumb-btn" :class="{ active: idx === activeImageIndex }" 
-                            @click="activeImageIndex = idx">
-                        <img :src="img" alt="Thumbnail">
-                    </button>
-                </div>
-            </div>
-            <!-- Detail -->
-            <div class="modal-detail">
-                <div class="modal-detail-header">
-                    <div class="modal-tags" id="modal-tags">
-                        <span class="modal-tag" v-for="tag in catalogTags(selectedProduct)" :key="tag">{{ tag }}</span>
-                    </div>
-                    <h2 class="modal-title" id="modal-title">{{ selectedProduct.name }}</h2>
-                    <NuxtLink :to="'/store/' + selectedProduct.storeSlug" id="modal-seller-link" class="card-store" style="margin-top:0; margin-bottom:2px; width:max-content;">
-                        Oleh: {{ selectedProduct.storeName }}
-                    </NuxtLink>
-                    <div class="modal-price-row">
-                        <span class="modal-price" id="modal-price">
-                            <span v-if="selectedProduct.price === 0">Gratis</span>
-                            <span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(selectedProduct.price).toLocaleString('id-ID') }}</span>
-                        </span>
-                        <div class="modal-stars" id="modal-stars">
-                            <i class="fa-solid fa-star"></i>
-                            <span id="modal-rating-text">{{ catalogRating(selectedProduct) }} ({{ catalogReviews(selectedProduct) }} ulasan)</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-detail-body">
-                    <div>
-                        <div class="detail-section-label">Deskripsi</div>
-                        <p class="detail-desc" id="modal-desc">{{ selectedProduct.description }}</p>
-                    </div>
-                    <div>
-                        <div class="detail-section-label">Fitur Utama</div>
-                        <ul class="feature-list" id="modal-features">
-                            <li v-for="feature in catalogFeatures(selectedProduct)" :key="feature"><i class="fa-solid fa-check"></i> <span>{{ feature }}</span></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <div class="detail-section-label">Spesifikasi</div>
-                        <div class="specs-row">
-                            <div class="spec-pill">
-                                <span class="spec-pill-label">Terakhir Update</span>
-                                <span class="spec-pill-val"><i class="fa-regular fa-calendar"></i><span id="modal-spec-updated">{{ catalogSpecifications(selectedProduct).lastUpdated }}</span></span>
-                            </div>
-                            <div class="spec-pill">
-                                <span class="spec-pill-label">Dukungan</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-headset"></i><span id="modal-spec-support">{{ catalogSpecifications(selectedProduct).support }}</span></span>
-                            </div>
-                            <div class="spec-pill">
-                                <span class="spec-pill-label">Format File</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-file-zipper"></i><span id="modal-spec-format">{{ catalogSpecifications(selectedProduct).fileFormat }}</span></span>
-                            </div>
-                            <div class="spec-pill">
-                                <span class="spec-pill-label">Lisensi</span>
-                                <span class="spec-pill-val"><i class="fa-solid fa-shield"></i><span id="modal-spec-license">{{ catalogSpecifications(selectedProduct).license }}</span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-cta" style="display:flex; flex-direction:column; gap:12px;">
-                    <a v-if="selectedProduct && selectedProduct.preview_url" :href="selectedProduct.preview_url" target="_blank" class="cta-preview" style="display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:var(--subtle); border-radius:var(--radius-md); text-decoration:none; color:var(--text); font-weight:600;">
-                        <i class="fa-solid fa-desktop"></i> Lihat Demo / Preview
-                    </a>
-                    <div style="display:flex; gap:12px; width:100%;">
-                        <button class="cta-buy" id="modal-buy-direct-btn" 
-                                style="flex:1;" 
-                                :style="selectedProduct && isInCart(selectedProduct.id || selectedProduct.catalogId) ? 'opacity: 0.5; cursor: not-allowed;' : ''"
-                                :disabled="selectedProduct && isInCart(selectedProduct.id || selectedProduct.catalogId)"
-                                @click="handleDirectBuy(selectedProduct, $event); closePreview()">
-                            <i class="fa-solid fa-bolt"></i>
-                            <span>Beli Langsung</span>
-                        </button>
-                        <button class="cta-buy" id="modal-add-cart-btn" 
-                                style="flex:1;"
-                                :style="selectedProduct && isInCart(selectedProduct.id || selectedProduct.catalogId) ? 'background: #10b981; color: #fff; border: 1px solid #10b981;' : 'background:var(--surface); color:var(--text); border:1px solid var(--border);'"
-                                @click="handleAddCart(selectedProduct, $event); closePreview()">
-                            <template v-if="selectedProduct && isInCart(selectedProduct.id || selectedProduct.catalogId)">
-                                <i class="fa-solid fa-check"></i>
-                                <span>Di Keranjang</span>
-                            </template>
-                            <template v-else>
-                                <i class="fa-solid fa-cart-plus"></i>
-                                <span>Tambahkan Keranjang</span>
-                            </template>
-                        </button>
-                    </div>
-                </div>
-                
-                <ApiPagination :meta="reviewMeta" :busy="reviewsLoading" @page="loadProductReviews" />
-                <div v-if="selectedProduct && selectedProduct.reviews && selectedProduct.reviews.length" class="modal-reviews" style="padding: 0 24px 24px;">
-                    <h3 style="font-size: 1rem; margin-bottom: 12px;">Ulasan Pembeli</h3>
-                    <div class="review-scroll" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; scroll-snap-type: x mandatory;">
-                        <div v-for="review in selectedProduct.reviews" :key="review.id" style="flex: 0 0 280px; scroll-snap-align: start; background: var(--subtle); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);" :class="{ 'is-sultan-bg': review.user?.sultan_expires_at && new Date(review.user.sultan_expires_at) > new Date() }">
-                            <div style="display: flex; gap: 4px; color: #f59e0b; font-size: 0.8rem; margin-bottom: 8px;">
-                                <i v-for="n in 5" :key="n" :class="n <= review.rating ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
-                            </div>
-                            <p style="font-size: 0.9rem; line-height: 1.4; color: var(--text); margin-bottom: 12px;">"{{ review.comment }}"</p>
-                            <div style="font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; flex-wrap: wrap;">
-                                <span style="margin-right: 4px;">Oleh: {{ review.user ? review.user.name : 'Pembeli' }}</span>
-                                <span v-if="review.user?.sultan_expires_at && new Date(review.user.sultan_expires_at) > new Date()" class="sultan-badge"><i class="fa-solid fa-crown" style="font-size: 10px;"></i> Sultan</span>
-                                <span v-if="review.is_auto_generated" style="opacity: 0.5; margin-left: 4px;">(Sistem)</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </dialog>
+
 
     <!-- ======= CHECKOUT MODAL ======= -->
     <dialog id="checkout-modal" class="checkout-modal">

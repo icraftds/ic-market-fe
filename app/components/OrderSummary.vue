@@ -75,7 +75,7 @@ const resolveImage = (item) => {
     return imgs[0]
   }
   
-  return '/logo-market.png'
+  return '/logo-market.webp'
 }
 </script>
 

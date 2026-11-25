@@ -188,7 +188,7 @@ onBeforeUnmount(() => {
 
         <!-- Logo -->
         <NuxtLink to="/" class="nav-logo">
-          <img src="/logo-market.png" alt="IC Market" class="nav-logo-img" />
+          <img src="/logo-market.webp" alt="IC Market" class="nav-logo-img" width="147" height="28" />
         </NuxtLink>
 
         <!-- Search -->

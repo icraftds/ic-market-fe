@@ -62,7 +62,7 @@ const handlePreview = () => {
     @click="handlePreview"
   >
     <div class="card-thumb">
-      <img :src="catalogImage(product)" :alt="product.name" loading="lazy">
+      <img :src="catalogImage(product)" :alt="product.name" width="640" height="480" loading="lazy" decoding="async">
       <span class="card-badge" :class="product.price === 0 ? 'free' : 'premium'">
         {{ product.price === 0 ? 'Gratis' : 'Seller' }}
       </span>

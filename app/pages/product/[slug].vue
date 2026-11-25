@@ -196,7 +196,7 @@ onBeforeUnmount(() => { if (import.meta.client) window.removeEventListener('resi
     <div class="pd-grid">
       <section class="pd-gallery" aria-label="Galeri produk" :style="{ top: stickyTop + 'px' }">
         <div class="pd-main-img">
-          <img :src="images[activeImage]" :alt="product.name" fetchpriority="high">
+          <img :src="images[activeImage]" :alt="product.name" width="800" height="600" fetchpriority="high" decoding="async">
           <template v-if="images.length > 1">
             <button type="button" class="pd-nav prev" aria-label="Gambar sebelumnya" @click="goImage(activeImage - 1)"><i class="fa-solid fa-chevron-left"></i></button>
             <button type="button" class="pd-nav next" aria-label="Gambar berikutnya" @click="goImage(activeImage + 1)"><i class="fa-solid fa-chevron-right"></i></button>
@@ -205,7 +205,7 @@ onBeforeUnmount(() => { if (import.meta.client) window.removeEventListener('resi
         <div v-if="images.length > 1" class="pd-thumbs-wrap">
           <div ref="thumbStrip" class="pd-thumbs">
             <button v-for="(img, idx) in images" :key="idx" type="button" :data-idx="idx" :class="{ active: idx === activeImage }" :aria-label="`Lihat gambar ${idx + 1}`" :aria-current="idx === activeImage" @click="goImage(idx)">
-              <img :src="img" :alt="`${product.name} ${idx + 1}`" loading="lazy">
+              <img :src="img" :alt="`${product.name} ${idx + 1}`" width="76" height="58" loading="lazy">
             </button>
           </div>
         </div>
@@ -286,7 +286,7 @@ onBeforeUnmount(() => { if (import.meta.client) window.removeEventListener('resi
       </div>
       <div ref="relatedStrip" class="pd-related-strip">
         <NuxtLink v-for="item in related" :key="item.id" :to="`/product/${item.slug}`" class="pd-related-card">
-          <div class="pd-related-img"><img :src="relatedImage(item)" :alt="item.name" loading="lazy"></div>
+          <div class="pd-related-img"><img :src="relatedImage(item)" :alt="item.name" width="400" height="300" loading="lazy" decoding="async"></div>
           <div class="pd-related-body">
             <h3>{{ item.name }}</h3>
             <span class="pd-related-price">

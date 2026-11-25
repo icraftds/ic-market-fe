@@ -4,7 +4,7 @@
     <footer class="site-footer">
         <div class="footer-inner">
             <div class="footer-brand">
-                <img src="/logo-market.png" alt="IC Market" style="height: 32px; width: auto; margin-bottom: 12px; display: block;" />
+                <img src="/logo-market.webp" alt="IC Market" width="168" height="32" loading="lazy" style="height: 32px; width: auto; margin-bottom: 12px; display: block;" />
                 <p class="footer-tagline">Platform aset digital premium untuk developer dan desainer Indonesia.</p>
             </div>
             <div>
