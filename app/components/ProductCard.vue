@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -47,12 +48,11 @@ const isInCart = (productId) => {
   return apiCart.value?.some(item => item.product_id === productId || item.id === productId)
 }
 
+const productPath = computed(() => props.product.slug ? `/product/${props.product.slug}` : null)
+
 const handlePreview = () => {
-  if (props.showQuickView) {
-    emit('preview', props.product)
-  } else {
-    router.push(`/store/${props.product.storeSlug}`)
-  }
+  if (productPath.value) router.push(productPath.value)
+  else if (props.product.storeSlug) router.push(`/store/${props.product.storeSlug}`)
 }
 </script>
 
@@ -75,7 +75,7 @@ const handlePreview = () => {
       <a class="card-store" :href="`/store/${product.storeSlug || product.storeApplicationId}`" @click.stop>
         Oleh: {{ product.storeName || 'Seller' }}
       </a>
-      <h3 class="card-title">{{ product.name }}</h3>
+      <h3 class="card-title"><NuxtLink v-if="productPath" :to="productPath" class="card-title-link" @click.stop>{{ product.name }}</NuxtLink><template v-else>{{ product.name }}</template></h3>
       <div class="card-footer">
         <span class="card-price" :class="{ 'free-price': product.price === 0 }">
           <span v-if="product.price === 0">Gratis</span><span v-else><img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> {{ Number(product.price).toLocaleString('id-ID') }}</span>
@@ -119,6 +119,7 @@ const handlePreview = () => {
 </template>
 
 <style scoped>
+.card-title-link { color: inherit; text-decoration: none; }
 .in-cart {
   background: #16a34a !important;
   color: #ffffff !important;

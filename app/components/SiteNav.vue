@@ -705,22 +705,20 @@ onBeforeUnmount(() => {
 .nav-btn-ghost:hover { border-color: #1472ff; color: #1472ff; background: #f5f9ff; }
 
 .nav-btn-primary {
-  display: flex; align-items: center; gap: 7px;
-  padding: 9px 18px;
-  border-radius: 10px;
-  font-size: 0.86rem; font-weight: 700;
-  background: linear-gradient(135deg, #1472ff, #0f5fcb);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 0 20px;
+  min-height: 48px;
+  border-radius: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.84rem; font-weight: 700;
+  background: #1472ff;
   color: #fff;
   text-decoration: none;
   border: none; cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(20,114,255,0.30);
-  transition: transform 0.18s, box-shadow 0.18s;
+  transition: background 0.2s;
 }
-.nav-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(20,114,255,0.40);
-}
+.nav-btn-primary:hover { background: #1060d0; }
 
 /* Coin chip */
 .nav-coin-chip {

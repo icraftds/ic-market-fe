@@ -16,6 +16,12 @@ const config = useRuntimeConfig()
 const session = useState('icmarket-auth-session', () => null)
 const authStatus = useState('icmarket-auth-status', () => 'idle')
 const privateScreen = computed(() => route.path.startsWith('/admin/') || route.path.startsWith('/seller/') || ['/profile', '/cart', '/checkout', '/orders', '/payment', '/success', '/topup', '/vouchers'].includes(route.path))
+const noindexPaths = ['/login', '/register', '/auto-login', '/access-denied']
+const siteUrl = String(config.public.siteUrl || '').replace(/\/$/, '')
+useHead(() => ({
+  meta: [{ name: 'robots', content: privateScreen.value || noindexPaths.includes(route.path) ? 'noindex, nofollow' : 'index, follow' }],
+  link: [{ rel: 'canonical', href: siteUrl + (route.path === '/' ? '/' : route.path.replace(/\/$/, '')), key: 'canonical' }]
+}))
 const { pending: authPending, pendingError, run: runAuth, redirect: redirectAuth, reset: resetAuth } = useAuthPending()
 const pageContent = ref(null)
 let stopAuthWatch

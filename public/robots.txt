@@ -1,2 +1,18 @@
-User-Agent: *
-Disallow:
+User-agent: *
+Disallow: /admin/
+Disallow: /seller/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /payment
+Disallow: /success
+Disallow: /orders
+Disallow: /profile
+Disallow: /topup
+Disallow: /vouchers
+Disallow: /login
+Disallow: /register
+Disallow: /auto-login
+Disallow: /auth/
+Disallow: /api/
+
+Sitemap: https://market.icraftds.id/sitemap.xml

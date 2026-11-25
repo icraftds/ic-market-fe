@@ -10,10 +10,10 @@
             <div>
                 <div class="footer-col-title">Produk</div>
                 <ul class="footer-links">
-                    <li><a href="#">Web Template</a></li>
-                    <li><a href="#">UI Kit</a></li>
-                    <li><a href="#">Source Code</a></li>
-                    <li><a href="#">Gratis</a></li>
+                    <li><NuxtLink to="/kategori/web-template">Web Template</NuxtLink></li>
+                    <li><NuxtLink to="/kategori/ui-kit">UI Kit</NuxtLink></li>
+                    <li><NuxtLink to="/kategori/software">Software</NuxtLink></li>
+                    <li><NuxtLink to="/?q=gratis">Gratis</NuxtLink></li>
                 </ul>
             </div>
             <div>

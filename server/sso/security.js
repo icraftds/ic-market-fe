@@ -103,3 +103,21 @@ export const noStoreHeaders = {
 export const sessionCookieOptions = {
     path: '/', secure: true, httpOnly: true, sameSite: 'lax',
 }
+
+/*
+ * Halaman publik (katalog, detail produk, toko, konten statis) boleh di-cache CDN
+ * HANYA untuk pengunjung anonim (tanpa header Cookie). Semua yang lain tetap no-store.
+ */
+export const publicCacheHeaders = {
+    'cache-control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300',
+    'referrer-policy': 'no-referrer',
+    'x-content-type-options': 'nosniff',
+    vary: 'Cookie',
+}
+
+const PUBLIC_PAGE = /^\/(?:(?:product|store)\/[^/]+|blog|faq|panduan|tentang|kebijakan)?\/?$/
+
+export const cacheHeadersFor = ({ method = 'GET', path = '/', cookie = '' } = {}) =>
+    ['GET', 'HEAD'].includes(String(method).toUpperCase()) && !cookie && PUBLIC_PAGE.test(String(path).split('?')[0])
+        ? publicCacheHeaders
+        : noStoreHeaders

@@ -1,4 +1,5 @@
 <script setup>
+useSeoMeta({ title: 'Blog', description: 'Artikel dan tips seputar aset digital, desain, dan jualan online dari IC Market.' })
 definePageMeta({ layout: 'default' })
 </script>
 

@@ -1,0 +1,15 @@
+# IC Market
+
+> Marketplace aset digital Indonesia: template web, UI kit, source code, grafis, dan audio. Pembayaran memakai iCoin, akses instan setelah pembayaran, garansi 30 hari.
+
+## Halaman utama
+- [Beranda / katalog](https://market.icraftds.id/): produk terbaru dan kategori
+- [Panduan Pembelian](https://market.icraftds.id/panduan): cara membeli dengan iCoin
+- [FAQ](https://market.icraftds.id/faq): pertanyaan umum
+- [Kebijakan Layanan](https://market.icraftds.id/kebijakan): syarat dan ketentuan
+- [Tentang Kami](https://market.icraftds.id/tentang)
+
+## Data
+- [Sitemap](https://market.icraftds.id/sitemap.xml): indeks sitemap halaman, toko, dan produk
+- Halaman produk: https://market.icraftds.id/product/{slug}
+- Halaman toko: https://market.icraftds.id/store/{slug}

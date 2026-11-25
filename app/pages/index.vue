@@ -1,5 +1,18 @@
 <script setup>
 const productApi = useProductApi()
+const siteUrl = String(useRuntimeConfig().public.siteUrl).replace(/\/$/, '')
+useSeoMeta({
+  title: 'IC Market – Jual Beli Aset Digital: Template, UI Kit, Source Code',
+  description: 'Marketplace aset digital Indonesia: template web, UI kit, source code, grafis, dan audio. Harga terjangkau, akses instan, garansi 30 hari. Buka toko 0% komisi.',
+  ogTitle: 'IC Market – Marketplace Aset Digital Indonesia',
+  ogDescription: 'Template web, UI kit, source code, grafis, dan audio dengan akses instan dan garansi 30 hari.',
+  ogImage: siteUrl + '/og-default.png',
+  ogUrl: siteUrl + '/'
+})
+useHead({ script: [{ type: 'application/ld+json', innerHTML: JSON.stringify([
+  { '@context': 'https://schema.org', '@type': 'Organization', name: 'IC Market', url: siteUrl + '/', logo: siteUrl + '/logo-market.png' },
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'IC Market', url: siteUrl + '/', inLanguage: 'id' }
+]) }] })
 import { computed, nextTick, onMounted, ref } from 'vue';
 
 definePageMeta({ layout: 'default' })
@@ -13,7 +26,7 @@ const welcomeCoins = ref('1.000');
 const { products: catalogProducts, hotProducts, refreshCatalog, refreshHotProducts } = useProductCatalog();
 
 
-const isLoading = ref(true);
+const isLoading = ref(catalogProducts.value.length === 0);
 const route = useRoute();
 const activeCategory = ref('semua');
 const sortBy = ref('newest');
@@ -26,8 +39,28 @@ const loadMoreTrigger = ref(null);
 const showWelcome = ref(false);
 const welcomeUser = ref('');
 const welcomeType = ref('login');
-const featuredReviews = ref([]);
-const categories = ref([]);
+const featuredReviews = useState('home-featured-reviews', () => []);
+const categories = useState('home-categories', () => []);
+
+// SEO: render halaman pertama katalog + hot products di server supaya link produk ada di HTML awal.
+if (import.meta.server && !route.query.q && !route.query.category) {
+    await useAsyncData('home-ssr-catalog', async () => {
+        const api = useRuntimeConfig().public.apiBase;
+        const [response] = await Promise.all([
+            refreshCatalog({ page: 1, limit: 12, sort: 'newest' }),
+            refreshHotProducts(),
+            productApi(`${api}/products/categories`).then(r => { if (r?.success) categories.value = r.data; }).catch(() => {}),
+            productApi(`${api}/reviews/featured`).then(r => { if (r?.success) featuredReviews.value = r.data; }).catch(() => {})
+        ]);
+        if (response?.meta) {
+            totalProducts.value = response.meta.total;
+            hasMore.value = response.meta.current_page < response.meta.last_page;
+        }
+        return true;
+    });
+}
+if (catalogProducts.value.length) isLoading.value = false;
+const catalogPrefetched = catalogProducts.value.length > 0 && !route.query.q && !route.query.category;
 
 
 
@@ -225,19 +258,8 @@ const animateToCart = (btn) => {
 };
 
 const openPreview = (product) => {
-    selectedProduct.value = product;
-    reviewMeta.value = null;
-    loadProductReviews().catch(() => {});
-    activeImageIndex.value = 0;
-    if (import.meta.client) {
-        document.getElementById('preview-modal')?.showModal();
-        document.body.style.overflow = 'hidden';
-        
-        // Record view asynchronously
-        productApi(`${config.public.apiBase}/products/${product.id}/view`, {
-            method: 'POST'
-        }).catch(err => console.error('Failed to record view:', err));
-    }
+    // Detail produk sekarang halaman sendiri: /product/[slug] (SEO-friendly).
+    if (product?.slug) return navigateTo(`/product/${product.slug}`);
 };
 
 const closePreview = () => {
@@ -316,8 +338,8 @@ const handleGlobalMouseUp = (e) => handleDragEnd();
 
 
 
-const loadProducts = async (append = false) => {
-    if (!append) isLoading.value = true;
+const loadProducts = async (append = false, silent = false) => {
+    if (!append && !silent) isLoading.value = true;
     else isLoadingMore.value = true;
 
     const params = { page: currentPage.value, limit: 12 };
@@ -373,7 +395,7 @@ const applyRouteQuery = async () => {
         activeCategory.value = 'semua';
     }
     currentPage.value = 1;
-    await loadProducts();
+    await loadProducts(false, catalogPrefetched && !q && !cat);
     if (q || cat) {
         setTimeout(() => document.querySelector('.catalog-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
@@ -483,7 +505,7 @@ onMounted(async () => {
         </div>
 
         <!-- DUPLICATE FOR SEAMLESS 100% INFINITE LOOP -->
-        <div class="marquee-group" aria-hidden="true">
+        <div class="marquee-group" aria-hidden="true" inert>
           <NuxtLink to="/topup" class="marquee-item">
             <span class="m-tag"><img src="/icoinz.svg" alt="iCoinz" class="m-tag-icon" /> Top Up</span>
             <span class="m-text">Bonus saldo ekstra hingga <strong>+25% iCoin</strong> setiap isi ulang hari ini</span>
