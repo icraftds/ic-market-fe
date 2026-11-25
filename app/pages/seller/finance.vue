@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const SETTINGS_KEY = 'icmarket_system_settings'
 const LEGACY_FINANCE_KEY = 'icmarket_seller_finance'
@@ -296,8 +296,8 @@ const loadFinancePage = async () => {
   loadFinanceForActiveStore()
 }
 
-const changeActiveStore = (event) => {
-  const selected = selectStore(event.target.value)
+const changeActiveStore = (eventOrValue) => {
+  const selected = selectStore(eventOrValue?.target ? eventOrValue.target.value : eventOrValue)
   if (!selected) return
 
   finance.value = null
@@ -341,15 +341,7 @@ onBeforeUnmount(() => {
       <div class="hero-actions">
         <label v-if="approvedStores.length > 1" class="store-switcher">
           <span>Toko aktif</span>
-          <select :value="activeStoreId" @change="changeActiveStore">
-            <option
-              v-for="store in approvedStores"
-              :key="store.applicationId"
-              :value="store.applicationId"
-            >
-              {{ store.storeName }}{{ getTenantStatus(store) === 'suspended' ? ' (Suspended)' : '' }}
-            </option>
-          </select>
+          <UiSelect :model-value="activeStoreId" :options="approvedStores.map(store => ({ value: store.applicationId, label: store.storeName + (getTenantStatus(store) === 'suspended' ? ' (Suspended)' : '') }))" width="min(100%, 280px)" aria-label="Pilih toko" @change="changeActiveStore" />
         </label>
 
         <NuxtLink to="/seller/dashboard" class="back-button">

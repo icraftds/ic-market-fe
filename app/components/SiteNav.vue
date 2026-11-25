@@ -431,14 +431,8 @@ onBeforeUnmount(() => {
           to="/vouchers" class="nb-link"
         >Voucher Saya</NuxtLink>
 
-        <!-- Seller links -->
-        <template v-if="role === 'seller'">
-          <span class="nb-sep">|</span>
-          <NuxtLink to="/seller/dashboard" class="nb-link">Dashboard</NuxtLink>
-          <NuxtLink to="/seller/products" class="nb-link">Produk</NuxtLink>
-          <NuxtLink to="/seller/orders" class="nb-link">Pesanan Masuk</NuxtLink>
-          <NuxtLink to="/seller/finance" class="nb-link">Finance</NuxtLink>
-        </template>
+        <!-- Seller: menu lengkap ada di sidebar Seller Center, di sini cukup satu pintu masuk -->
+        <NuxtLink v-if="role === 'seller'" to="/seller/dashboard" class="nb-link highlight">Seller Center</NuxtLink>
 
         <!-- Admin links -->
         <template v-if="role === 'admin'">

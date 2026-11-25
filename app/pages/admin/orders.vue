@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const config = useRuntimeConfig()
 const authToken = useAuthCredential()
@@ -153,14 +153,7 @@ onBeforeUnmount(() => {
 
     <section class="toolbar">
       <input v-model="search" type="search" placeholder="Cari order, buyer, toko, schema, atau produk...">
-      <select v-model="statusFilter">
-        <option value="all">Semua Status</option>
-        <option value="pending">Menunggu Pembayaran</option>
-        <option value="paid">Sudah Dibayar</option>
-        <option value="processing">Diproses</option>
-        <option value="completed">Selesai</option>
-        <option value="cancelled">Dibatalkan</option>
-      </select>
+      <UiSelect v-model="statusFilter" :options="[{ value: 'all', label: 'Semua Status' }, { value: 'pending', label: 'Menunggu Pembayaran' }, { value: 'paid', label: 'Sudah Dibayar' }, { value: 'processing', label: 'Diproses' }, { value: 'completed', label: 'Selesai' }, { value: 'cancelled', label: 'Dibatalkan' }]" width="min(100%, 220px)" />
     </section>
 
     <section v-if="filteredOrders.length" class="orders-list">

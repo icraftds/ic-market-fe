@@ -156,6 +156,17 @@ const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart()
 const inCart = computed(() => apiCart.value?.some(item => item.product_id === product.value.id || item.id === product.value.id))
 const busy = ref(false)
 
+const { openPreview: openEnginePreviewTab, openingId: openingPreviewId } = useEnginePreview()
+const previewBusy = computed(() => openingPreviewId.value !== null)
+const previewError = ref('')
+const hasEnginePreview = computed(() => product.value?.preview_status === 'ready')
+
+const openEnginePreview = async () => {
+  previewError.value = ''
+  const result = await openEnginePreviewTab(product.value.id, product.value.name)
+  if (!result.ok && result.message) previewError.value = result.message
+}
+
 const buyNow = async () => {
   if (price.value === 0 || busy.value) return
   busy.value = true
@@ -235,8 +246,12 @@ onBeforeUnmount(() => { if (import.meta.client) window.removeEventListener('resi
             <template v-else-if="inCart"><i class="fa-solid fa-check"></i> Di Keranjang</template>
             <template v-else><i class="fa-solid fa-cart-plus"></i> Keranjang</template>
           </button>
+          <button v-if="hasEnginePreview" type="button" class="pd-btn ghost live" :disabled="previewBusy" @click="openEnginePreview">
+            <i class="fa-solid" :class="previewBusy ? 'fa-spinner fa-spin' : 'fa-play'"></i> Coba Live Preview
+          </button>
           <a v-if="product.preview_url" :href="product.preview_url" target="_blank" rel="noopener noreferrer" class="pd-btn ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i> Live Preview</a>
         </div>
+        <p v-if="previewError" class="pd-preview-error" role="alert">{{ previewError }}</p>
         <p class="pd-trust">Akses instan setelah pembayaran · Garansi 30 hari</p>
 
         <div v-if="features.length" class="pd-section">
@@ -339,6 +354,8 @@ onBeforeUnmount(() => { if (import.meta.client) window.removeEventListener('resi
 .pd-btn:hover:not(:disabled) { opacity: .85; }
 .pd-btn.primary { background: var(--accent, #111110); border-color: var(--accent, #111110); color: #fff; }
 .pd-btn.ghost { flex-basis: 100%; background: transparent; color: var(--muted); font-weight: 500; }
+.pd-btn.ghost.live { color: var(--text); font-weight: 600; border-color: var(--accent, #111110); }
+.pd-preview-error { margin: 8px 0 0; color: #b91c1c; font-size: .85rem; }
 .pd-btn.done { background: var(--green, #16a34a); border-color: var(--green, #16a34a); color: #fff; }
 .pd-btn:disabled { opacity: .6; cursor: not-allowed; }
 .pd-trust { margin: 12px 0 0; font-size: .82rem; color: var(--muted); }

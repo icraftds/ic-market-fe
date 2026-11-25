@@ -1,6 +1,8 @@
 <script setup>
 const productApi = useProductApi()
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+
+definePageMeta({ layout: 'dashboard' })
 
 const route = useRoute()
 const router = useRouter()
@@ -49,6 +51,156 @@ const errorMessage = ref('')
 const assetMessage = ref('')
 const savedMessage = ref('')
 const isProcessingImages = ref(false)
+const isReady = ref(false)
+
+const PREVIEW_PROFILES = [
+  { value: 'static', label: 'Static (HTML/CSS/JS)' },
+  { value: 'node-spa', label: 'Node SPA (React, Vue, Vite)' },
+  { value: 'node-server', label: 'Node Server (Express, Next, Nuxt)' },
+  { value: 'php', label: 'PHP' },
+  { value: 'php-laravel', label: 'Laravel' },
+  { value: 'python-server', label: 'Python (Django, Flask, FastAPI)' },
+  { value: 'go-server', label: 'Go' },
+  { value: 'rust-server', label: 'Rust' }
+]
+const MAX_PREVIEW_ZIP_BYTES = 50 * 1024 * 1024
+const previewProfile = ref('static')
+const previewFile = ref(null)
+const previewState = ref({ status: null, deploymentId: null, profile: null, running: null, pending: null, log: [] })
+const isStoppingPreview = ref(false)
+const isBuilding = state => ['queued', 'building'].includes(state?.status) || ['queued', 'building'].includes(state?.pending?.status)
+const isPreviewBusy = ref(false)
+let previewTimer = null
+
+const previewStatusLabel = computed(() => ({
+  queued: 'Dalam antrean',
+  building: 'Sedang build',
+  ready: 'Siap dilihat',
+  failed: 'Build gagal'
+}[previewState.value.status] || 'Belum ada preview'))
+
+const handlePreviewFile = (event) => {
+  errorMessage.value = ''
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  if (!/\.zip$/i.test(file.name)) {
+    errorMessage.value = 'Preview harus berupa file .zip.'
+    return
+  }
+  if (file.size > MAX_PREVIEW_ZIP_BYTES) {
+    errorMessage.value = 'File ZIP preview maksimal 50 MB.'
+    return
+  }
+  previewFile.value = file
+}
+
+const stopPreviewPolling = () => {
+  if (previewTimer) clearInterval(previewTimer)
+  previewTimer = null
+}
+
+const refreshPreviewStatus = async (productId) => {
+  const config = useRuntimeConfig()
+  const authToken = useAuthCredential()
+  try {
+    const res = await productApi(`${config.public.apiBase}/seller/products/${productId}/preview`, {
+      headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    if (res.success) {
+      previewState.value = {
+        status: res.data.status,
+        deploymentId: res.data.deployment_id,
+        profile: res.data.profile,
+        running: res.data.running ?? null,
+        pending: res.data.pending || null,
+        log: res.data.log || []
+      }
+      if (!isBuilding(previewState.value)) stopPreviewPolling()
+    }
+  } catch {
+    stopPreviewPolling()
+  }
+}
+
+const startPreviewPolling = (productId) => {
+  stopPreviewPolling()
+  previewTimer = setInterval(() => refreshPreviewStatus(productId), 4000)
+}
+
+const deployPreview = async (productId) => {
+  const config = useRuntimeConfig()
+  const authToken = useAuthCredential()
+  const body = new FormData()
+  body.append('archive', previewFile.value)
+  body.append('profile', previewProfile.value)
+
+  const res = await productApi(`${config.public.apiBase}/seller/products/${productId}/preview`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${authToken.value}` },
+    body
+  })
+  previewState.value = {
+    status: res.data.status,
+    deploymentId: res.data.deployment_id,
+    profile: res.data.profile,
+    running: res.data.running ?? null,
+    pending: res.data.pending || null,
+    log: []
+  }
+  previewFile.value = null
+  startPreviewPolling(productId)
+}
+
+const { openPreview: openEnginePreview, openingId: openingPreviewId } = useEnginePreview()
+const isOpeningPreview = computed(() => openingPreviewId.value !== null)
+const openPreview = async () => {
+  if (!route.query.id) return
+  errorMessage.value = ''
+  const result = await openEnginePreview(route.query.id, form.value.name)
+  if (!result.ok && result.message) errorMessage.value = result.message
+}
+
+const stopPreview = async () => {
+  if (!route.query.id || isStoppingPreview.value) return
+  isStoppingPreview.value = true
+  errorMessage.value = ''
+  try {
+    const config = useRuntimeConfig()
+    const authToken = useAuthCredential()
+    const res = await productApi(`${config.public.apiBase}/seller/products/${route.query.id}/preview/stop`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    previewState.value = { ...previewState.value, running: res?.data?.running ?? false }
+  } catch (error) {
+    errorMessage.value = error?.data?.message || 'Preview gagal dihentikan.'
+  } finally {
+    isStoppingPreview.value = false
+  }
+}
+
+const removePreview = async () => {
+  if (!route.query.id || isPreviewBusy.value) return
+  isPreviewBusy.value = true
+  errorMessage.value = ''
+  try {
+    const config = useRuntimeConfig()
+    const authToken = useAuthCredential()
+    await productApi(`${config.public.apiBase}/seller/products/${route.query.id}/preview`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${authToken.value}` }
+    })
+    stopPreviewPolling()
+    previewState.value = { status: null, deploymentId: null, profile: null, running: null, pending: null, log: [] }
+  } catch (error) {
+    errorMessage.value = error?.data?.message || 'Preview gagal dihapus.'
+  } finally {
+    isPreviewBusy.value = false
+  }
+}
+
+onBeforeUnmount(stopPreviewPolling)
 
 const normalizeProduct = (product) => {
   const defaults = createEmptyForm()
@@ -121,6 +273,18 @@ const loadProduct = async () => {
           id: img.id || `existing-${index}-${Date.now()}`
         }
       })
+      if (data.preview_status) {
+        previewState.value = {
+          status: data.preview_status,
+          deploymentId: null,
+          profile: data.preview_profile,
+          running: null,
+          pending: data.preview_pending_status ? { status: data.preview_pending_status, profile: data.preview_pending_profile } : null,
+          log: []
+        }
+        refreshPreviewStatus(route.query.id)
+        if (isBuilding(previewState.value)) startPreviewPolling(route.query.id)
+      }
       form.value = {
           ...createEmptyForm(),
           ...data,
@@ -427,11 +591,11 @@ const saveProduct = async () => {
       images: imageUrls,
       features: cleanedFeatures,
       specifications: cleanedSpecs,
-      digital_files: cleanedDigitalFiles,
       preview_url: form.value.previewUrl,
       tags: cleanedTags
     }
 
+    let productId = route.query.id
     if (isEditing.value) {
       await productApi(`${config.public.apiBase}/seller/products/${route.query.id}`, {
           method: 'PUT',
@@ -439,15 +603,29 @@ const saveProduct = async () => {
           body: payload
       })
     } else {
-      await productApi(`${config.public.apiBase}/seller/products`, {
+      const created = await productApi(`${config.public.apiBase}/seller/products`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${authToken.value}` },
           body: payload
       })
+      productId = created?.data?.id
     }
 
-    savedMessage.value = `Produk berhasil disimpan.`
-    setTimeout(() => router.push('/seller/products'), 500)
+    if (previewFile.value && productId) {
+      try {
+        await deployPreview(productId)
+      } catch (error) {
+        // Produk sudah tersimpan; pindah ke mode edit supaya upload ulang tidak membuat duplikat.
+        if (!isEditing.value) await router.replace({ query: { id: productId } })
+        errorMessage.value = `Produk tersimpan, tetapi preview gagal: ${error?.data?.message || 'coba lagi.'}`
+        return
+      }
+    }
+
+    savedMessage.value = previewFile.value === null && previewState.value.status
+      ? 'Produk tersimpan. Preview sedang diproses.'
+      : 'Produk berhasil disimpan.'
+    setTimeout(() => router.push('/seller/products'), 800)
   } catch (error) {
     errorMessage.value = 'Produk gagal disimpan. Silakan coba lagi.'
   }
@@ -477,25 +655,33 @@ const initializePage = async () => {
   loadProduct()
 }
 
-onMounted(initializePage)
+onMounted(async () => {
+  try {
+    await initializePage()
+  } finally {
+    isReady.value = true
+  }
+})
 </script>
 
 <template>
   <main class="product-form-page">
-    <NuxtLink to="/seller/products" class="back-link">← Kembali ke Produk Saya</NuxtLink>
-
     <section class="form-heading">
-      <p class="eyebrow">SELLER CENTER</p>
-      <h1>{{ isEditing ? 'Edit Produk' : 'Tambah Produk' }}</h1>
-      <p>Isi informasi produk, gambar katalog, dan aset digital untuk IC Market.</p>
+      <div>
+        <NuxtLink to="/seller/products" class="back-link"><i class="fa-solid fa-arrow-left"></i> Produk Saya</NuxtLink>
+        <h2>{{ isEditing ? 'Edit Produk' : 'Produk Baru' }}</h2>
+        <p>Isi informasi produk, gambar katalog, dan aset digital untuk IC Market.</p>
+      </div>
       <div v-if="activeStore" class="store-context">
-        <span>Produk akan disimpan ke</span>
-        <strong>{{ activeStore.storeName }}</strong>
-        <small>/{{ activeStore.storeSlug }}</small>
+        <i class="fa-solid fa-store"></i>
+        <div>
+          <strong>{{ activeStore.storeName }}</strong>
+          <small>/{{ activeStore.storeSlug }}</small>
+        </div>
       </div>
     </section>
 
-    <section v-if="!activeStore" class="no-store-state">
+    <section v-if="isReady && !activeStore" class="no-store-state">
       <h2>Belum ada toko aktif</h2>
       <p>Produk hanya dapat ditambahkan ke toko yang sudah disetujui.</p>
       <NuxtLink to="/seller/register" class="primary-button">Lihat Toko Saya</NuxtLink>
@@ -513,6 +699,7 @@ onMounted(initializePage)
     </section>
 
     <form v-else class="product-form" @submit.prevent="saveProduct">
+      <div class="form-main">
       <section class="form-section">
         <div class="section-heading">
           <div>
@@ -530,42 +717,21 @@ onMounted(initializePage)
         <div class="two-columns">
           <label>
             Kategori
-            <select v-model="form.category">
-              <option>Template</option>
-              <option>Design Asset</option>
-              <option>Software</option>
-              <option>Course</option>
-              <option>Lainnya</option>
-            </select>
+            <UiSelect v-model="form.category" :options="['Template', 'Design Asset', 'Software', 'Course', 'Lainnya']" aria-label="Kategori" />
           </label>
           <label>
             Jenis Produk
-            <select v-model="form.type">
-              <option>Digital</option>
-              <option>Fisik</option>
-            </select>
+            <UiSelect v-model="form.type" :options="['Digital', 'Fisik']" aria-label="Jenis produk" />
           </label>
         </div>
 
         <div class="two-columns">
-          <label>
-            Harga (Rupiah)
-            <input v-model.number="form.price" type="number" min="0" />
-          </label>
+          <UiMoneyInput v-model="form.price" label="Harga (Rupiah)" :empty-value="0" hint="Isi 0 untuk produk gratis." />
           <label>
             Stok
             <input v-model.number="form.stock" type="number" min="0" />
           </label>
         </div>
-
-        <label>
-          Status
-          <select v-model="form.status">
-            <option value="draft">Draft</option>
-            <option value="published">Dipublikasikan</option>
-            <option value="inactive">Nonaktif</option>
-          </select>
-        </label>
 
         <label>
           Tag (Opsional)
@@ -596,12 +762,14 @@ onMounted(initializePage)
             </div>
 
             <button
-              class="small-secondary-button"
+              class="small-secondary-button ic-icon-btn"
+              title="Tambah fitur"
+              aria-label="Tambah fitur"
               type="button"
               :disabled="form.features.length >= 8"
               @click="addFeature"
             >
-              + Tambah Fitur
+              <i class="fa-solid fa-plus"></i>
             </button>
           </div>
 
@@ -680,13 +848,7 @@ onMounted(initializePage)
 
             <label>
               Lisensi
-              <select v-model="form.specifications.license">
-                <option>Personal</option>
-                <option>Commercial</option>
-                <option>Extended</option>
-                <option>Open Source</option>
-                <option>Custom</option>
-              </select>
+              <UiSelect v-model="form.specifications.license" :options="['Personal', 'Commercial', 'Extended', 'Open Source', 'Custom']" aria-label="Lisensi" />
             </label>
           </div>
         </div>
@@ -723,562 +885,273 @@ onMounted(initializePage)
                 Alt text
                 <input v-model="image.altText" maxlength="150" placeholder="Deskripsi singkat gambar" />
               </label>
-              <button type="button" class="remove-button" @click="removeImage(image.id)">Hapus gambar</button>
+              <button type="button" class="ic-icon-btn danger" title="Hapus gambar" aria-label="Hapus gambar" @click="removeImage(image.id)"><i class="fa-solid fa-trash"></i></button>
             </div>
           </article>
         </div>
       </section>
 
-      <section v-if="form.type === 'Digital'" class="form-section">
+      <section class="form-section">
         <div class="section-heading">
           <div>
             <span class="section-step">04</span>
-            <h2>File Digital</h2>
+            <h2>Preview Live</h2>
           </div>
-          <p>Maksimal {{ MAX_DIGITAL_FILES }} file. Maks. 100 MB per file.</p>
+          <p>Opsional. Unggah source ZIP agar pembeli bisa mencoba produk langsung.</p>
         </div>
+
+        <div v-if="previewState.status" class="preview-status" :class="previewState.status">
+          <div class="preview-status-main">
+            <i class="fa-solid" :class="{
+              'fa-circle-check': previewState.status === 'ready',
+              'fa-circle-xmark': previewState.status === 'failed',
+              'fa-spinner fa-spin': ['queued', 'building'].includes(previewState.status)
+            }"></i>
+            <div>
+              <strong>{{ previewStatusLabel }}</strong>
+              <small>
+                Profil: {{ previewState.profile }}
+                <template v-if="previewState.status === 'ready' && previewState.running === true"> · berjalan</template>
+                <template v-else-if="previewState.status === 'ready' && previewState.running === false"> · tidak berjalan (menyala otomatis saat dibuka)</template>
+              </small>
+            </div>
+          </div>
+          <div v-if="isEditing" class="preview-status-actions">
+            <button v-if="previewState.status === 'ready'" type="button" class="ic-icon-btn ok" title="Buka preview" aria-label="Buka preview" :disabled="isOpeningPreview" @click="openPreview">
+              <i class="fa-solid" :class="isOpeningPreview ? 'fa-spinner fa-spin' : 'fa-arrow-up-right-from-square'"></i>
+            </button>
+            <UiButton v-if="previewState.status === 'ready' && previewState.running === true" size="sm" variant="outline" :loading="isStoppingPreview" @click="stopPreview">Hentikan</UiButton>
+            <button type="button" class="ic-icon-btn" title="Perbarui status" aria-label="Perbarui status" @click="refreshPreviewStatus(route.query.id)">
+              <i class="fa-solid fa-rotate"></i>
+            </button>
+            <button type="button" class="ic-icon-btn danger" title="Hapus preview" aria-label="Hapus preview" :disabled="isPreviewBusy" @click="removePreview">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div v-if="previewState.pending" class="preview-pending" :class="previewState.pending.status" role="status">
+          <i class="fa-solid" :class="previewState.pending.status === 'failed' ? 'fa-triangle-exclamation' : 'fa-spinner fa-spin'"></i>
+          <div>
+            <strong v-if="previewState.pending.status === 'failed'">Build versi baru gagal</strong>
+            <strong v-else>Versi baru sedang dibangun ({{ previewState.pending.status === 'queued' ? 'antre' : 'build' }})</strong>
+            <small>Preview saat ini tetap aktif sampai versi baru siap.</small>
+            <pre v-if="previewState.pending.status === 'failed' && previewState.log.length" class="preview-log">{{ previewState.log.slice(-12).join('\n') }}</pre>
+          </div>
+        </div>
+
+        <div class="two-columns">
+          <label>
+            Jenis Proyek
+            <UiSelect v-model="previewProfile" :options="PREVIEW_PROFILES" aria-label="Profil build preview" />
+          </label>
+        </div>
+
         <label class="upload-box">
-          <input class="file-input" type="file" multiple @change="handleDigitalFiles" />
-          <strong>Pilih file digital</strong>
-          <span>Contoh: ZIP, PDF, source design, atau dokumen aset digital.</span>
+          <input class="file-input" type="file" accept=".zip,application/zip" @change="handlePreviewFile" />
+          <strong>{{ previewFile ? previewFile.name : 'Pilih source ZIP' }}</strong>
+          <span>{{ previewFile ? formatBytes(previewFile.size) : 'Maks. 50 MB. Jangan sertakan node_modules atau file rahasia (.env).' }}</span>
         </label>
-
-        <div v-if="form.digitalFiles.length" class="digital-file-list">
-          <article v-for="file in form.digitalFiles" :key="file.id" class="digital-file-card">
-            <div class="file-icon">
-              <span v-if="file.uploading" class="upload-spinner">⏳</span>
-              <span v-else-if="file.downloadUrl">✅</span>
-              <span v-else>📄</span>
-            </div>
-            <div class="file-info">
-              <strong>{{ file.fileName }}</strong>
-              <span>{{ formatBytes(file.fileSizeBytes) }} · {{ file.mimeType }}</span>
-              <span v-if="file.uploading" class="upload-status">Mengupload...</span>
-              <span v-else-if="file.downloadUrl" class="upload-status success">File siap didownload ✓</span>
-              <span v-else class="upload-status warn">Belum ada URL download</span>
-              <label>
-                Versi
-                <input v-model="file.version" maxlength="20" placeholder="1.0.0" />
-              </label>
-              <label v-if="file.isManual">
-                URL Download Eksternal
-                <input v-model="file.downloadUrl" type="url" placeholder="https://drive.google.com/..." />
-              </label>
-            </div>
-            <button type="button" class="remove-button" @click="removeDigitalFile(file.id)">Hapus</button>
-          </article>
-        </div>
-        
-        <div class="manual-add-file">
-          <button type="button" class="add-file-btn" @click="addManualFile" :disabled="form.digitalFiles.length >= MAX_DIGITAL_FILES">
-            + Tambah File via Link Eksternal
-          </button>
-          <p class="hint-text">Atau unggah langsung melalui tombol pilih file di atas.</p>
-        </div>
+        <p class="helper-text">ZIP akan di-build otomatis di sandbox setelah produk disimpan. Prosesnya bisa memakan beberapa menit.<template v-if="previewState.status === 'ready'"> Mengunggah ZIP baru membuat versi baru; preview yang sekarang tetap aktif sampai versi baru siap.</template></p>
       </section>
-
-      <p v-if="assetMessage" class="asset-message">{{ assetMessage }}</p>
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-      <p v-if="savedMessage" class="success-message">{{ savedMessage }}</p>
-
-      <div class="form-actions">
-        <NuxtLink to="/seller/products" class="secondary-button">Batal</NuxtLink>
-        <button class="primary-button" type="submit">{{ isEditing ? 'Simpan Perubahan' : 'Simpan Produk' }}</button>
       </div>
+
+      <aside class="form-side">
+        <div class="side-card">
+          <h3>Publikasi</h3>
+          <label>
+            Status
+            <UiSelect v-model="form.status" :options="[{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Dipublikasikan' }, { value: 'inactive', label: 'Nonaktif' }]" aria-label="Status produk" />
+          </label>
+
+          <dl class="summary-list">
+            <div><dt>Nama</dt><dd>{{ form.name || '—' }}</dd></div>
+            <div><dt>Kategori</dt><dd>{{ form.category }}</dd></div>
+            <div><dt>Harga</dt><dd>{{ Number(form.price) ? 'Rp ' + Number(form.price).toLocaleString('id-ID') : 'Gratis' }}</dd></div>
+            <div><dt>Gambar</dt><dd>{{ form.images.length }} / {{ MAX_IMAGES }}</dd></div>
+          </dl>
+
+          <p v-if="assetMessage" class="asset-message">{{ assetMessage }}</p>
+          <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+          <p v-if="savedMessage" class="success-message">{{ savedMessage }}</p>
+
+          <div class="form-actions">
+            <button class="primary-button" type="submit">
+              <i class="fa-solid fa-floppy-disk"></i>
+              {{ isEditing ? 'Simpan Perubahan' : 'Simpan Produk' }}
+            </button>
+            <NuxtLink to="/seller/products" class="secondary-button">Batal</NuxtLink>
+          </div>
+        </div>
+      </aside>
     </form>
   </main>
 </template>
 
 <style scoped>
 .product-form-page {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 48px 24px 80px;
-}
-
-.back-link {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.form-heading {
-  margin: 34px 0 28px;
-}
-
-.eyebrow {
-  margin-bottom: 8px;
-  color: var(--accent-2);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 2px;
-}
-
-.form-heading h1 {
-  font-size: clamp(32px, 5vw, 44px);
-  letter-spacing: -1.2px;
-}
-
-.form-heading > p:last-child {
-  margin-top: 8px;
-  color: var(--muted);
-}
-
-.store-context {
+  --card: #ffffff;
+  --line: #e5e9f0;
+  --ink: #0f172a;
+  --sub: #64748b;
+  --brand: #2563eb;
+  color: var(--ink);
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-  padding: 11px 13px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--subtle);
-  font-size: 12px;
-}
-
-.store-context span,
-.store-context small {
-  color: var(--muted);
-}
-
-.no-store-state {
-  display: grid;
-  justify-items: start;
-  gap: 10px;
-  padding: 28px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--surface);
-}
-
-.no-store-state p {
-  margin: 0 0 4px;
-  color: var(--muted);
-}
-
-.suspended-state {
-  border-color: #fecaca;
-}
-
-.suspended-state h2 {
-  color: #991b1b;
-}
-
-.product-form {
-  display: grid;
-  gap: 20px;
-}
-
-.form-section {
-  display: grid;
-  gap: 20px;
-  padding: 28px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--surface);
-}
-
-.section-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding-bottom: 4px;
-}
-
-.section-heading > div {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.section-heading h2 {
-  font-size: 19px;
-}
-
-.section-heading p {
-  max-width: 330px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-  text-align: right;
-}
-
-.section-step {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--subtle);
-  color: var(--accent-2);
-  font-size: 11px;
-  font-weight: 900;
-}
-.helper-text {
-  font-size: 0.85rem;
-  color: var(--muted, #64748b);
-  display: block;
-  margin-top: 4px;
-}
-.product-form label {
-  display: grid;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.product-form input,
-.product-form select,
-.product-form textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--bg);
-  font: inherit;
-  font-weight: 400;
-  color: var(--text);
-  outline: none;
-}
-
-.product-form input:focus,
-.product-form select:focus,
-.product-form textarea:focus {
-  border-color: var(--accent-2);
-}
-
-.two-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.detail-subsection {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: 13px;
-  background: var(--bg);
-}
-
-.subsection-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.subsection-heading h3 {
-  margin: 0;
-  font-size: 15px;
-}
-
-.subsection-heading p {
-  margin: 5px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.small-secondary-button {
-  flex: none;
-  padding: 8px 11px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.small-secondary-button:disabled {
-  cursor: not-allowed;
-  opacity: .45;
-}
-
-.feature-input-list {
-  display: grid;
-  gap: 9px;
-}
-
-.feature-input-row {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 38px;
-  align-items: center;
-  gap: 9px;
-}
-
-.feature-number {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--subtle);
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.remove-feature-button {
-  width: 38px;
-  height: 38px;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  background: #fff;
-  color: #b91c1c;
-  font: inherit;
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.upload-box {
-  position: relative;
-  display: flex !important;
-  min-height: 130px;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-  gap: 7px !important;
-  padding: 22px;
-  border: 1.5px dashed var(--border);
-  border-radius: 14px;
-  background: var(--bg);
-  cursor: pointer;
-  text-align: center;
-  transition: border-color var(--transition), background var(--transition);
+  gap: 20px;
 }
 
-.upload-box:hover {
-  border-color: var(--accent-2);
-  background: var(--subtle);
+/* Heading */
+.form-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--sub); text-decoration: none; }
+.back-link:hover { color: var(--brand); }
+.form-heading h2 { margin: 6px 0 2px; font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.form-heading p { margin: 0; color: var(--sub); font-size: 13.5px; }
+.store-context {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+}
+.store-context > i { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #dbeafe; color: var(--brand); }
+.store-context strong { display: block; font-size: 13px; }
+.store-context small { color: var(--sub); font-size: 11.5px; }
+
+/* Layout */
+.product-form { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.form-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.form-side { position: sticky; top: 88px; }
+
+/* Cards */
+.form-section, .side-card, .no-store-state {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+.form-section { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+.side-card { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.side-card h3 { margin: 0; font-size: 15px; font-weight: 800; }
+.no-store-state { padding: 28px; }
+.no-store-state h2 { margin: 0 0 6px; font-size: 18px; }
+.no-store-state p { margin: 0 0 14px; color: var(--sub); }
+
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.section-heading > div { display: flex; align-items: center; gap: 12px; }
+.section-heading h2 { margin: 0; font-size: 16px; font-weight: 800; white-space: nowrap; }
+.section-heading p { margin: 0; font-size: 12.5px; color: var(--sub); text-align: right; }
+.section-step {
+  width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  background: #eff6ff; color: var(--brand); font-size: 12px; font-weight: 800;
 }
 
-.upload-box.disabled {
-  cursor: wait;
-  opacity: .65;
+/* Fields */
+label { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; }
+input, select, textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid #d5dbe5; border-radius: 10px; background: #fff;
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s;
 }
+input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(37, 99, 235, .14); }
+input::placeholder, textarea::placeholder { color: #94a3b8; }
+textarea { resize: vertical; min-height: 110px; line-height: 1.55; }
+.helper-text, .hint-text { font-size: 11.5px; font-weight: 500; color: var(--sub); margin: 0; }
+.two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 
-.upload-box span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 400;
+/* Sub sections */
+.detail-subsection { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
+.subsection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.subsection-heading h3 { margin: 0; font-size: 14px; font-weight: 800; }
+.subsection-heading p { margin: 2px 0 0; font-size: 12px; color: var(--sub); }
+.feature-input-list { display: flex; flex-direction: column; gap: 8px; }
+.feature-input-row { display: flex; align-items: center; gap: 10px; }
+.feature-number { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; background: #e2e8f0; color: #475569; font-size: 12px; font-weight: 800; }
+.remove-feature-button { width: 34px; height: 34px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #94a3b8; font-size: 18px; cursor: pointer; }
+.remove-feature-button:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+
+/* Buttons */
+.small-secondary-button, .add-file-btn {
+  padding: 8px 14px; border: 1px solid #d5dbe5; border-radius: 9px; background: #fff;
+  font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; white-space: nowrap;
 }
+.small-secondary-button:hover:not(:disabled), .add-file-btn:hover:not(:disabled) { border-color: var(--brand); color: var(--brand); }
+.small-secondary-button:disabled, .add-file-btn:disabled { opacity: .5; cursor: not-allowed; }
+.manual-add-file { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.remove-button { padding: 7px 12px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2; color: #b91c1c; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.remove-button:hover { background: #fee2e2; }
 
-.file-input {
-  position: absolute;
-  width: 1px !important;
-  height: 1px;
-  padding: 0 !important;
-  opacity: 0;
-  pointer-events: none;
+.primary-button, .secondary-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 16px;
+  border-radius: 10px; font: inherit; font-size: 13.5px; font-weight: 700; text-decoration: none; cursor: pointer; border: 1px solid transparent;
 }
+.primary-button { background: var(--brand); color: #fff; box-shadow: 0 1px 2px rgba(37, 99, 235, .35); }
+.primary-button:hover { background: #1d4ed8; }
+.secondary-button { background: #fff; border-color: #d5dbe5; color: var(--ink); }
+.secondary-button:hover { background: #f1f5f9; }
+.form-actions { display: flex; flex-direction: column; gap: 8px; }
 
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+/* Summary */
+.summary-list { margin: 0; display: flex; flex-direction: column; gap: 10px; padding-top: 4px; border-top: 1px solid var(--line); }
+.summary-list > div { display: flex; justify-content: space-between; gap: 12px; padding-top: 10px; font-size: 13px; }
+.summary-list dt { color: var(--sub); }
+.summary-list dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+
+/* Upload */
+.upload-box {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 30px 16px; border: 2px dashed #cbd5e1; border-radius: 14px; background: #f8fafc; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
 }
+.upload-box:hover { border-color: var(--brand); background: #eff6ff; }
+.upload-box.disabled { opacity: .6; pointer-events: none; }
+.upload-box strong { font-size: 14px; color: var(--ink); }
+.upload-box span { font-size: 12px; font-weight: 500; color: var(--sub); }
+.file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
-.image-card {
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
+.image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.image-card { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+.image-card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; background: #f1f5f9; }
+.image-card-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.image-card-body small { color: var(--sub); font-size: 11.5px; overflow-wrap: anywhere; }
+
+.digital-file-list { display: flex; flex-direction: column; gap: 12px; }
+.digital-file-card { display: flex; gap: 14px; align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.file-icon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: #f1f5f9; font-size: 18px; flex-shrink: 0; }
+.file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.file-info strong { font-size: 13.5px; overflow-wrap: anywhere; }
+.file-info > span { font-size: 12px; color: var(--sub); }
+.upload-status { font-weight: 700; }
+.upload-status.success { color: #15803d !important; }
+.upload-status.warn { color: #b45309 !important; }
+
+/* Messages */
+.asset-message, .error-message, .success-message { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 600; }
+.asset-message { background: #eff6ff; color: #1d4ed8; }
+.error-message { background: #fef2f2; color: #b91c1c; }
+.success-message { background: #f0fdf4; color: #15803d; }
+
+.preview-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: #f8fafc; }
+.preview-status-main { display: flex; align-items: center; gap: 12px; }
+.preview-status-main > i { font-size: 20px; color: #64748b; }
+.preview-status-main strong { display: block; font-size: 13.5px; }
+.preview-status-main small { color: var(--sub); font-size: 11.5px; }
+.preview-status-actions { display: flex; gap: 6px; }
+.preview-status.ready { background: #f0fdf4; border-color: #bbf7d0; }
+.preview-status.ready .preview-status-main > i { color: #15803d; }
+.preview-status.failed { background: #fef2f2; border-color: #fecaca; }
+.preview-status.failed .preview-status-main > i { color: #dc2626; }
+.preview-status.queued .preview-status-main > i, .preview-status.building .preview-status-main > i { color: #2563eb; }
+
+@media (max-width: 1100px) {
+  .product-form { grid-template-columns: 1fr; }
+  .form-side { position: static; order: -1; }
 }
-
-.image-card img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
-  background: var(--subtle);
-}
-
-.image-card-body {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-}
-
-.image-card-body small {
-  overflow: hidden;
-  color: var(--muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.digital-file-list {
-  display: grid;
-  gap: 10px;
-}
-
-.digital-file-card {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 14px;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
-}
-
-.file-icon {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  place-items: center;
-  border-radius: 10px;
-  background: var(--subtle);
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.file-info {
-  min-width: 0;
-}
-
-.file-info > strong,
-.file-info > span {
-  display: block;
-}
-
-.file-info > strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.file-info > span {
-  margin: 4px 0 9px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.file-info label {
-  max-width: 300px;
-  font-size: 11px;
-}
-
-.file-info input {
-  padding: 8px 10px;
-}
-
-.upload-status {
-  font-size: 11px;
-  color: var(--muted);
-}
-.upload-status.success { color: #16803d; font-weight: 700; }
-.upload-status.warn { color: #c2410c; }
-
-.remove-button {
-  border: 0;
-  background: transparent;
-  color: var(--red);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.asset-message,
-.error-message,
-.success-message {
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-size: 13px;
-}
-
-.asset-message {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.error-message {
-  background: #fef2f2;
-  color: var(--red);
-}
-
-.success-message {
-  background: #f0fdf4;
-  color: var(--green);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.primary-button,
-.secondary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 13px 18px;
-  border: 0;
-  border-radius: 10px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.primary-button {
-  background: var(--accent);
-  color: #fff;
-}
-
-.secondary-button {
-  background: var(--subtle);
-  color: var(--text);
-}
-
 @media (max-width: 640px) {
-  .subsection-heading {
-    flex-direction: column;
-  }
-
-  .small-secondary-button {
-    width: 100%;
-  }
+  .two-columns { grid-template-columns: 1fr; }
+  .section-heading { flex-direction: column; align-items: flex-start; }
+  .section-heading p { text-align: left; }
 }
 
-@media (max-width: 700px) {
-  .product-form-page {
-    padding: 32px 16px 60px;
-  }
 
-  .form-section {
-    padding: 20px;
-  }
-
-  .two-columns,
-  .image-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .section-heading {
-    flex-direction: column;
-  }
-
-  .section-heading p {
-    text-align: left;
-  }
-
-  .digital-file-card {
-    grid-template-columns: auto 1fr;
-  }
-
-  .digital-file-card > .remove-button {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
-}
+.preview-pending { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; }
+.preview-pending.failed { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+.preview-pending i { margin-top: 3px; }
+.preview-pending strong { display: block; font-size: 13px; }
+.preview-pending small { display: block; margin-top: 2px; font-size: 12px; font-weight: 500; opacity: .85; }
+.preview-log { margin: 8px 0 0; max-height: 140px; overflow: auto; padding: 8px 10px; border-radius: 8px; background: #0f172a; color: #e2e8f0; font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; }
 </style>

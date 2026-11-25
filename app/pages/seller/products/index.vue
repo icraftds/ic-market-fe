@@ -2,13 +2,27 @@
 const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
+definePageMeta({ layout: 'dashboard' })
+
 const products = ref([])
 const search = ref('')
 const statusFilter = ref('all')
 const deleteTarget = ref(null)
+const columns = [
+  { key: 'name', label: 'Produk' },
+  { key: 'category', label: 'Kategori' },
+  { key: 'price', label: 'Harga' },
+  { key: 'stock', label: 'Stok' },
+  { key: 'views', label: 'Dilihat' },
+  { key: 'carts', label: 'Keranjang' },
+  { key: 'status', label: 'Status' },
+  { key: 'preview', label: 'Preview' },
+  { key: 'actions', label: 'Aksi' }
+]
 const config = useRuntimeConfig()
 const authToken = useAuthCredential()
 const sellerStore = ref(null)
+const isLoading = ref(true)
 
 const loadStoreInfo = async () => {
     try {
@@ -61,6 +75,13 @@ const productThumbnail = (product) => product.images?.[0] || ''
 const productInitial = (product) => product.name?.trim()?.charAt(0)?.toUpperCase() || 'P'
 
 const requestDelete = (product) => { deleteTarget.value = product }
+
+const { openPreview: openEnginePreview, openingId: openingPreviewId } = useEnginePreview()
+const openPreview = async (product) => {
+  const result = await openEnginePreview(product.id, product.name)
+  if (!result.ok && result.message) window.alert(result.message)
+}
+
 const cancelDelete = () => { deleteTarget.value = null }
 const confirmDelete = async () => {
   if (!deleteTarget.value) return
@@ -90,9 +111,12 @@ const toggleStatus = async (product) => {
   }
 }
 
-onMounted(() => {
-    loadStoreInfo()
-    loadProducts()
+onMounted(async () => {
+    try {
+        await Promise.all([loadStoreInfo(), loadProducts()])
+    } finally {
+        isLoading.value = false
+    }
 })
 </script>
 
@@ -100,85 +124,78 @@ onMounted(() => {
   <main class="seller-products-page">
     <section class="seller-products-hero">
       <div>
-        <p class="eyebrow">SELLER CENTER</p>
-        <h1>Produk Saya</h1>
         <p class="page-description">Kelola katalog, gambar, dan aset digital toko Anda.</p>
         <p v-if="sellerStore" class="active-store-text">Toko aktif: <strong>{{ sellerStore.name }}</strong></p>
       </div>
-
-      <div class="hero-actions">
-        <NuxtLink to="/seller/products/create" class="primary-button">
-          + Tambah Produk
-        </NuxtLink>
-      </div>
     </section>
 
-    <template v-if="sellerStore">
+    <template v-if="isLoading || sellerStore">
     <section class="product-toolbar">
       <input v-model="search" class="search-input" type="search" placeholder="Cari nama atau kategori produk..." />
-      <select v-model="statusFilter" class="filter-select">
-        <option value="all">Semua Status</option>
-        <option value="published">Dipublikasikan</option>
-        <option value="inactive">Nonaktif</option>
-      </select>
+      <UiSelect v-model="statusFilter" :options="[{ value: 'all', label: 'Semua Status' }, { value: 'published', label: 'Dipublikasikan' }, { value: 'inactive', label: 'Nonaktif' }]" width="min(100%, 220px)" />
     </section>
 
     <section class="product-summary">
-      <div><strong>{{ products.length }}</strong><span>Total Produk</span></div>
-      <div><strong>{{ products.filter(p => p.status === 'published').length }}</strong><span>Dipublikasikan</span></div>
+      <div><strong>{{ isLoading ? '—' : products.length }}</strong><span>Total Produk</span></div>
+      <div><strong>{{ isLoading ? '—' : products.filter(p => p.status === 'published').length }}</strong><span>Dipublikasikan</span></div>
     </section>
 
     <section class="products-panel">
-      <div v-if="filteredProducts.length" class="products-table-wrap">
-        <table class="products-table">
-          <thead>
-            <tr>
-              <th>Produk</th>
-              <th>Kategori</th>
-              <th>Harga</th>
-              <th>Stok</th>
-              <th>Dilihat</th>
-              <th>Keranjang</th>
-              <th>Status</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="product in filteredProducts" :key="product.id">
-              <td>
-                <div class="product-cell">
-                  <img v-if="productThumbnail(product)" class="product-thumb" :src="productThumbnail(product)" :alt="product.name" />
-                  <div v-else class="product-thumb product-thumb-placeholder">{{ productInitial(product) }}</div>
-                  <div>
-                    <strong>{{ product.name }}</strong>
-                    <small>{{ product.type }}</small>
-                  </div>
-                </div>
-              </td>
-              <td>{{ product.category }}</td>
-              <td>{{ formatPrice(product.price) }}</td>
-              <td>{{ product.stock }}</td>
-              <td>{{ product.views || 0 }} x</td>
-              <td>{{ product.carts || 0 }} x</td>
-              <td>
-                <span class="status-badge" :class="product.status">
-                  {{ product.status === 'published' ? 'Dipublikasikan' : 'Nonaktif' }}
-                </span>
-              </td>
-              <td class="actions-cell">
-                <NuxtLink :to="`/seller/products/create?id=${product.id}`" class="text-button">Edit</NuxtLink>
-                <button class="text-button" @click="toggleStatus(product)">{{ product.status === 'published' ? 'Nonaktifkan' : 'Publikasikan' }}</button>
-                <button class="text-button danger" @click="requestDelete(product)">Hapus</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-else class="empty-state">
-        <h2>Produk tidak ditemukan</h2>
-        <p>Coba ubah kata kunci atau tambahkan produk baru.</p>
-      </div>
+      <UiTable :columns="columns" :rows="filteredProducts" :loading="isLoading" caption="Daftar produk toko" empty-text="Produk tidak ditemukan. Coba ubah kata kunci atau tambahkan produk baru.">
+        <template #cell-name="{ row: product }">
+          <div class="product-cell">
+            <img v-if="productThumbnail(product)" class="product-thumb" :src="productThumbnail(product)" :alt="product.name" />
+            <div v-else class="product-thumb product-thumb-placeholder">{{ productInitial(product) }}</div>
+            <div>
+              <strong>{{ product.name }}</strong>
+              <small>{{ product.type }}</small>
+            </div>
+          </div>
+        </template>
+        <template #cell-price="{ value }">{{ formatPrice(value) }}</template>
+        <template #cell-views="{ value }">{{ value || 0 }} x</template>
+        <template #cell-carts="{ value }">{{ value || 0 }} x</template>
+        <template #cell-status="{ row: product }">
+          <span class="status-badge" :class="product.status">
+            {{ product.status === 'published' ? 'Dipublikasikan' : 'Nonaktif' }}
+          </span>
+        </template>
+        <template #cell-preview="{ row: product }">
+          <button
+            v-if="product.preview_status === 'ready'"
+            type="button"
+            class="ic-icon-btn ok"
+            title="Buka preview"
+            aria-label="Buka preview"
+            :disabled="openingPreviewId === product.id"
+            @click="openPreview(product)"
+          >
+            <i class="fa-solid" :class="openingPreviewId === product.id ? 'fa-spinner fa-spin' : 'fa-arrow-up-right-from-square'"></i>
+          </button>
+          <span v-else-if="['queued', 'building'].includes(product.preview_status)" class="preview-state building" title="Sedang build">
+            <i class="fa-solid fa-spinner fa-spin"></i> Build
+          </span>
+          <NuxtLink v-else-if="product.preview_status === 'failed'" :to="`/seller/products/create?id=${product.id}`" class="preview-state failed" title="Build gagal, buka untuk upload ulang">
+            <i class="fa-solid fa-triangle-exclamation"></i> Gagal
+          </NuxtLink>
+          <NuxtLink v-else :to="`/seller/products/create?id=${product.id}`" class="preview-state none" title="Tambah preview">
+            <i class="fa-solid fa-plus"></i>
+          </NuxtLink>
+        </template>
+        <template #cell-actions="{ row: product }">
+          <div class="action-icons">
+            <NuxtLink :to="`/seller/products/create?id=${product.id}`" class="icon-action" title="Edit" aria-label="Edit">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </NuxtLink>
+            <button type="button" class="icon-action" :title="product.status === 'published' ? 'Nonaktifkan' : 'Publikasikan'" :aria-label="product.status === 'published' ? 'Nonaktifkan' : 'Publikasikan'" @click="toggleStatus(product)">
+              <i class="fa-solid" :class="product.status === 'published' ? 'fa-eye-slash' : 'fa-eye'"></i>
+            </button>
+            <button type="button" class="icon-action danger" title="Hapus" aria-label="Hapus" @click="requestDelete(product)">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </template>
+      </UiTable>
     </section>
     </template>
     
@@ -187,16 +204,13 @@ onMounted(() => {
         <p>Silahkan daftar toko terlebih dahulu di menu dashboard.</p>
     </section>
 
-    <div v-if="deleteTarget" class="modal-backdrop">
-      <div class="confirm-modal">
-        <h2>Hapus produk?</h2>
-        <p>Produk <strong>{{ deleteTarget.name }}</strong> akan dihapus secara permanen.</p>
-        <div class="modal-actions">
-          <button class="secondary-button" @click="cancelDelete">Batal</button>
-          <button class="danger-button" @click="confirmDelete">Ya, Hapus</button>
-        </div>
-      </div>
-    </div>
+    <UiModal :open="Boolean(deleteTarget)" size="sm" title="Hapus produk?" @update:open="value => { if (!value) cancelDelete() }">
+      <p class="tw:m-0">Produk <strong>{{ deleteTarget?.name }}</strong> akan dihapus secara permanen dan tidak bisa dikembalikan.</p>
+      <template #footer>
+        <UiButton variant="outline" @click="cancelDelete">Batal</UiButton>
+        <UiButton variant="danger" @click="confirmDelete">Ya, Hapus</UiButton>
+      </template>
+    </UiModal>
     <ApiPagination :meta="paginationMeta" :busy="pageLoading" @page="changePage" />
   </main>
 </template>
@@ -341,7 +355,7 @@ onMounted(() => {
 
 .product-cell {
   display: flex;
-  min-width: 260px;
+  min-width: 190px;
   align-items: center;
   gap: 12px;
 }
@@ -502,4 +516,25 @@ onMounted(() => {
 
 .status-badge.published { background:#dcfce7; color:#166534; }
 .status-badge.inactive { background:#f1f5f9; color:#475569; }
+
+.table-loading { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+.sk-line { height: 44px; border-radius: 10px; background: linear-gradient(90deg, #e9edf3 25%, #f4f6fa 50%, #e9edf3 75%); background-size: 200% 100%; animation: sk-shimmer 1.2s infinite linear; }
+@keyframes sk-shimmer { to { background-position: -200% 0; } }
+
+.preview-cell { white-space: nowrap; }
+.preview-state { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; font-size: 12px; font-weight: 700; text-decoration: none; }
+.preview-state.building { color: #1d4ed8; }
+.preview-state.failed { color: #b91c1c; }
+.preview-state.none { width: 34px; border: 1px dashed #cbd5e1; border-radius: 9px; color: #94a3b8; }
+.preview-state.none:hover { border-color: #2563eb; color: #2563eb; }
+.actions-cell { white-space: nowrap; width: 1%; }
+.action-icons { display: inline-flex; gap: 6px; }
+.icon-action {
+  width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 9px;
+  border: 1px solid #e5e9f0; background: #fff; color: #475569; font-size: 13px; cursor: pointer; text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.icon-action:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.icon-action.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.products-table-wrap { overflow-x: auto; }
 </style>

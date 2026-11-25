@@ -110,6 +110,7 @@ router.afterEach(() => {
       <NuxtPage v-if="!config.public.ssoEnabled || !privateScreen || session" />
     </NuxtLayout>
     </div>
+    <PreviewOverlay />
     <div v-if="authPending" class="global-page-loader auth-pending-overlay" role="status" aria-live="polite" aria-atomic="true">
       <div class="loader-content">
         <img src="/icoinz.svg" alt="" class="loader-icon" />

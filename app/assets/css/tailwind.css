@@ -1,0 +1,22 @@
+/*
+ * Tailwind v4, dipakai HANYA untuk sistem komponen baru (app/components/ui).
+ *  - tanpa preflight  : reset bawaan Tailwind tidak dimuat, halaman lama tidak berubah
+ *  - prefix `tw:`     : utility seperti `tw:flex` tidak bertabrakan dengan class lama (.flex, .border, dst.)
+ *  - source(none)     : hanya memindai folder yang didaftarkan lewat @source
+ */
+@import "tailwindcss/theme.css" prefix(tw);
+@import "tailwindcss/utilities.css" prefix(tw) source(none);
+
+@source "../../components/ui";
+@source "../../pages/dev";
+
+/* Token desain: dipetakan dari variabel yang sudah ada di style.css supaya warna tetap satu sumber. */
+@theme {
+  --color-ink: #0f172a;
+  --color-brand: #2563eb;
+  --color-brand-soft: #eff6ff;
+  --color-line: #d5dbe5;
+  --color-muted: #64748b;
+  --radius-field: 10px;
+  --shadow-pop: 0 12px 32px rgba(15, 23, 42, .14), 0 2px 6px rgba(15, 23, 42, .06);
+}

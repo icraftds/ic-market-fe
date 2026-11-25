@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const products = ref([])
 const search = ref('')
@@ -64,11 +64,7 @@ onMounted(() => {
 
     <div class="filters">
       <input type="text" v-model="search" placeholder="Cari nama produk..." />
-      <select v-model="statusFilter">
-        <option value="all">Semua Status</option>
-        <option value="published">Published</option>
-        <option value="draft">Draft</option>
-      </select>
+      <UiSelect v-model="statusFilter" :options="[{ value: 'all', label: 'Semua Status' }, { value: 'published', label: 'Published' }, { value: 'draft', label: 'Draft' }]" width="min(100%, 220px)" />
     </div>
 
     <table class="products-table">
@@ -96,8 +92,8 @@ onMounted(() => {
             <span class="badge" :class="product.is_hot ? 'active' : 'pending'">{{ product.is_hot ? 'Ya (Hot)' : 'Bukan' }}</span>
           </td>
           <td>
-            <button @click="toggleHotProduct(product)" class="btn-approve" :class="{'btn-remove': product.is_hot}">
-              {{ product.is_hot ? 'Hapus Hot' : 'Jadikan Hot' }}
+            <button type="button" class="ic-icon-btn" :class="{ hot: product.is_hot }" :title="product.is_hot ? 'Hapus Hot' : 'Jadikan Hot'" :aria-label="product.is_hot ? 'Hapus Hot' : 'Jadikan Hot'" @click="toggleHotProduct(product)">
+              <i class="fa-solid fa-fire"></i>
             </button>
           </td>
         </tr>

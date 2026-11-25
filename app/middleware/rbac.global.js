@@ -4,6 +4,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const { session, syncSession } = useDemoAuth()
 
     const path = to.path
+    // Katalog komponen UI hanya ada di mode dev; lewati pemeriksaan peran (import.meta.dev dibuang di build produksi).
+    if (import.meta.dev && path.startsWith('/dev/')) return
     if (config.public.ssoEnabled && ['/login', '/register'].includes(path)) {
         const target = typeof to.query.redirect === 'string' ? to.query.redirect : '/'
         if (import.meta.client) {
@@ -12,7 +14,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
         }
         return navigateTo('/auth/start?return_to=' + encodeURIComponent(target), { external: true, redirectCode: 303 })
     }
-    await syncSession()
+    try {
+        await syncSession()
+    } catch (error) {
+        // Halaman publik (katalog, produk, toko, konten) tidak boleh ikut mati kalau SSO bermasalah.
+        // Anggap pengunjung tamu; rute privat tetap diarahkan ke login di bawah.
+        if (import.meta.server) console.error('[sso] session sync failed:', error?.statusCode || error?.response?.status || '', error?.data?.code || error?.message || '')
+    }
 
     if (config.public.ssoEnabled) {
         if (!session.value && (path.startsWith('/admin/') || path.startsWith('/seller/') || ['/profile', '/cart', '/checkout', '/orders', '/payment', '/success', '/topup', '/vouchers'].includes(path))) {
@@ -79,10 +87,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
         return
     }
 
-    // Sellers ONLY allowed in /seller/*, /logout, /profile
+    // Seller boleh melihat halaman publik toko (beranda, produk, toko, kategori, info) seperti pembeli,
+    // tetapi halaman khusus pembeli (keranjang, checkout, pesanan, dst.) tetap diarahkan ke dashboard seller.
     if (role === 'seller') {
         const allowedSellerPaths = ['/seller/dashboard', '/seller/products', '/seller/orders', '/seller/finance', '/logout', '/profile']
-        if (!allowedSellerPaths.includes(path) && !path.startsWith('/seller/')) {
+        const publicPaths = ['/', '/blog', '/faq', '/panduan', '/kebijakan', '/tentang']
+        const publicPrefixes = ['/product/', '/store/', '/kategori/']
+        const isPublicPage = publicPaths.includes(path) || publicPrefixes.some((prefix) => path.startsWith(prefix))
+
+        if (!allowedSellerPaths.includes(path) && !path.startsWith('/seller/') && !isPublicPage) {
             return navigateTo('/seller/dashboard')
         }
     }

@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const {
   activeStore,
@@ -118,9 +118,9 @@ const initialize = async () => {
   if (store) loadOrders()
 }
 
-const handleStoreChange = (event) => {
+const handleStoreChange = (eventOrValue) => {
   notice.value = ''
-  const selected = selectStore(event.target.value)
+  const selected = selectStore(eventOrValue?.target ? eventOrValue.target.value : eventOrValue)
   if (!selected) return
   loadOrders()
 }
@@ -183,11 +183,7 @@ onBeforeUnmount(() => {
 
       <label v-if="approvedStores.length > 1" class="store-switcher">
         <span>Pilih toko</span>
-        <select :value="activeStoreId" @change="handleStoreChange">
-          <option v-for="store in approvedStores" :key="store.applicationId" :value="store.applicationId">
-            {{ store.storeName }}{{ getTenantStatus(store) === 'suspended' ? ' (Suspended)' : '' }}
-          </option>
-        </select>
+        <UiSelect :model-value="activeStoreId" :options="approvedStores.map(store => ({ value: store.applicationId, label: store.storeName + (getTenantStatus(store) === 'suspended' ? ' (Suspended)' : '') }))" width="min(100%, 280px)" aria-label="Pilih toko" @change="handleStoreChange" />
       </label>
     </section>
 
@@ -214,12 +210,7 @@ onBeforeUnmount(() => {
 
       <section class="toolbar">
         <input v-model="search" type="search" placeholder="Cari order, pembeli, atau produk...">
-        <select v-model="statusFilter">
-          <option value="all">Semua Status</option>
-          <option value="paid">Sudah Dibayar</option>
-          <option value="processing">Diproses</option>
-          <option value="completed">Selesai</option>
-        </select>
+        <UiSelect v-model="statusFilter" :options="[{ value: 'all', label: 'Semua Status' }, { value: 'paid', label: 'Sudah Dibayar' }, { value: 'processing', label: 'Diproses' }, { value: 'completed', label: 'Selesai' }]" width="min(100%, 220px)" />
       </section>
 
       <section v-if="filteredOrders.length" class="orders-list">
@@ -259,11 +250,11 @@ onBeforeUnmount(() => {
             <span v-if="order.financialStatus === 'held'" class="escrow-note">Dana berada di Holding</span>
             <span v-if="order.financialStatus === 'released'" class="escrow-note released">Dana sudah Available</span>
 
-            <button v-if="order.status === 'paid'" type="button" class="secondary-button" @click="changeStatus(order, 'processing')">
-              Proses Pesanan
+            <button v-if="order.status === 'paid'" type="button" class="ic-icon-btn" title="Proses Pesanan" aria-label="Proses Pesanan" @click="changeStatus(order, 'processing')">
+              <i class="fa-solid fa-gears"></i>
             </button>
-            <button v-if="order.status === 'paid' || order.status === 'processing'" type="button" class="primary-button" @click="changeStatus(order, 'completed')">
-              Tandai Selesai
+            <button v-if="order.status === 'paid' || order.status === 'processing'" type="button" class="ic-icon-btn ok" title="Tandai Selesai" aria-label="Tandai Selesai" @click="changeStatus(order, 'completed')">
+              <i class="fa-solid fa-circle-check"></i>
             </button>
           </div>
         </article>

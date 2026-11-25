@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import vm from 'node:vm'
 const ref = value => ({ value })
 const load = (path, globals, name) => {
-  const source = fs.readFileSync(new URL(path, import.meta.url), 'utf8').replace(/export /g, '').replace(/import\.meta\.client/g, 'true')
+  const source = fs.readFileSync(new URL(path, import.meta.url), 'utf8').replace(/export /g, '').replace(/import\.meta\.client/g, 'true').replace(/import\.meta\.dev/g, 'false')
   const context = vm.createContext({ console, computed: fn => ({ get value() { return fn() } }), ...globals })
   vm.runInContext(source + `\nglobalThis.result = ${name}`, context)
   return context.result

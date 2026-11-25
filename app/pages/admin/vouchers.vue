@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, ref, onMounted } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const config = useRuntimeConfig()
 const token  = useAuthCredential()
@@ -327,17 +327,11 @@ onMounted(() => {
                 </div>
                 <div class="form-col">
                   <label class="field-label">Tipe Kupon <span class="req">*</span></label>
-                  <select v-model="form.type" class="field-input">
-                    <option value="percent">Persentase (%)</option>
-                    <option value="flat">Nominal (iCoin-Z)</option>
-                  </select>
+                  <UiSelect v-model="form.type" :options="[{ value: 'percent', label: 'Persentase (%)' }, { value: 'flat', label: 'Nominal (iCoin-Z)' }]" width="100%" />
                 </div>
                 <div class="form-col">
                   <label class="field-label">Akses Voucher <span class="req">*</span></label>
-                  <select v-model="form.visibility" class="field-input">
-                    <option value="public">Publik (Semua Pengguna)</option>
-                    <option value="private">Privat (Spesifik Pengguna)</option>
-                  </select>
+                  <UiSelect v-model="form.visibility" :options="[{ value: 'public', label: 'Publik (Semua Pengguna)' }, { value: 'private', label: 'Privat (Spesifik Pengguna)' }]" width="100%" />
                 </div>
                 <div v-if="form.visibility === 'private'" class="form-col" style="grid-column: 1 / -1;">
                   <label class="field-label">Pilih Pengguna <span class="req">*</span></label>

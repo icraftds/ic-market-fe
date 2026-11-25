@@ -3,7 +3,7 @@ useSeoMeta({ title: 'FAQ – Pertanyaan Umum Pembeli & Seller', description: 'Ja
 definePageMeta({ layout: 'default' })
 import { ref } from 'vue'
 
-const activeFaq = ref(null)
+const activeFaq = ref(0)
 
 const faqs = [
   {
@@ -27,6 +27,7 @@ const faqs = [
     a: 'Setiap produk berhak mendapatkan dukungan teknis langsung dari penjual (kreator) selama 30 hari setelah pembelian, memastikan proyek Anda berjalan lancar.'
   }
 ]
+const faqItems = faqs.map((faq, id) => ({ id, title: faq.q, content: faq.a }))
 
 const toggleFaq = (index) => {
   activeFaq.value = activeFaq.value === index ? null : index
@@ -43,23 +44,7 @@ const toggleFaq = (index) => {
 
     <div class="faq-container">
       <div class="faq-wrapper">
-        <div 
-          v-for="(faq, idx) in faqs" 
-          :key="idx" 
-          class="faq-card" 
-          :class="{ active: activeFaq === idx }"
-          @click="toggleFaq(idx)"
-        >
-          <div class="faq-header">
-            <h3>{{ faq.q }}</h3>
-            <div class="icon-toggle">
-              <i class="fa-solid fa-chevron-down"></i>
-            </div>
-          </div>
-          <div class="faq-body">
-            <p>{{ faq.a }}</p>
-          </div>
-        </div>
+        <UiAccordion v-model="activeFaq" :items="faqItems" />
       </div>
     </div>
     <SiteFooter />
@@ -118,7 +103,7 @@ const toggleFaq = (index) => {
   z-index: 1;
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 20px 72px;
 }
 
 .faq-wrapper {

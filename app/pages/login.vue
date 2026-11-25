@@ -216,7 +216,9 @@ async function submitLogin(event) {
 }
 
 async function completeLoginNavigation() {
-  if (session.value?.role === 'seller') await navigateTo('/seller/dashboard')
+  if (session.value?.role === 'seller') {
+    await navigateTo(redirectTarget.value.startsWith('/seller/') ? redirectTarget.value : '/seller/dashboard')
+  }
   else {
     if (import.meta.client && redirectTarget.value === '/') sessionStorage.setItem('icmarket_show_welcome', '1')
     await navigateTo(redirectTarget.value)

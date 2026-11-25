@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'dashboard' })
 
 const STORES_KEY = 'icmarket_admin_stores'
 const SETTINGS_KEY = 'icmarket_system_settings'
@@ -671,14 +671,7 @@ onMounted(loadData)
         placeholder="Cari payout, toko, schema, bank, atau gateway ref..."
       />
 
-      <select v-model="statusFilter">
-        <option value="all">Semua Status</option>
-        <option value="scheduled">Terjadwal</option>
-        <option value="approved">Disetujui</option>
-        <option value="processing">Diproses</option>
-        <option value="completed">Selesai</option>
-        <option value="failed">Gagal</option>
-      </select>
+      <UiSelect v-model="statusFilter" :options="[{ value: 'all', label: 'Semua Status' }, { value: 'scheduled', label: 'Terjadwal' }, { value: 'approved', label: 'Disetujui' }, { value: 'processing', label: 'Diproses' }, { value: 'completed', label: 'Selesai' }, { value: 'failed', label: 'Gagal' }]" width="min(100%, 220px)" />
     </section>
 
     <section class="payout-panel">

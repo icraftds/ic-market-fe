@@ -518,12 +518,7 @@ onMounted(async () => {
 
             <div class="sidebar-section">
                 <div class="sidebar-title">Urutkan</div>
-                <select class="sort-select" id="sort-select" v-model="sortBy" @change="reloadCatalog()">
-                    <option value="newest">Terbaru</option>
-                    <option value="price-asc">Harga: Rendah ke Tinggi</option>
-                    <option value="price-desc">Harga: Tinggi ke Rendah</option>
-                    <option value="rating">Rating Tertinggi</option>
-                </select>
+                <UiSelect v-model="sortBy" :options="[{ value: 'newest', label: 'Terbaru' }, { value: 'price-asc', label: 'Harga: Rendah ke Tinggi' }, { value: 'price-desc', label: 'Harga: Tinggi ke Rendah' }, { value: 'rating', label: 'Rating Tertinggi' }]" width="100%" aria-label="Urutkan produk" @change="reloadCatalog()" />
             </div>
 
             <div class="sidebar-section">

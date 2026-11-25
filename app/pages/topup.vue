@@ -442,16 +442,8 @@ const handleOpenQris = () => {
 
       <div v-if="activeTab === 'history'" class="tab-content" style="margin-top: 32px;">
         <div class="history-filters" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
-          <select v-model="filterType" class="filter-select">
-            <option value="all">Semua Tipe</option>
-            <option value="credit">Pemasukan (Top Up)</option>
-            <option value="debit">Pengeluaran (Belanja)</option>
-          </select>
-          <select v-model="filterDate" class="filter-select">
-            <option value="all">Semua Waktu</option>
-            <option value="7days">7 Hari Terakhir</option>
-            <option value="30days">30 Hari Terakhir</option>
-          </select>
+          <UiSelect v-model="filterType" :options="[{ value: 'all', label: 'Semua Tipe' }, { value: 'credit', label: 'Pemasukan (Top Up)' }, { value: 'debit', label: 'Pengeluaran (Belanja)' }]" width="min(100%, 240px)" />
+          <UiSelect v-model="filterDate" :options="[{ value: 'all', label: 'Semua Waktu' }, { value: '7days', label: '7 Hari Terakhir' }, { value: '30days', label: '30 Hari Terakhir' }]" width="min(100%, 240px)" />
         </div>
 
         <div v-if="filteredHistories.length > 0" class="history-section" style="margin-bottom: 48px;">
