@@ -14,7 +14,7 @@ const links = computed(() => {
     { label: 'Game-Z', to: '/game-z', tone: 'plain' }
   ]
   if (auth.isSeller) list.push({ label: 'Toko Saya', to: auth.user?.hasStore ? `/store/${auth.user.storeSlug}` : '/seller/register', tone: 'brand' })
-  list.push({ label: 'Jasa Hosting', soon: true })
+  list.push({ label: 'Jasa Hosting', to: '/hosting', tone: 'plain', soon: true })
   if (auth.isLoggedIn) {
     list.push({ label: 'Pesanan Saya', to: '/orders', tone: 'plain' }, { label: 'Voucher Saya', to: '/vouchers', tone: 'plain' })
   }
@@ -33,17 +33,15 @@ const linkCls = (l) => {
   <div class="tw:border-0 tw:border-t tw:border-solid tw:border-[#efefea] tw:bg-[#fcfcfb]">
     <nav aria-label="Navigasi utama" class="tw:mx-auto tw:flex tw:max-w-[1200px] tw:flex-wrap tw:items-center tw:gap-1.5 tw:px-6 tw:font-sans tw:text-[13px] tw:font-semibold">
       <template v-for="l in links" :key="l.label">
-        <span v-if="l.soon" class="tw:flex tw:items-center tw:gap-1.5 tw:px-2.5 tw:py-[11px] tw:text-muted">
-          {{ l.label }}
-          <span class="tw:rounded-[5px] tw:bg-[#fff4d6] tw:px-1.5 tw:py-0.5 tw:font-mono tw:text-[9px] tw:font-bold tw:tracking-[.05em] tw:text-[#8a5a00]">SEGERA</span>
-        </span>
         <NuxtLink
-          v-else
           :to="l.to"
           :aria-current="isActive(l) ? 'page' : undefined"
-          class="tw:px-2.5 tw:py-[11px] tw:no-underline tw:hover:text-brand tw:focus-visible:ring-[3px] tw:focus-visible:ring-brand/30 tw:focus-visible:outline-none"
+          class="tw:flex tw:items-center tw:gap-1.5 tw:px-2.5 tw:py-[11px] tw:no-underline tw:hover:text-brand tw:focus-visible:ring-[3px] tw:focus-visible:ring-brand/30 tw:focus-visible:outline-none"
           :class="linkCls(l)"
-        >{{ l.label }}</NuxtLink>
+        >
+          {{ l.label }}
+          <span v-if="l.soon" class="tw:rounded-[5px] tw:bg-[#fff4d6] tw:px-1.5 tw:py-0.5 tw:font-mono tw:text-[9px] tw:font-bold tw:tracking-[.05em] tw:text-[#8a5a00]">SEGERA</span>
+        </NuxtLink>
       </template>
       <span class="tw:ml-auto tw:flex tw:flex-wrap tw:gap-2 tw:text-[11px] tw:font-semibold">
         <span class="tw:rounded-full tw:bg-[#efefea] tw:px-2.5 tw:py-[5px] tw:text-[#5b5b55]">50+ Produk Digital</span>
