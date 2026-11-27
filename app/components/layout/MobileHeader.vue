@@ -66,8 +66,8 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-
           :class="hit"
           @click="ui.toggleMobileNav()"
         >
-          <span v-if="auth.isLoggedIn" aria-hidden="true">{{ auth.user.initial }}</span>
-          <Icon v-else name="material-symbols:person-outline" class="tw:size-3.5" aria-hidden="true" />
+          <span v-if="auth.ready && auth.isLoggedIn" aria-hidden="true">{{ auth.user.initial }}</span>
+          <Icon v-else-if="auth.ready" name="material-symbols:person-outline" class="tw:size-3.5" aria-hidden="true" />
         </button>
       </span>
     </div>

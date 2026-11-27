@@ -2,7 +2,7 @@
 const productApi = useProductApi()
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', middleware: 'require-login' })
 
 const { session, syncSession } = useDemoAuth()
 const {

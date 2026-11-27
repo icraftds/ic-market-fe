@@ -1,9 +1,18 @@
+import { isPublicV2Path, isPrivateV2Path } from '~/utils/authRouting'
+
 export default defineNuxtRouteMiddleware(async (to) => {
     const config = useRuntimeConfig()
     const authPending = useAuthPending()
     const { session, syncSession } = useDemoAuth()
 
     const path = to.path
+    // Halaman publik v2: SSR tidak boleh bergantung pada sesi. Di klien sesi disegarkan tanpa menunggu.
+    if (isPublicV2Path(path)) {
+        if (import.meta.client) syncSession().catch(() => {})
+        return
+    }
+    // Halaman privat v2 dijaga middleware bernama (require-login / require-seller).
+    if (isPrivateV2Path(path)) return
     // Katalog komponen UI hanya ada di mode dev; lewati pemeriksaan peran (import.meta.dev dibuang di build produksi).
     if (import.meta.dev && path.startsWith('/dev/')) return
     // Fase desain: halaman seller/akun/hosting masih memakai data tiruan (belum ada API/sesi nyata).

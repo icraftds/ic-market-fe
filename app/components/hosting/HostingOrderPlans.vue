@@ -26,7 +26,7 @@ const theme = hostingTheme
       <span class="tw:min-h-[38px] tw:text-left tw:text-[12.5px] tw:leading-normal tw:text-ink-2">{{ p.for }}</span>
       <span class="tw:flex tw:flex-col tw:items-start">
         <span class="tw:text-[13px] tw:font-medium tw:text-muted tw:line-through">Rp {{ p.wasText }}</span>
-        <span class="tw:font-display tw:text-[28px] tw:font-extrabold tw:tracking-[-0.02em]">Rp {{ p.priceText }}<span class="tw:font-sans tw:text-[13px] tw:font-medium tw:text-ink-2"> / bulan</span></span>
+        <span class="tw:flex tw:flex-wrap tw:items-baseline tw:gap-x-1.5"><span class="tw:font-display tw:text-[28px] tw:font-extrabold tw:tracking-[-0.02em] tw:whitespace-nowrap">Rp {{ p.priceText }}</span><span class="tw:font-sans tw:text-[13px] tw:font-medium tw:whitespace-nowrap tw:text-ink-2">/ bulan</span></span>
       </span>
       <span aria-hidden="true" class="tw:h-px tw:w-full" :class="p.on ? theme[p.id].divider : 'tw:bg-[#efefea]'" />
       <span class="tw:flex tw:w-full tw:flex-col tw:gap-2 tw:text-left">

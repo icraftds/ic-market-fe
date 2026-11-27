@@ -1,5 +1,5 @@
 <script setup>
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: 'blank', middleware: 'require-login' })
 useSeoMeta({ title: 'Checkout | IC Market', robots: 'noindex' })
 
 const cart = useCartStore()

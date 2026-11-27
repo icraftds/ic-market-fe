@@ -1,6 +1,6 @@
 <script setup>
 /** Pesan paket hosting (papan V2HostingOrder): 3 langkah setup, pay, done. Wajib login (modal, mock auth store). */
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: 'blank', middleware: 'require-login' })
 useSeoMeta({ title: 'Pesan Paket Hosting | IC Market', robots: 'noindex' })
 
 const hosting = useHostingStore()

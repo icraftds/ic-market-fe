@@ -113,7 +113,8 @@ const select = () => { close(); input.value?.blur() }
           Keranjang<span v-if="cart.count > 0" class="tw:sr-only"> ({{ cart.count }} produk)</span>
         </NuxtLink>
 
-        <template v-if="auth.isLoggedIn">
+        <div v-if="!auth.ready" aria-hidden="true" class="tw:h-11 tw:w-[112px] tw:animate-pulse tw:rounded-[12px] tw:bg-[#f0f0f2]" />
+        <template v-else-if="auth.isLoggedIn">
           <NuxtLink to="/topup" class="tw:flex tw:min-h-11 tw:items-center tw:gap-[9px] tw:rounded-[10px] tw:border-[1.5px] tw:border-solid tw:border-[#e8f0ff] tw:bg-[#f5f9ff] tw:px-3 tw:py-1.5 tw:text-inherit tw:no-underline tw:hover:text-brand">
             <span aria-hidden="true" class="tw:grid tw:size-[26px] tw:place-items-center tw:rounded-lg tw:bg-ink tw:font-display tw:text-[13px] tw:font-extrabold tw:text-coin">Z</span>
             <span class="tw:flex tw:flex-col tw:leading-[1.15]">
@@ -129,7 +130,7 @@ const select = () => { close(); input.value?.blur() }
             </span>
           </NuxtLink>
         </template>
-        <NuxtLink v-else to="/login" class="tw:flex tw:min-h-11 tw:items-center tw:rounded-[12px] tw:bg-ink tw:px-[22px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:hover:text-white tw:hover:bg-ink-2"><Icon name="material-symbols:login" class="tw:mr-2 tw:size-[18px] tw:shrink-0" aria-hidden="true" />Masuk</NuxtLink>
+        <a v-else :href="auth.loginHref(route.fullPath)" class="tw:flex tw:min-h-11 tw:items-center tw:rounded-[12px] tw:bg-ink tw:px-[22px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:hover:text-white tw:hover:bg-ink-2"><Icon name="material-symbols:login" class="tw:mr-2 tw:size-[18px] tw:shrink-0" aria-hidden="true" />Masuk</a>
       </div>
     </div>
     <AppNav />

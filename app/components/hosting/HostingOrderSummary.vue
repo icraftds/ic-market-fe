@@ -22,12 +22,12 @@ const theme = hostingTheme
         </li>
       </ul>
       <div class="tw:flex tw:flex-col tw:gap-1.5 tw:border-0 tw:border-t tw:border-solid tw:border-[#efefea] tw:pt-3.5 tw:font-sans tw:text-[13.5px] tw:font-medium">
-        <div class="tw:flex tw:justify-between"><span class="tw:text-ink-2">Rp {{ hosting.planPriceText }} × {{ hosting.months }} bulan</span><span>Rp {{ hosting.totalText }}</span></div>
-        <div class="tw:flex tw:justify-between"><span class="tw:text-ink-2">Hemat dari harga normal</span><span class="tw:font-bold tw:text-[#15803d]">−Rp {{ hosting.savedText }}</span></div>
+        <div class="tw:flex tw:items-baseline tw:justify-between tw:gap-3"><span class="tw:min-w-0 tw:text-ink-2">Rp {{ hosting.planPriceText }} × {{ hosting.months }} bulan</span><span class="tw:shrink-0 tw:whitespace-nowrap">Rp {{ hosting.totalText }}</span></div>
+        <div class="tw:flex tw:items-baseline tw:justify-between tw:gap-3"><span class="tw:min-w-0 tw:text-ink-2">Hemat dari harga normal</span><span class="tw:shrink-0 tw:font-bold tw:whitespace-nowrap tw:text-[#15803d]">−Rp {{ hosting.savedText }}</span></div>
       </div>
-      <div class="tw:flex tw:items-baseline tw:justify-between">
+      <div class="tw:flex tw:items-baseline tw:justify-between tw:gap-3">
         <span class="tw:font-sans tw:text-[15px] tw:font-bold">Total</span>
-        <span class="tw:font-display tw:text-[30px] tw:font-extrabold tw:tracking-[-0.02em]">Rp {{ hosting.totalText }}</span>
+        <span class="tw:font-display tw:text-[30px] tw:font-extrabold tw:tracking-[-0.02em] tw:whitespace-nowrap">Rp {{ hosting.totalText }}</span>
       </div>
       <button type="button" class="tw:m-0 tw:flex tw:min-h-[54px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-[14px] tw:border-0 tw:bg-ink tw:font-sans tw:text-[15.5px] tw:font-bold tw:text-white tw:hover:bg-ink-2 tw:focus-visible:ring-[3px] tw:focus-visible:ring-brand/40 tw:focus-visible:outline-none" @click="hosting.orderNext()">
         Lanjut ke pembayaran<Icon name="material-symbols:arrow-forward" class="tw:size-5 tw:shrink-0" aria-hidden="true" />

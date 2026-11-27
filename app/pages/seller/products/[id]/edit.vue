@@ -1,5 +1,5 @@
 <script setup>
-definePageMeta({ layout: 'seller-center' })
+definePageMeta({ layout: 'seller-center', middleware: 'require-seller' })
 useSeoMeta({ title: 'Edit produk | Seller Center', robots: 'noindex' })
 const route = useRoute()
 const seller = useSellerStore()

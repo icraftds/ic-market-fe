@@ -1,5 +1,5 @@
 <script setup>
-definePageMeta({ layout: 'flow' })
+definePageMeta({ layout: 'flow', middleware: 'require-login' })
 useSeoMeta({ title: 'Buka Toko | IC Market', robots: 'noindex' })
 </script>
 

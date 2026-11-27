@@ -1,6 +1,6 @@
 <script setup>
 // Sub-rute dashboard: /akun/purch | hist | voucher | home | files | domain | db | help | billing
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: 'blank', middleware: 'require-login' })
 
 const TABS = ['purch', 'hist', 'voucher', 'home', 'files', 'domain', 'db', 'help', 'billing']
 const route = useRoute()
