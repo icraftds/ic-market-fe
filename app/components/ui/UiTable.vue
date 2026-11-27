@@ -64,6 +64,7 @@ const toggleAll = () => emit('update:selected', allSelected.value ? props.select
 const toggleRow = (id) => emit('update:selected', props.selected.includes(id) ? props.selected.filter(x => x !== id) : [...props.selected, id])
 const cellValue = (row, column) => (column.format ? column.format(row[column.key], row) : row[column.key])
 const colspan = computed(() => props.columns.length + (props.selectable ? 1 : 0))
+const colAttrs = column => (column.width ? { style: { width: column.width } } : {})
 </script>
 
 <template>
@@ -81,7 +82,7 @@ const colspan = computed(() => props.columns.length + (props.selectable ? 1 : 0)
               :key="column.key"
               scope="col"
               :aria-sort="ariaSort(column)"
-              :style="column.width ? { width: column.width } : undefined"
+              v-bind="colAttrs(column)"
               class="tw:border-b tw:border-slate-200 tw:text-xs tw:font-bold tw:tracking-wide tw:whitespace-nowrap tw:text-slate-500 tw:uppercase"
               :class="[cellPad, alignClass[column.align] || alignClass.left]"
             >

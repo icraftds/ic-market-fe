@@ -11,7 +11,8 @@ export default defineNuxtConfig({
   css: [
     '~/assets/css/style.css',
     '~/assets/css/flow.css',
-    '~/assets/css/tailwind.css'
+    '~/assets/css/tailwind.css',
+    '~/assets/css/ui-editor.css'
   ],
 
   vite: {

@@ -89,6 +89,8 @@ const tools = computed(() => [
   { key: 'undo', label: 'Urungkan', icon: 'M7 6 3.5 9.5 7 13M4 9.5h8a4 4 0 0 1 0 8h-1', can: () => editor.value?.can().undo(), do: () => run(c => c.undo()) },
   { key: 'redo', label: 'Ulangi', icon: 'M13 6l3.5 3.5L13 13M16 9.5H8a4 4 0 0 0 0 8h1', can: () => editor.value?.can().redo(), do: () => run(c => c.redo()) }
 ])
+const editorAttrs = computed(() => ({ style: { '--ui-editor-min': props.minHeight } }))
+const fallbackAttrs = computed(() => ({ style: { minHeight: props.minHeight } }))
 </script>
 
 <template>
@@ -131,8 +133,8 @@ const tools = computed(() => [
       </form>
 
       <ClientOnly>
-        <EditorContent :editor="editor" class="ui-editor" :style="{ '--ui-editor-min': minHeight }" />
-        <template #fallback><div class="tw:p-3 tw:text-sm tw:text-slate-400" :style="{ minHeight }">Memuat editor…</div></template>
+        <EditorContent :editor="editor" class="ui-editor" v-bind="editorAttrs" />
+        <template #fallback><div class="tw:p-3 tw:text-sm tw:text-slate-400" v-bind="fallbackAttrs">Memuat editor…</div></template>
       </ClientOnly>
     </div>
 
@@ -140,17 +142,3 @@ const tools = computed(() => [
   </div>
 </template>
 
-<style scoped>
-.ui-editor :deep(.tiptap) { min-height: var(--ui-editor-min, 10rem); padding: 12px 14px; outline: none; font-size: 14px; line-height: 1.65; color: #0f172a; }
-.ui-editor :deep(.tiptap > * + *) { margin-top: .6em; }
-.ui-editor :deep(.tiptap p) { margin: 0; }
-.ui-editor :deep(.tiptap h2) { margin: 1em 0 0; font-size: 1.25rem; font-weight: 800; line-height: 1.3; }
-.ui-editor :deep(.tiptap h3) { margin: 1em 0 0; font-size: 1.05rem; font-weight: 700; line-height: 1.35; }
-.ui-editor :deep(.tiptap ul), .ui-editor :deep(.tiptap ol) { margin: 0; padding-left: 1.4em; }
-.ui-editor :deep(.tiptap ul) { list-style: disc; }
-.ui-editor :deep(.tiptap ol) { list-style: decimal; }
-.ui-editor :deep(.tiptap li p) { display: inline; }
-.ui-editor :deep(.tiptap blockquote) { margin-left: 0; padding: 2px 0 2px 14px; border-left: 3px solid #cbd5e1; color: #475569; }
-.ui-editor :deep(.tiptap a) { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
-.ui-editor :deep(.tiptap p.is-editor-empty:first-child::before) { content: attr(data-placeholder); float: left; height: 0; color: #94a3b8; pointer-events: none; }
-</style>

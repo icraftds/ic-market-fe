@@ -119,10 +119,11 @@ const onOutside = (event) => { if (open.value && root.value && !root.value.conta
 onMounted(() => document.addEventListener('pointerdown', onOutside))
 onBeforeUnmount(() => { document.removeEventListener('pointerdown', onOutside); clearTimeout(typeaheadTimer) })
 watch(() => props.disabled, (value) => { if (value) close() })
+const rootAttrs = computed(() => (props.width ? { style: { width: props.width, flex: 'none' } } : {}))
 </script>
 
 <template>
-  <div ref="root" class="tw:relative tw:w-full" :style="width ? { width, flex: 'none' } : undefined">
+  <div ref="root" class="tw:relative tw:w-full" v-bind="rootAttrs">
     <button
       ref="trigger"
       type="button"
@@ -134,7 +135,7 @@ watch(() => props.disabled, (value) => { if (value) close() })
       :disabled="disabled"
       class="tw:flex tw:w-full tw:cursor-pointer tw:items-center tw:justify-between tw:gap-2.5 tw:rounded-field tw:border tw:bg-white tw:text-left tw:font-medium tw:text-ink tw:transition tw:hover:border-slate-400 tw:focus-visible:border-brand tw:focus-visible:ring-4 tw:focus-visible:ring-brand/15 tw:focus-visible:outline-none tw:disabled:cursor-not-allowed tw:disabled:bg-slate-100 tw:disabled:text-slate-400"
       :class="[
-        size === 'sm' ? 'tw:px-2.5 tw:py-1.5 tw:text-[13px]' : 'tw:px-3 tw:py-2.5 tw:text-sm',
+        size === 'sm' ? 'tw:min-h-9 tw:px-2.5 tw:py-1.5 tw:text-[13px]' : 'tw:min-h-11 tw:px-3 tw:py-2.5 tw:text-sm',
         open ? 'tw:border-brand tw:ring-4 tw:ring-brand/15' : 'tw:border-line'
       ]"
       @click.prevent="toggle"

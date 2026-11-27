@@ -2,7 +2,8 @@
 /**
  * UiButton: <UiButton variant="primary" size="md" :loading="saving">Simpan</UiButton>
  * Dengan `to` jadi NuxtLink, dengan `href` jadi <a>, selain itu <button>.
- * variant: primary | dark | outline | ghost | danger | danger-soft   size: sm | md | lg
+ * variant: primary (ink) | brand (biru) | outline | pill (hero) | ghost | danger | danger-soft | dark (alias primary)
+ * size: sm | md | lg (lg min-h 48).  iconOnly: tombol persegi, wajib beri `label` (aria-label).
  */
 import { computed, resolveComponent } from 'vue'
 
@@ -14,7 +15,9 @@ const props = defineProps({
   type: { type: String, default: 'button' },
   loading: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
-  block: { type: Boolean, default: false }
+  block: { type: Boolean, default: false },
+  iconOnly: { type: Boolean, default: false },
+  label: { type: String, default: null }
 })
 
 const NuxtLink = resolveComponent('NuxtLink')
@@ -22,18 +25,30 @@ const tag = computed(() => (props.to ? NuxtLink : props.href ? 'a' : 'button'))
 const inactive = computed(() => props.disabled || props.loading)
 
 const variants = {
-  primary: 'tw:border-blue-700/60 tw:bg-linear-to-b tw:from-blue-500 tw:to-blue-600 tw:text-white tw:shadow-[0_1px_2px_rgba(37,99,235,.35),inset_0_1px_0_rgba(255,255,255,.2)] tw:hover:from-blue-500 tw:hover:to-blue-700 tw:focus-visible:ring-blue-500/35',
-  dark: 'tw:border-slate-950 tw:bg-linear-to-b tw:from-slate-700 tw:to-slate-900 tw:text-white tw:shadow-[0_1px_2px_rgba(15,23,42,.35),inset_0_1px_0_rgba(255,255,255,.12)] tw:hover:from-slate-600 tw:hover:to-slate-900 tw:focus-visible:ring-slate-500/40',
-  outline: 'tw:border-slate-300 tw:bg-white tw:text-slate-800 tw:shadow-[0_1px_2px_rgba(15,23,42,.06)] tw:hover:border-slate-400 tw:hover:bg-slate-50 tw:focus-visible:ring-blue-500/25',
-  ghost: 'tw:border-transparent tw:bg-transparent tw:text-slate-600 tw:hover:bg-slate-100 tw:hover:text-ink tw:focus-visible:ring-slate-400/30',
-  danger: 'tw:border-red-700/60 tw:bg-linear-to-b tw:from-red-500 tw:to-red-600 tw:text-white tw:shadow-[0_1px_2px_rgba(220,38,38,.35),inset_0_1px_0_rgba(255,255,255,.2)] tw:hover:from-red-500 tw:hover:to-red-700 tw:focus-visible:ring-red-500/35',
-  'danger-soft': 'tw:border-red-200 tw:bg-red-50 tw:text-red-700 tw:hover:border-red-300 tw:hover:bg-red-100 tw:focus-visible:ring-red-500/25'
+  primary: 'tw:border-ink tw:bg-ink tw:text-white tw:hover:bg-ink-2 tw:hover:border-ink-2 tw:focus-visible:ring-ink/30',
+  brand: 'tw:border-brand tw:bg-brand tw:text-white tw:hover:bg-blue-700 tw:hover:border-blue-700 tw:focus-visible:ring-brand/35',
+  outline: 'tw:border-line tw:bg-surface tw:text-ink tw:hover:border-muted tw:hover:bg-bg tw:focus-visible:ring-brand/30',
+  pill: 'tw:rounded-full tw:border-hero tw:bg-hero tw:text-white tw:hover:bg-slate-800 tw:focus-visible:ring-hero/30',
+  ghost: 'tw:border-transparent tw:bg-transparent tw:text-ink-2 tw:hover:bg-subtle tw:hover:text-ink tw:focus-visible:ring-ink/20',
+  danger: 'tw:border-bad tw:bg-bad tw:text-white tw:hover:bg-red-700 tw:hover:border-red-700 tw:focus-visible:ring-bad/35',
+  'danger-soft': 'tw:border-red-200 tw:bg-red-50 tw:text-red-700 tw:hover:border-red-300 tw:hover:bg-red-100 tw:focus-visible:ring-bad/25'
 }
+const variantAlias = { dark: 'primary' }
 const sizes = {
-  sm: 'tw:h-8 tw:px-3 tw:text-[13px]',
-  md: 'tw:h-10 tw:px-4 tw:text-sm',
-  lg: 'tw:h-12 tw:rounded-xl tw:px-6 tw:text-[15px]'
+  sm: 'tw:min-h-9 tw:px-3 tw:text-[13px]',
+  md: 'tw:min-h-11 tw:px-4 tw:text-sm',
+  lg: 'tw:min-h-12 tw:px-6 tw:text-[14.5px]'
 }
+const iconSizes = {
+  sm: 'tw:min-h-9 tw:min-w-9 tw:text-[13px]',
+  md: 'tw:min-h-11 tw:min-w-11 tw:text-sm',
+  lg: 'tw:min-h-12 tw:min-w-12 tw:text-[14.5px]'
+}
+const classes = computed(() => [
+  variants[variantAlias[props.variant] || props.variant] || variants.primary,
+  (props.iconOnly ? iconSizes : sizes)[props.size] || sizes.md,
+  props.block ? 'tw:w-full' : ''
+])
 </script>
 
 <template>
@@ -45,8 +60,9 @@ const sizes = {
     :disabled="tag === 'button' ? inactive : undefined"
     :aria-disabled="tag !== 'button' && inactive ? 'true' : undefined"
     :aria-busy="loading || undefined"
-    class="tw:inline-flex tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:leading-none tw:font-semibold tw:tracking-[-0.005em] tw:whitespace-nowrap tw:no-underline tw:transition tw:duration-150 tw:select-none tw:active:scale-[.98] tw:focus-visible:ring-[3px] tw:focus-visible:outline-none tw:disabled:cursor-not-allowed tw:disabled:opacity-50 tw:disabled:shadow-none tw:aria-disabled:pointer-events-none tw:aria-disabled:opacity-50"
-    :class="[variants[variant] || variants.primary, sizes[size] || sizes.md, block ? 'tw:w-full' : '']"
+    :aria-label="label || undefined"
+    class="tw:inline-flex tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-field tw:border tw:border-solid tw:leading-none tw:font-bold tw:whitespace-nowrap tw:no-underline tw:transition tw:duration-150 tw:select-none tw:active:scale-[.98] tw:focus-visible:ring-[3px] tw:focus-visible:outline-none tw:disabled:cursor-not-allowed tw:disabled:opacity-50 tw:aria-disabled:pointer-events-none tw:aria-disabled:opacity-50"
+    :class="classes"
   >
     <svg v-if="loading" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="tw:animate-spin">
       <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".25" />
