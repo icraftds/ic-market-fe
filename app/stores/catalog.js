@@ -364,6 +364,8 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   return {
+    // State SSR: wajib di-return agar ikut payload dan ter-hydrate di klien (ref yang tak di-return hilang di klien).
+    lists, facetCache, views, detailKeys, suggestCache, categoriesAt,
     products, categories, sellers, loading, error,
     bySlug, byId, byCategory, categoryBySlug, sellerBySlug, related, sellerProducts, liveProducts, categoryTabs,
     fetchList, fetchFacets, loadView, view, fetchProduct, fetchRelated, fetchCategories, fetchStore, fetchStoreCategories, fetchStoreReviews,

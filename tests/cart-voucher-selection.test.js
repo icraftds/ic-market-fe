@@ -61,10 +61,16 @@ test('Cart selection toggles individual items and all items, and calculates sele
   assert.equal(store.selectedTotal.value, 80000)
 
   store.toggle(3)
-  // Hanya id + status pilih yang disimpan untuk tamu
-  assert.deepEqual(JSON.parse(stored.get('icmarket-cart-v2')), [
-    { productId: 1, selected: true }, { productId: 2, selected: true }, { productId: 3, selected: false }
-  ])
+  // Tamu: id + status pilih + salinan ringan data produk PUBLIK (supaya baris keranjang tampil tanpa API); tanpa data pribadi/token
+  const saved = JSON.parse(stored.get('icmarket-cart-v2'))
+  assert.deepEqual(saved.map((i) => [i.productId, i.selected]), [[1, true], [2, true], [3, false]])
+  for (const i of saved) {
+    assert.deepEqual(Object.keys(i).sort(), ['productId', 'selected', 'snap'])
+    assert.equal(i.snap.id, i.productId)
+    assert.equal(typeof i.snap.name, 'string')
+    assert.equal(typeof i.snap.price, 'number')
+    assert.equal('description' in i.snap, false) // tanpa teks panjang
+  }
 
   store.dropSelected() // setelah checkout: hanya baris terpilih yang dibuang
   assert.deepEqual(plain(store.items.value.map((i) => i.productId)), [3])

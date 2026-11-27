@@ -799,6 +799,8 @@ export const useHostingStore = defineStore('hosting', () => {
   }
 
   return {
+    // State SSR: wajib di-return agar ikut payload dan ter-hydrate di klien (ref yang tak di-return hilang di klien).
+    apiPlans, apiComparison, apiSteps, apiFaq, apiStacks, apiDurations, pendingPay, deploymentsApi, invoicesApi,
     isMock: mock,
     loadState, errors, submitting, invalidate, clearErrors,
     // publik & harga

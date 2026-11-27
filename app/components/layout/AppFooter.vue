@@ -3,6 +3,8 @@
  * AppFooter: footer situs (V2Home). Kolom Kategori diambil dari katalog supaya jadi tautan internal untuk SEO.
  */
 const catalog = useCatalogStore()
+// Kategori dimuat di server (sekali per request) agar footer SSR sama dengan klien; state ikut payload Pinia.
+await callOnce('footer-categories', () => catalog.fetchCategories().then(() => undefined).catch(() => undefined))
 
 const columns = computed(() => [
   {

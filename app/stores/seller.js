@@ -194,7 +194,10 @@ export const useSellerStore = defineStore('seller', () => {
   const productById = computed(() => (id) => products.value.find((p) => p.id === Number(id)))
   const productBySlug = computed(() => (slug) => products.value.find((p) => p.slug === slug))
 
-  const failedBuildCount = computed(() => products.value.filter((p) => p.preview === 'failed').length)
+  // Mode API: dari todo 'preview_failed' di payload dasbor (tanpa memuat seluruh daftar produk); mock: dari daftar.
+  const failedBuildCount = computed(() => (mock
+    ? products.value.filter((p) => p.preview === 'failed').length
+    : Number(dashData.value?.todos?.find((t) => t.type === 'preview_failed')?.count) || 0))
   const needsReplyCount = computed(() => {
     if (mock) return reviews.value.filter((r) => !r.reply).length
     const c = loadState.value.reviews.meta?.counts?.unanswered
@@ -418,7 +421,7 @@ export const useSellerStore = defineStore('seller', () => {
   async function ensure(page, id) {
     if (mock) return true
     const jobs = {
-      dashboard: () => [loadDashboard(), loadOrderStats(), loadFinance(), loadProducts()],
+      dashboard: () => [loadDashboard(), loadOrderStats(), loadFinance()], // produk TIDAK dimuat di sini (ada di halaman Produk)
       products: () => [loadProducts()],
       orders: () => [loadOrders(), loadOrderStats()],
       customers: () => [loadCustomers()],
@@ -850,6 +853,8 @@ export const useSellerStore = defineStore('seller', () => {
   function setFilter(q) { productQuery.value = q }
 
   return {
+    // State SSR: wajib di-return agar ikut payload dan ter-hydrate di klien (ref yang tak di-return hilang di klien).
+    dashData, orderStatsData, productReviews, productOrders,
     profile, products, orders, customers, ledger, finance, payouts, vouchers, reviews, settings, details,
     period, productTab, productQuery, selectedIds, ledgerFilter, lastMessage, pendingBuild, draftBuild, form,
     isMock: mock, loadState, queries, errors, orderDetail, previews,

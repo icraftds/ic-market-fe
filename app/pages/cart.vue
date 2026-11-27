@@ -6,7 +6,12 @@ const cart = useCartStore()
 
 // Keranjang tamu dibaca dari localStorage di klien (plugin auth.client memanggil hydrate), jadi tunggu mount agar tidak berkedip kosong.
 const ready = ref(false)
-onMounted(() => { ready.value = true })
+// Satu-satunya tempat GET /cart (selain checkout). Tunggu sesi siap dulu, kalau tidak useServer() masih false dan tidak ada yang dimuat.
+const auth = useAuthStore()
+onMounted(() => {
+  ready.value = true
+  auth.ensureSession().then(() => cart.ensureLoaded(true)).catch(() => {})
+})
 const busy = computed(() => !ready.value || cart.syncing)
 
 // Kelompokkan baris per toko, urutan kemunculan dipertahankan.

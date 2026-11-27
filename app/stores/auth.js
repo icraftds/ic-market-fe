@@ -104,7 +104,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
     const userStoreStatus = s.store_status ?? null
     const userAppStatus = s.application_status ?? null
-    await loadStore(s.role, userAppStatus, userStoreStatus)
+    const cart = useCartStore()
+    // Ringkasan dari GET /user: jumlah keranjang & status toko, jadi header tidak memanggil GET /cart atau GET /seller/store.
+    if (typeof s.cart_count === 'number') cart.setServerCount(s.cart_count)
+    else cart.refreshCount(true) // sesi tanpa field itu (mis. BFF): satu panggilan ringan GET /cart/count
+    if ('store_status' in s || 'application_status' in s || 'store_slug' in s) {
+      store.value = s.store_slug ? { name: s.store_name, slug: s.store_slug, status: s.store_status } : null
+      storeStatus.value = userStoreStatus
+      applicationStatus.value = userAppStatus
+    } else {
+      await loadStore(s.role, userAppStatus, userStoreStatus)
+    }
     user.value = fromSession(s, store.value, applicationStatus.value)
   }
 

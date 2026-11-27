@@ -17,9 +17,32 @@ export const useDemoAuth = () => {
     const walletMeta = useState('icmarket-wallet-meta', () => null)
     const authStatus = useState('icmarket-auth-status', () => 'idle')
 
-    const fetchWallet = async (page = null) => {
+    // Cache ringan di localStorage per user: wallet/initialize cukup SEKALI per akun, saldo dipakai ulang 60 dtk
+    // (sebelumnya keduanya dipanggil di setiap reload/redirect). Aman bila storage diblokir/SSR.
+    const lsGet = (k) => { try { return import.meta.client ? localStorage.getItem(k) : null } catch { return null } }
+    const lsSet = (k, v) => { try { if (import.meta.client) localStorage.setItem(k, v) } catch { /* abaikan */ } }
+    const uidKey = (prefix) => (session.value?.id ? `${prefix}:${session.value.id}` : null)
+    const BALANCE_TTL = 60_000
+
+    // opts.cache: pakai saldo tersimpan bila masih segar (dipakai sync sesi otomatis; halaman top up/checkout memanggil tanpa cache).
+    const fetchWallet = async (page = null, opts = {}) => {
         const currentToken = sessionCookie.value
         if (!currentToken) return false
+        if (opts.cache && page === null) {
+            const key = uidKey('icmarket-wallet-bal')
+            const raw = key && lsGet(key)
+            if (raw) {
+                try {
+                    const c = JSON.parse(raw)
+                    if (Date.now() - c.at < BALANCE_TTL && Number.isFinite(c.balance)) {
+                        walletBalance.value = c.balance
+                        walletStatus.value = 'fresh'
+                        if (session.value) session.value = { ...session.value, coins: c.balance }
+                        return true
+                    }
+                } catch { /* cache rusak: lanjut ambil dari server */ }
+            }
+        }
         try {
             const response = await productApi(`${config.public.apiBase}/wallet`, {
                 headers: { Authorization: `Bearer ${currentToken}` },
@@ -29,6 +52,7 @@ export const useDemoAuth = () => {
             if (!response.success || response.data?.balance == null) throw new Error('Saldo tidak tersedia')
             walletBalance.value = Number(response.data.balance)
             walletStatus.value = 'fresh'
+            if (page === null) { const key = uidKey('icmarket-wallet-bal'); if (key) lsSet(key, JSON.stringify({ at: Date.now(), balance: walletBalance.value })) }
             if (session.value) session.value = { ...session.value, coins: walletBalance.value }
             if (page !== null) {
                 walletHistories.value = response.data.histories || []
@@ -46,11 +70,14 @@ export const useDemoAuth = () => {
         if (!currentToken || !import.meta.client) return false
         if (app._walletInitRequest) return app._walletInitRequest
         if (!retry && app._walletInitializedToken === currentToken) return !walletInitializationPending.value
+        const initKey = uidKey('icmarket-wallet-init')
+        if (!retry && initKey && lsGet(initKey) === '1') return true // sudah pernah diinisialisasi untuk akun ini
         app._walletInitializedToken = currentToken
         app._walletInitRequest = productApi(`${config.public.apiBase}/wallet/initialize`, {
             method: 'POST', headers: { Authorization: `Bearer ${currentToken}` }, body: {}
         }).then(() => {
             if (currentToken === sessionCookie.value) walletInitializationPending.value = false
+            if (initKey) lsSet(initKey, '1') // jangan panggil lagi di reload/redirect berikutnya
             return true
         }).catch(() => {
             if (currentToken === sessionCookie.value) walletInitializationPending.value = true
@@ -125,7 +152,7 @@ export const useDemoAuth = () => {
         app._sessionRequest = (async () => {
             await fetchUser()
             if (sessionCookie.value) {
-                const walletTask = initializeWallet().then(() => fetchWallet())
+                const walletTask = initializeWallet().then(() => fetchWallet(null, { cache: true }))
                 app._walletSync = walletTask.catch(() => {}) // yang butuh saldo bisa menunggu ini
                 if (!opts.background) await walletTask
             }
@@ -265,6 +292,8 @@ export const useDemoAuth = () => {
             // Ignore error
         }
         
+        // Hapus saldo yang di-cache (flag init wallet sengaja dipertahankan: sekali per akun).
+        try { if (import.meta.client) Object.keys(localStorage).filter((k) => k.startsWith('icmarket-wallet-bal:')).forEach((k) => localStorage.removeItem(k)) } catch { /* abaikan */ }
         session.value = null
         sessionCookie.value = null
         walletBalance.value = null

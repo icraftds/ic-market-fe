@@ -10,13 +10,19 @@ import * as cartApi from '~/services/cart.js'
 
 export const CART_STORAGE_KEY = 'icmarket-cart-v2'
 
+/** Salinan ringan produk untuk baris keranjang (tanpa deskripsi panjang) supaya keranjang tamu tampil tanpa API. */
+const pickSnap = (p) => ({
+  id: p.id, slug: p.slug, name: p.name, price: p.price, categoryName: p.categoryName, format: p.format,
+  seller: p.seller, sellerName: p.sellerName, tint: p.tint, image: p.image, images: Array.isArray(p.images) ? p.images.slice(0, 1) : []
+})
+
 const readGuest = () => {
   try { return parseStored(localStorage.getItem(CART_STORAGE_KEY)) } catch { return [] }
 }
 const writeGuest = (items) => {
   try {
     if (!items.length) localStorage.removeItem(CART_STORAGE_KEY)
-    else localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items.map((i) => ({ productId: i.productId, selected: i.selected }))))
+    else localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items.map((i) => ({ productId: i.productId, selected: i.selected, ...(i.snap ? { snap: i.snap } : {}) }))))
   } catch { /* penyimpanan diblokir: abaikan */ }
 }
 
@@ -31,12 +37,14 @@ export const useCartStore = defineStore('cart', () => {
   const serverProducts = ref({}) // productId -> produk (dari GET /cart), dipakai bila tak ada di katalog mock
   const syncing = ref(false)
   const hydrated = ref(false)
+  const serverCount = ref(0) // jumlah keranjang dari GET /user (tanpa memanggil GET /cart)
+  const loaded = ref(false) // daftar server sudah dimuat (hanya di halaman keranjang/checkout)
 
   const lines = computed(() => {
     const catalog = useCatalogStore()
     return items.value
       .map((it) => {
-        const product = catalog.byId(it.productId) || serverProducts.value[it.productId]
+        const product = catalog.byId(it.productId) || serverProducts.value[it.productId] || it.snap
         if (!product) return null
         return {
           productId: it.productId,
@@ -49,7 +57,8 @@ export const useCartStore = defineStore('cart', () => {
       .filter(Boolean)
   })
 
-  const count = computed(() => items.value.length)
+  // Login + daftar belum dimuat: pakai jumlah dari /user. Selain itu panjang daftar lokal.
+  const count = computed(() => (!mock && loggedIn() && !loaded.value ? serverCount.value : items.value.length))
   const selectedCount = computed(() => items.value.filter((i) => i.selected).length)
   const selectedTotal = computed(() => lines.value.reduce((a, l) => a + (l.selected ? l.product.price : 0), 0))
   const allSelected = computed(() => items.value.length > 0 && items.value.every((i) => i.selected))
@@ -78,18 +87,18 @@ export const useCartStore = defineStore('cart', () => {
   /** Setelah login: kirim item tamu ke akun, muat keranjang server, kosongkan penyimpanan tamu. */
   async function syncAfterLogin() {
     if (mock || syncing.value) return
+    const guest = items.value.length ? items.value : readGuest()
+    // Tidak ada item tamu: JANGAN memanggil GET /cart di sini. Jumlah dari /user; daftar dimuat di halaman keranjang.
+    if (!guest.length) { loaded.value = false; return }
     syncing.value = true
     try {
-      const guest = items.value.length ? items.value : readGuest()
-      let rows = await cartApi.listCart()
-      const push = itemsToPush(guest, rows)
-      if (push.length) {
-        const res = await cartApi.mergeCart(push.map((i) => i.productId))
-        if (res.skipped?.length) useUiStore().push({ tone: 'warn', message: `${res.skipped.length} produk tidak bisa dimasukkan ke keranjang.` })
-        rows = res.cart.length ? res.cart : await cartApi.listCart() // /cart/merge sudah mengembalikan keranjang terbaru
-      }
-      applyServer(rows, guest)
+      // Kirim item tamu; /cart/merge mengembalikan keranjang terbaru, jadi tidak perlu GET /cart.
+      const res = await cartApi.mergeCart(guest.map((i) => i.productId))
+      if (res.skipped?.length) useUiStore().push({ tone: 'warn', message: `${res.skipped.length} produk tidak bisa dimasukkan ke keranjang.` })
+      applyServer(res.cart || [], guest)
       items.value = items.value.filter((i) => i.cartId)
+      loaded.value = true
+      serverCount.value = items.value.length
       try { localStorage.removeItem(CART_STORAGE_KEY) } catch { /* abaikan */ }
     } catch (e) {
       notify(e, 'Gagal menyinkronkan keranjang.')
@@ -97,6 +106,33 @@ export const useCartStore = defineStore('cart', () => {
       syncing.value = false
     }
   }
+
+  /** Dipanggil halaman keranjang/checkout saja: muat daftar dari server (sekali; force = segarkan). */
+  async function ensureLoaded(force = false) {
+    if (!useServer() || (loaded.value && !force)) return
+    syncing.value = true
+    try {
+      await reloadServer()
+      loaded.value = true
+      serverCount.value = items.value.length
+    } catch (e) {
+      notify(e, 'Gagal memuat keranjang.')
+    } finally {
+      syncing.value = false
+    }
+  }
+
+  let lastCountAt = 0
+  /** Segarkan hanya jumlah (GET /cart/count), dibatasi 30 dtk; dipakai saat tab kembali aktif. */
+  async function refreshCount(force = false) {
+    if (!useServer() || loaded.value) return
+    if (!force && Date.now() - lastCountAt < 30_000) return
+    lastCountAt = Date.now()
+    try { serverCount.value = await cartApi.cartCount() } catch { /* badge boleh usang; tidak mengganggu halaman */ }
+  }
+
+  /** Diisi auth dari GET /user (cart_count). */
+  function setServerCount(n) { serverCount.value = Math.max(0, Number(n) || 0) }
 
   async function reloadServer() {
     const keep = items.value
@@ -120,9 +156,18 @@ export const useCartStore = defineStore('cart', () => {
   function add(productId) {
     const id = Number(productId)
     if (has(id)) return // produk digital: satu per keranjang
+    const p = useCatalogStore().byId(id)
+    const snap = p ? pickSnap(p) : undefined
     return run(
-      () => items.value.push({ productId: id, selected: true }),
-      async () => { await cartApi.addToCart(id, 1); await reloadServer() },
+      () => {
+        items.value.push({ productId: id, selected: true, ...(snap ? { snap } : {}) })
+        if (useServer() && !loaded.value) serverCount.value += 1
+      },
+      async () => {
+        const row = await cartApi.addToCart(id, 1)
+        const it = items.value.find((i) => i.productId === id)
+        if (it && row?.id) it.cartId = Number(row.id) // id baris keranjang dari respons POST; tanpa GET /cart
+      },
       'Gagal menambah ke keranjang.'
     )
   }
@@ -170,9 +215,9 @@ export const useCartStore = defineStore('cart', () => {
     const auth = useAuthStore()
     watch(() => auth.isLoggedIn, (on, was) => {
       if (on && !was) syncAfterLogin()
-      else if (!on && was) { items.value = []; serverProducts.value = {} }
+      else if (!on && was) { items.value = []; serverProducts.value = {}; loaded.value = false; serverCount.value = 0 }
     })
   }
 
-  return { items, lines, count, selectedCount, selectedTotal, allSelected, syncing, has, hydrate, syncAfterLogin, add, remove, toggle, toggleAll, removeSelected, dropSelected, reload, clear }
+  return { items, lines, count, serverCount, loaded, ensureLoaded, setServerCount, refreshCount, selectedCount, selectedTotal, allSelected, syncing, has, hydrate, syncAfterLogin, add, remove, toggle, toggleAll, removeSelected, dropSelected, reload, clear }
 })

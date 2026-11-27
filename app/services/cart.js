@@ -17,6 +17,13 @@ const mapCartRows = (rows) => (Array.isArray(rows) ? rows : []).map((r) => ({
 }))
 
 /** Produk non-published / tidak ada / milik sendiri -> 422; non-published dilempar sebagai code 'not_purchasable'. */
+/** Hanya jumlah baris keranjang (GET /cart/count): ringan, untuk badge header. */
+export async function cartCount() {
+  const api = useApi()
+  const d = await api('cart/count', { auth: 'required' })
+  return Math.max(0, Number(d?.count) || 0)
+}
+
 export async function addToCart(productId, quantity = 1) {
   const api = useApi()
   try {

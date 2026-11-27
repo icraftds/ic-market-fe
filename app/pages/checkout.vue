@@ -9,6 +9,8 @@ const cart = useCartStore()
 const wallet = useWalletStore()
 const ui = useUiStore()
 
+onMounted(() => { useAuthStore().ensureSession().then(() => cart.ensureLoaded()).catch(() => {}) })
+
 const step = ref('pay')
 const paying = ref(false)
 // Voucher + cashback di papan ini hanya tiruan desain; di mode API disembunyikan (belum terhubung ke server).

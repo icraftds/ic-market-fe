@@ -113,9 +113,9 @@ const bars = computed(() => props.values.map((v) => H[Math.max(0, Math.min(100, 
 </script>
 
 <template>
-  <MobilePanelCard :title="title">
+  <LayoutMobilePanelCard :title="title">
     <div role="img" :aria-label="label" class="tw:flex tw:h-[90px] tw:items-end tw:gap-[3px]">
       <span v-for="(c, i) in bars" :key="i" class="tw:flex-1 tw:rounded-t-[3px] tw:bg-seller" :class="c" />
     </div>
-  </MobilePanelCard>
+  </LayoutMobilePanelCard>
 </template>

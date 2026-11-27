@@ -101,7 +101,7 @@ const select = () => { close(); input.value?.blur() }
             <Icon name="material-symbols:search" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Cari
           </button>
         </form>
-        <SearchSuggest v-if="open" ref="suggest" :query="q" :listbox-id="listboxId" :active-index="active" @select="select" />
+        <LayoutSearchSuggest v-if="open" ref="suggest" :query="q" :listbox-id="listboxId" :active-index="active" @select="select" />
       </div>
 
       <div class="tw:flex tw:items-center tw:gap-3.5">
@@ -133,6 +133,5 @@ const select = () => { close(); input.value?.blur() }
         <a v-else :href="auth.loginHref(route.fullPath)" class="tw:flex tw:min-h-11 tw:items-center tw:rounded-[12px] tw:bg-ink tw:px-[22px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:hover:text-white tw:hover:bg-ink-2"><Icon name="material-symbols:login" class="tw:mr-2 tw:size-[18px] tw:shrink-0" aria-hidden="true" />Masuk</a>
       </div>
     </div>
-    <AppNav />
   </header>
 </template>

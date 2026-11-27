@@ -9,7 +9,7 @@ const dots = { bad: 'tw:bg-bad', warn: 'tw:bg-warn', ok: 'tw:bg-ok' }
 </script>
 
 <template>
-  <MobilePanelCard :title="title" tight>
+  <LayoutMobilePanelCard :title="title" tight>
     <ul class="tw:m-0 tw:flex tw:list-none tw:flex-col tw:gap-2.5 tw:p-0">
       <li v-for="(it, i) in items" :key="i" class="tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink">
         <component :is="it.to ? NuxtLink : 'div'" :to="it.to" class="tw:flex tw:items-center tw:gap-2.5 tw:text-inherit tw:no-underline">
@@ -17,5 +17,5 @@ const dots = { bad: 'tw:bg-bad', warn: 'tw:bg-warn', ok: 'tw:bg-ok' }
         </component>
       </li>
     </ul>
-  </MobilePanelCard>
+  </LayoutMobilePanelCard>
 </template>

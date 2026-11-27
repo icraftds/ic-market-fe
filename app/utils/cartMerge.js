@@ -42,7 +42,7 @@ export function itemsToPush(local, server) {
 export function parseStored(raw) {
   try {
     const data = typeof raw === 'string' ? JSON.parse(raw) : raw
-    return dedupe(data).map((i) => ({ productId: i.productId, selected: i.selected !== false }))
+    return dedupe(data).map((i) => ({ productId: i.productId, selected: i.selected !== false, ...(i.snap && typeof i.snap === 'object' ? { snap: i.snap } : {}) }))
   } catch {
     return []
   }
