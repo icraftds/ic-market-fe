@@ -6,6 +6,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const path = to.path
     // Katalog komponen UI hanya ada di mode dev; lewati pemeriksaan peran (import.meta.dev dibuang di build produksi).
     if (import.meta.dev && path.startsWith('/dev/')) return
+    // Fase desain: halaman seller/akun/hosting masih memakai data tiruan (belum ada API/sesi nyata).
+    // Pemeriksaan peran dilewati hanya di mode dev atau bila NUXT_PUBLIC_DESIGN_MOCK=true. Produksi biasa tetap terkunci.
+    if ((import.meta.dev || config.public.designMock) && ['/seller', '/akun', '/hosting'].some((p) => path === p || path.startsWith(p + '/'))) return
     if (config.public.ssoEnabled && ['/login', '/register'].includes(path)) {
         const target = typeof to.query.redirect === 'string' ? to.query.redirect : '/'
         if (import.meta.client) {

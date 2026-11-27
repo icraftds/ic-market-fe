@@ -69,6 +69,7 @@ export default defineNuxtConfig({
     },
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://market.icraftds.id',
+      designMock: process.env.NUXT_PUBLIC_DESIGN_MOCK === 'true',
       ssoEnabled: process.env.SSO_ENABLED === 'true',
       ssoGlobalLogoutEnabled: process.env.SSO_GLOBAL_LOGOUT_ENABLED === 'true',
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',
