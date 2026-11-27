@@ -64,7 +64,6 @@ export default defineNuxtConfig({
     '/seller/register': { ssr: true },
     '/akun/**': { ssr: false },
     '/hosting/pesan': { ssr: false },
-    '/product/*/preview': { ssr: false },
     '/**': { headers: securityHeaders({ apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api', authApiBase: process.env.NUXT_PUBLIC_AUTH_API_BASE || 'http://localhost:8003/api', production: process.env.NODE_ENV === 'production' }) }
   },
 

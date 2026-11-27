@@ -1,6 +1,8 @@
 User-agent: *
 Disallow: /admin/
 Disallow: /seller/
+Disallow: /akun/
+Disallow: /product/*/preview
 Disallow: /cart
 Disallow: /checkout
 Disallow: /payment

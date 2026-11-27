@@ -15,8 +15,12 @@ useSeoMeta({
   ogDescription: 'Template web, UI kit, source code, grafis, dan audio dengan akses instan dan garansi 30 hari.',
   ogType: 'website',
   ogImage: siteUrl + '/og-default.png',
+  ogImageAlt: 'IC Market – Marketplace Aset Digital Indonesia',
   ogUrl: siteUrl + '/',
-  twitterCard: 'summary_large_image'
+  twitterCard: 'summary_large_image',
+  twitterTitle: 'IC Market – Marketplace Aset Digital Indonesia',
+  twitterDescription: 'Template web, UI kit, source code, grafis, dan audio dengan akses instan dan garansi 30 hari.',
+  twitterImage: siteUrl + '/og-default.png'
 })
 
 // Data beranda (SSR, tanpa sesi): kategori + produk terbaru. HomeAllProducts memakai kunci cache yang sama.
@@ -31,7 +35,18 @@ useHead({
     type: 'application/ld+json',
     innerHTML: JSON.stringify([
       { '@context': 'https://schema.org', '@type': 'Organization', name: 'IC Market', url: siteUrl + '/', logo: siteUrl + '/logo-512.png' },
-      { '@context': 'https://schema.org', '@type': 'WebSite', name: 'IC Market', url: siteUrl + '/', inLanguage: 'id' },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'IC Market',
+        url: siteUrl + '/',
+        inLanguage: 'id',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${siteUrl}/cari?q={search_term_string}`,
+          'query-input': 'required name=search_term_string'
+        }
+      },
       {
         '@context': 'https://schema.org',
         '@type': 'ItemList',

@@ -58,7 +58,7 @@ const description = computed(() => {
     Number(p.price) === 0 ? 'gratis, akses instan.' : `${new Intl.NumberFormat('id-ID').format(Number(p.price))} iCoin, akses instan.`
   ].filter(Boolean).join(' ')
 })
-const image = computed(() => product.value?.image || `${siteUrl}/og/${product.value?.slug || slug.value}.png`)
+const image = computed(() => product.value?.image || `${siteUrl}/og-default.png`)
 
 useSeoMeta({
   title,
@@ -68,6 +68,7 @@ useSeoMeta({
   ogType: 'product',
   ogUrl: url,
   ogImage: image,
+  ogImageAlt: computed(() => (product.value ? `${product.value.name} – IC Market` : 'IC Market')),
   ogSiteName: 'IC Market',
   twitterCard: 'summary_large_image',
   twitterTitle: title,

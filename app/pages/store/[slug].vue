@@ -95,6 +95,7 @@ const title = computed(() => `${seller.value?.name || 'Toko'} | IC Market`)
 const description = computed(() => seller.value
   ? `${seller.value.shortDesc} ${seller.value.products} produk digital dari ${seller.value.name} di IC Market.`.trim()
   : 'Toko di IC Market.')
+const storeOgImage = computed(() => seller.value?.banner || seller.value?.logo || `${siteUrl}/og-default.png`)
 useSeoMeta({
   title,
   description,
@@ -102,7 +103,12 @@ useSeoMeta({
   ogDescription: description,
   ogType: 'website',
   ogUrl: canonical,
-  ogImage: computed(() => seller.value?.logo || undefined),
+  ogImage: storeOgImage,
+  ogImageAlt: computed(() => (seller.value ? `Toko ${seller.value.name} di IC Market` : 'Toko di IC Market')),
+  twitterCard: 'summary_large_image',
+  twitterTitle: title,
+  twitterDescription: description,
+  twitterImage: storeOgImage,
   robots: computed(() => (!seller.value || state.value.q ? 'noindex' : undefined))
 })
 useHead(() => ({

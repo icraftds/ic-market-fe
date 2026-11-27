@@ -11,7 +11,11 @@ definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
 const catalog = useCatalogStore()
+const siteUrl = String(useRuntimeConfig().public.siteUrl || 'https://market.icraftds.id').replace(/\/$/, '')
 const slug = computed(() => String(route.params.slug || '').trim().toLowerCase())
+
+// SSR: ambil metadata produk agar saat link /product/{slug}/preview dibagikan (WA, Discord, X, FB), preview OG tampil lengkap.
+const { data: initialProduct } = await useAsyncData(`preview-meta:${slug.value}`, () => catalog.fetchProduct(slug.value).catch(() => null), { watch: [slug] })
 
 const devDefs = [
   { id: 'desktop', label: 'Desktop', icon: 'material-symbols:desktop-windows-outline', cls: 'tw:w-full tw:h-full' },
@@ -19,17 +23,47 @@ const devDefs = [
   { id: 'mobile', label: 'Ponsel', icon: 'material-symbols:smartphone', cls: 'tw:w-[390px] tw:max-w-full tw:h-[780px] tw:max-h-full tw:rounded-2xl tw:shadow-2xl' }
 ]
 
-const product = ref(null)
+const product = ref(initialProduct.value || null)
 const phase = ref('loading') // loading | running | error | ended
 const errorMessage = ref('')
 const sessionUrl = ref('')
 const device = ref('desktop')
 const remaining = ref(600)
 
-useHead({
-  title: computed(() => (product.value ? `Live Preview: ${product.value.name}` : 'Live Preview')),
-  meta: [{ name: 'robots', content: 'noindex, nofollow' }]
+const seoTitle = computed(() => (product.value ? `Live Preview: ${product.value.name} | IC Market` : 'Live Preview | IC Market'))
+const seoDescription = computed(() => {
+  const p = product.value
+  if (!p) return 'Coba Live Preview produk digital langsung di browser melalui IC Market.'
+  return [
+    `Coba live preview interaktif ${p.name}.`,
+    p.desc,
+    Number(p.price) === 0 ? 'Gratis, akses instan.' : `${new Intl.NumberFormat('id-ID').format(Number(p.price))} iCoin, akses instan.`
+  ].filter(Boolean).join(' ')
 })
+const seoImage = computed(() => product.value?.image || `${siteUrl}/og-default.png`)
+const previewUrl = computed(() => `${siteUrl}/product/${product.value?.slug || slug.value}/preview`)
+const canonicalUrl = computed(() => `${siteUrl}/product/${product.value?.slug || slug.value}`)
+
+useSeoMeta({
+  title: seoTitle,
+  description: seoDescription,
+  ogTitle: seoTitle,
+  ogDescription: seoDescription,
+  ogType: 'website',
+  ogUrl: previewUrl,
+  ogImage: seoImage,
+  ogImageAlt: computed(() => (product.value ? `Live Preview ${product.value.name}` : 'IC Market Live Preview')),
+  ogSiteName: 'IC Market',
+  twitterCard: 'summary_large_image',
+  twitterTitle: seoTitle,
+  twitterDescription: seoDescription,
+  twitterImage: seoImage,
+  robots: 'noindex, nofollow'
+})
+
+useHead(() => ({
+  link: [{ rel: 'canonical', href: canonicalUrl.value }]
+}))
 
 const curDev = computed(() => devDefs.find((d) => d.id === device.value) || devDefs[0])
 const time = computed(() => `${String(Math.floor(remaining.value / 60)).padStart(2, '0')}:${String(remaining.value % 60).padStart(2, '0')}`)
