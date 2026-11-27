@@ -121,8 +121,8 @@ test('Vouchers page Gunakan button saves pending voucher and routes to /cart whe
   assert.equal(routes.pop(), '/')
 })
 
-function loadCheckout({ mock = false, lines, checkoutImpl, payImpl, reloadFails = false } = {}) {
-  const calls = { checkout: [], pay: [], dropped: 0, removed: 0, reloaded: 0, toasts: [], sync: 0 }
+function loadCheckout({ mock = false, lines, checkoutImpl, payImpl, voucherImpl, balance = 100000, reloadFails = false } = {}) {
+  const calls = { checkout: [], pay: [], voucher: [], dropped: 0, removed: 0, reloaded: 0, toasts: [], sync: 0 }
   const cart = {
     lines: lines || [
       { productId: 1, selected: true, product: { price: 10000 } },
@@ -132,21 +132,23 @@ function loadCheckout({ mock = false, lines, checkoutImpl, payImpl, reloadFails 
     get selectedTotal() { return this.lines.reduce((a, l) => a + (l.selected ? l.product.price : 0), 0) },
     dropSelected() { calls.dropped++ }, removeSelected() { calls.removed++ }, async reload() { calls.reloaded++ }
   }
-  const wallet = { isMock: mock, balance: 100000, format: (n) => String(n), async syncBalance() { calls.sync++ } }
+  const wallet = { isMock: mock, balance, format: (n) => String(n), async syncBalance() { calls.sync++ } }
   const context = vm.createContext({
-    ref, computed, onMounted() {}, definePageMeta() {}, useSeoMeta() {}, navigateTo() {},
+    ref, computed, watch() {}, onMounted() {}, definePageMeta() {}, useSeoMeta() {}, navigateTo() {},
+    useAuthStore: () => ({ ensureSession: async () => {} }),
+    validateVoucher: async (a) => { calls.voucher.push(a); if (voucherImpl) return voucherImpl(a); return { code: a.code, discount: 10000 } },
     useCartStore: () => cart, useWalletStore: () => wallet, useUiStore: () => ({ push: (t) => calls.toasts.push(t) }),
     checkoutOrder: async (a) => { calls.checkout.push(a); return checkoutImpl ? checkoutImpl(a) : { transaction_id: 'ORD-1', status: 'pending' } },
     payOrder: async (id) => { calls.pay.push(id); if (payImpl) return payImpl(id) },
     normalizeError: (e) => ({ message: e?.message || 'Terjadi kesalahan.' })
   })
-  vm.runInContext(stripImports(scriptOf('../app/pages/checkout.vue')) + '\nglobalThis.page = { step, paying, lines, total, showVoucher, pay, paid }', context)
+  vm.runInContext(stripImports(scriptOf('../app/pages/checkout.vue')) + '\nglobalThis.page = { step, paying, lines, total, pay, paid, voucherCode, voucherDiscount, voucherError, applyVoucher, removeVoucher, payable, insufficient }', context)
   return { page: context.page, calls }
 }
 
 test('Checkout page (API mode) sends only selected items with iCoin method, pays the created order, then shows done', async () => {
   const { page, calls } = loadCheckout()
-  assert.equal(page.showVoucher, false) // voucher/cashback tiruan tidak tampil di mode API
+  assert.equal(page.voucherCode.value, '') // tanpa voucher: tidak mengirim voucherCode
   assert.equal(page.total.value, 60000)
   await page.pay()
   assert.deepEqual(plain(calls.checkout), [{ items: [{ productId: 1 }, { productId: 3 }], paymentMethod: 'icmarket_coins' }])
@@ -181,8 +183,35 @@ test('Checkout page skips pay for free orders already completed, and ignores dou
 
 test('Checkout page (mock mode) makes no API calls', async () => {
   const { page, calls } = loadCheckout({ mock: true })
-  assert.equal(page.showVoucher, true)
+  assert.equal(calls.voucher.length, 0) // voucher mode mock = toggle tiruan di UI, tanpa panggilan server
   await page.pay()
   assert.equal(calls.checkout.length, 0); assert.equal(calls.pay.length, 0)
   assert.equal(calls.removed, 1); assert.equal(page.step.value, 'done')
+})
+
+test('Checkout page (API mode) applies a server-validated voucher and sends its code with the order', async () => {
+  const { page, calls } = loadCheckout()
+  await page.applyVoucher('HEMAT10')
+  assert.deepEqual(plain(calls.voucher), [{ code: 'HEMAT10', subtotal: 60000, items: [{ productId: 1 }, { productId: 3 }] }])
+  assert.equal(page.voucherCode.value, 'HEMAT10')
+  assert.equal(page.payable.value, 50000) // diskon dari SERVER (10.000), bukan hitungan klien
+  await page.pay()
+  assert.deepEqual(plain(calls.checkout), [{ items: [{ productId: 1 }, { productId: 3 }], paymentMethod: 'icmarket_coins', voucherCode: 'HEMAT10' }])
+  assert.equal(page.voucherCode.value, '') // voucher dilepas setelah dipakai
+})
+
+test('Checkout page (API mode) shows the server reason for a rejected voucher and keeps the full total', async () => {
+  const { page } = loadCheckout({ voucherImpl: async () => { throw new Error('Voucher sudah kedaluwarsa.') } })
+  await page.applyVoucher('LAMA')
+  assert.equal(page.voucherError.value, 'Voucher sudah kedaluwarsa.')
+  assert.equal(page.voucherCode.value, '')
+  assert.equal(page.payable.value, 60000)
+})
+
+test('Checkout page (API mode) blocks paying when the iCoin balance is not enough, without creating an order', async () => {
+  const { page, calls } = loadCheckout({ balance: 20000 })
+  assert.equal(page.insufficient.value, true)
+  await page.pay()
+  assert.equal(calls.checkout.length, 0)
+  assert.equal(page.step.value, 'pay')
 })

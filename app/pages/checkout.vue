@@ -2,7 +2,7 @@
 definePageMeta({ layout: 'blank', middleware: 'require-login' })
 useSeoMeta({ title: 'Checkout | IC Market', robots: 'noindex' })
 
-import { checkout as checkoutOrder, payOrder } from '~/services/orders'
+import { checkout as checkoutOrder, payOrder, validateVoucher } from '~/services/orders'
 import { normalizeError } from '~/services/errors'
 
 const cart = useCartStore()
@@ -13,18 +13,44 @@ onMounted(() => { useAuthStore().ensureSession().then(() => cart.ensureLoaded())
 
 const step = ref('pay')
 const paying = ref(false)
-// Voucher + cashback di papan ini hanya tiruan desain; di mode API disembunyikan (belum terhubung ke server).
-const showVoucher = wallet.isMock
 onMounted(() => { if (!wallet.isMock) wallet.syncBalance() })
 const voucher = ref(false)
 const paid = ref([])
 
 const lines = computed(() => cart.lines.filter(l => l.selected))
 const total = computed(() => cart.selectedTotal)
+
+// ---- Voucher nyata (mode API): kode diperiksa server, diskon dari server; dikirim lagi saat checkout ----
+const voucherCode = ref('')
+const voucherDiscount = ref(0)
+const voucherError = ref('')
+const voucherBusy = ref(false)
+async function applyVoucher(code) {
+  voucherBusy.value = true
+  voucherError.value = ''
+  try {
+    const v = await validateVoucher({ code, subtotal: total.value, items: lines.value.map((l) => ({ productId: l.productId })) })
+    voucherCode.value = v.code || code
+    voucherDiscount.value = Math.max(0, Math.trunc(Number(v.discount) || 0))
+  } catch (e) {
+    voucherCode.value = ''
+    voucherDiscount.value = 0
+    voucherError.value = normalizeError(e).message || 'Voucher tidak bisa dipakai.'
+  } finally {
+    voucherBusy.value = false
+  }
+}
+function removeVoucher() { voucherCode.value = ''; voucherDiscount.value = 0; voucherError.value = '' }
+// Isi keranjang berubah: diskon lama tidak berlaku lagi, minta pasang ulang.
+watch(total, () => { if (voucherCode.value) { removeVoucher(); voucherError.value = 'Isi keranjang berubah, pasang voucher lagi.' } })
+
+const payable = computed(() => Math.max(0, total.value - voucherDiscount.value))
+// Saldo diketahui & kurang: jangan buat pesanan yang pasti gagal bayar.
+const insufficient = computed(() => !wallet.isMock && wallet.balance !== null && payable.value > 0 && Number(wallet.balance) < payable.value)
 const cashback = computed(() => Math.round(total.value * 0.2))
 
 async function pay() {
-  if (!lines.value.length || paying.value) return
+  if (!lines.value.length || paying.value || insufficient.value) return
   if (wallet.isMock) {
     paid.value = lines.value
     cart.removeSelected()
@@ -36,10 +62,11 @@ async function pay() {
   const picked = lines.value
   let created = false
   try {
-    const order = await checkoutOrder({ items: picked.map((l) => ({ productId: l.productId })), paymentMethod: 'icmarket_coins' })
+    const order = await checkoutOrder({ items: picked.map((l) => ({ productId: l.productId })), paymentMethod: 'icmarket_coins', ...(voucherCode.value ? { voucherCode: voucherCode.value } : {}) })
     created = true
     if (order?.status !== 'completed') await payOrder(order.transaction_id) // produk gratis langsung completed
     paid.value = picked
+    removeVoucher()
     cart.dropSelected()
     step.value = 'done'
   } catch (e) {
@@ -68,9 +95,21 @@ function reset() {
         <h1 class="tw:m-0 tw:mt-1.5 tw:mb-5 tw:font-display tw:text-[32px] tw:font-extrabold tw:tracking-[-.02em]">Checkout</h1>
         <div class="tw:overflow-hidden tw:rounded-[20px] tw:border tw:border-solid tw:border-line tw:bg-surface">
           <CheckoutItems :lines="lines" />
-          <CheckoutPayMethod :balance="wallet.format()" :remain="wallet.format(wallet.balance - total)" />
-          <CheckoutVoucher v-if="showVoucher" :applied="voucher" :cashback="wallet.format(cashback)" @toggle="voucher = !voucher" />
-          <CheckoutSummary :total="wallet.format(total)" :disabled="!lines.length || paying" @pay="pay" />
+          <CheckoutPayMethod :balance="wallet.format()" :remain="wallet.format(wallet.balance - payable)" />
+          <CheckoutVoucher v-if="wallet.isMock" :applied="voucher" :cashback="wallet.format(cashback)" @toggle="voucher = !voucher" />
+          <CheckoutVoucherApi
+            v-else
+            :applied-code="voucherCode"
+            :discount="wallet.format(voucherDiscount)"
+            :error="voucherError"
+            :busy="voucherBusy"
+            @apply="applyVoucher"
+            @remove="removeVoucher"
+          />
+          <UiAlert v-if="insufficient" tone="warn" title="Saldo iCoin tidak cukup" class="tw:mx-[22px] tw:mb-4">
+            Kurang Z {{ wallet.format(payable - Number(wallet.balance)) }}. <NuxtLink to="/topup" class="tw:font-bold tw:text-brand">Top up saldo</NuxtLink> lalu kembali ke sini.
+          </UiAlert>
+          <CheckoutSummary :total="wallet.format(payable)" :disabled="!lines.length || paying || insufficient" @pay="pay" />
         </div>
       </template>
       <CheckoutDone v-else :lines="paid" @reset="reset" />

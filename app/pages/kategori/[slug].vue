@@ -74,16 +74,21 @@ watch(applied, (v) => { draft.value = { ...emptyFilters(), ...v } })
 // Jumlah hasil untuk draf (tombol sheet ponsel): hanya klien, ditunda.
 const draftTotal = ref(null)
 let draftTimer
+let autoTimer
 watch(draft, (f) => {
   if (!import.meta.client) return
   clearTimeout(draftTimer)
+  clearTimeout(autoTimer)
   const same = JSON.stringify(f) === JSON.stringify({ ...emptyFilters(), ...applied.value })
   if (same) { draftTotal.value = null; return }
+  // Desktop: filter berlaku langsung setelah jeda singkat (harga min/maks tidak mengirim tiap ketukan).
+  // Ponsel tetap memakai lembar filter + tombol "Terapkan" (tampil jumlah hasil dulu).
+  if (window.matchMedia('(min-width: 1024px)').matches) autoTimer = setTimeout(() => apply(), 500)
   draftTimer = setTimeout(async () => {
     try { draftTotal.value = (await catalog.fetchList(listParams(f, sort.value, 1, 1))).meta.total } catch { draftTotal.value = null }
   }, 300)
 }, { deep: true })
-onBeforeUnmount(() => clearTimeout(draftTimer))
+onBeforeUnmount(() => { clearTimeout(draftTimer); clearTimeout(autoTimer) })
 const draftCount = computed(() => draftTotal.value ?? meta.value.total)
 
 const go = (f, urut, pg = 1) => router.push({ path: route.path, query: buildCatalogQuery(f, urut, pg) })
@@ -220,7 +225,7 @@ useHead(() => ({
       <div class="tw:mt-3.5 tw:flex tw:flex-wrap tw:items-start tw:gap-7 tw:lg:mt-7">
         <CatalogFilterPanel
           v-model="draft"
-          class="tw:max-lg:hidden"
+          class="tw:max-lg:hidden tw:lg:sticky tw:lg:top-4 tw:lg:max-h-[calc(100vh-2rem)] tw:lg:self-start tw:lg:overflow-y-auto"
           :technologies="technologies"
           :sellers="sellerOptions"
           @apply="apply"

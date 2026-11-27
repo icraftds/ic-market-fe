@@ -29,3 +29,16 @@ export async function cancelOrder(orderId) {
   const api = useApi()
   return api(`orders/${orderId}/cancel`, { method: 'POST', auth: 'required' })
 }
+
+/** POST /vouchers/validate -> { code, type, amount, discount, ... }. Diskon dihitung SERVER dari harga di database (bukan klien). */
+export async function validateVoucher({ code, subtotal, items } = {}) {
+  const api = useApi()
+  return api('vouchers/validate', {
+    method: 'POST', auth: 'required',
+    body: {
+      code: String(code || '').trim(),
+      subtotal: Math.max(0, Math.trunc(Number(subtotal) || 0)),
+      items: (items || []).map((i) => ({ product_id: Number(i.productId ?? i.product_id), quantity: Number(i.quantity || 1) }))
+    }
+  })
+}
