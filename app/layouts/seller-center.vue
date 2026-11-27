@@ -4,7 +4,7 @@ const ui = useUiStore()
 
 <template>
   <div class="tw:flex tw:min-h-screen tw:flex-wrap tw:items-stretch tw:bg-panel tw:font-sans tw:text-hero">
-    <SellerSidebar class="tw:max-lg:hidden" />
+    <SellerSidebar class="tw:max-lg:hidden tw:lg:sticky tw:lg:top-0 tw:lg:h-screen tw:lg:self-start tw:lg:overflow-y-auto" />
     <div class="tw:flex tw:min-w-0 tw:flex-[999_1_640px] tw:flex-col">
       <!-- Ponsel (< lg): bar toko gelap + navigasi bawah 5 tab (papan V2Mobile #4). -->
       <LayoutMobileSellerHeader class="tw:lg:hidden" />
