@@ -69,7 +69,7 @@ const select = () => { close(); input.value?.blur() }
   <header class="tw:border-0 tw:border-b tw:border-solid tw:border-line tw:bg-surface tw:font-sans tw:leading-normal tw:text-ink">
     <div class="tw:mx-auto tw:flex tw:max-w-[1200px] tw:flex-wrap tw:items-center tw:gap-5 tw:px-6 tw:py-3.5">
       <NuxtLink to="/" aria-label="IC Market" class="tw:flex tw:items-baseline tw:gap-1.5 tw:font-display tw:text-[28px] tw:font-extrabold tw:tracking-[-.02em] tw:text-inherit tw:no-underline tw:hover:text-brand">
-        <span class="tw:text-brand">iC</span><span>Market</span>
+        <img src="/logo-market.webp" alt="IC Market" width="147" height="28" class="tw:block tw:h-7 tw:w-auto">
       </NuxtLink>
 
       <div ref="wrap" class="tw:relative tw:min-w-0 tw:flex-[1_1_360px]" @focusin="onFocusin" @focusout="onFocusout">

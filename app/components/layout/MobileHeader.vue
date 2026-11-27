@@ -41,7 +41,7 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-
   <header class="tw:flex tw:flex-col tw:gap-2.5 tw:border-0 tw:border-b tw:border-solid tw:border-line tw:bg-surface tw:px-4 tw:pt-3 tw:pb-2.5">
     <div class="tw:flex tw:items-center tw:justify-between">
       <NuxtLink to="/" aria-label="IC Market" class="tw:font-display tw:text-[22px] tw:font-extrabold tw:tracking-[-0.02em] tw:text-ink tw:no-underline">
-        <span class="tw:text-brand">iC</span> Market
+        <img src="/logo-market.webp" alt="IC Market" width="126" height="24" class="tw:block tw:h-6 tw:w-auto">
       </NuxtLink>
       <span class="tw:flex tw:items-center tw:gap-3">
         <NuxtLink

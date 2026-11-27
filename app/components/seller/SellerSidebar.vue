@@ -50,7 +50,7 @@ async function handleLogout() {
 <template>
   <aside class="tw:box-border tw:flex tw:max-w-full tw:flex-[1_1_240px] tw:flex-col tw:gap-[18px] tw:bg-side tw:px-[14px] tw:py-5 tw:text-[#cbd5e1]">
     <div class="tw:flex tw:items-baseline tw:gap-2 tw:px-2">
-      <NuxtLink to="/" class="tw:font-display tw:text-[24px] tw:font-extrabold tw:text-white tw:no-underline"><span class="tw:text-[#60a5fa]">iC</span> Market</NuxtLink>
+      <NuxtLink to="/" aria-label="IC Market" class="tw:inline-flex tw:items-center tw:rounded-lg tw:bg-white tw:px-2 tw:py-1 tw:no-underline"><img src="/logo-market.webp" alt="IC Market" width="116" height="22" class="tw:block tw:h-[22px] tw:w-auto"></NuxtLink>
       <span class="tw:font-mono tw:text-[9.5px] tw:font-semibold tw:tracking-[.08em] tw:text-[#94a3b8]">SELLER CENTER</span>
     </div>
 

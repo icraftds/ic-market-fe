@@ -45,7 +45,7 @@ const columns = computed(() => [
   <footer class="tw:mt-[72px] tw:border-0 tw:border-t tw:border-solid tw:border-line tw:bg-surface">
     <div class="tw:mx-auto tw:grid tw:max-w-shop tw:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] tw:gap-9 tw:px-6 tw:pt-11 tw:pb-7">
       <div>
-        <div class="tw:font-display tw:text-[26px] tw:font-extrabold tw:tracking-[-0.02em]"><span class="tw:text-brand">iC</span> Market</div>
+        <img src="/logo-market.webp" alt="IC Market" width="158" height="30" loading="lazy" class="tw:block tw:h-[30px] tw:w-auto">
         <p class="tw:mx-0 tw:mt-3 tw:mb-0 tw:max-w-[260px] tw:font-sans tw:text-[13.5px] tw:leading-[1.6] tw:font-normal tw:text-muted">Platform aset digital premium untuk developer dan desainer Indonesia.</p>
       </div>
       <div v-for="col in columns" :key="col.title">

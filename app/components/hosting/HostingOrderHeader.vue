@@ -14,7 +14,7 @@ const steps = computed(() => orderStepLabels.map((t, i) => ({
   <header class="tw:border-0 tw:border-b tw:border-solid tw:border-line tw:bg-surface">
     <div class="tw:mx-auto tw:flex tw:max-w-[1080px] tw:flex-wrap tw:items-center tw:justify-between tw:gap-4 tw:px-4 tw:py-4 tw:lg:px-6">
       <span class="tw:flex tw:items-center tw:gap-3.5">
-        <NuxtLink to="/" aria-label="IC Market" class="tw:font-display tw:text-[26px] tw:font-extrabold tw:tracking-[-0.02em] tw:text-ink tw:no-underline tw:hover:text-brand"><span class="tw:text-brand">iC</span> Market</NuxtLink>
+        <NuxtLink to="/" aria-label="IC Market" class="tw:inline-flex tw:items-center tw:no-underline"><img src="/logo-market.webp" alt="IC Market" width="136" height="26" class="tw:block tw:h-[26px] tw:w-auto"></NuxtLink>
         <span aria-hidden="true" class="tw:h-6 tw:w-px tw:bg-line" />
         <span class="tw:font-sans tw:text-[15px] tw:font-bold">Jasa Hosting</span>
       </span>

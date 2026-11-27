@@ -43,7 +43,7 @@ function onSelectSubscription(e) {
 <template>
   <aside class="tw:box-border tw:flex tw:max-w-full tw:flex-[1_1_240px] tw:flex-col tw:gap-4 tw:border-0 tw:border-r tw:border-solid tw:border-line tw:bg-white tw:px-3.5 tw:py-[18px]">
     <NuxtLink to="/" aria-label="IC Market" class="tw:px-2 tw:font-display tw:text-[24px] tw:font-extrabold tw:tracking-[-0.02em] tw:text-ink tw:no-underline tw:hover:text-brand tw:focus-visible:rounded-chip tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">
-      <span class="tw:text-brand">iC</span> Market <span class="tw:font-mono tw:text-[10px] tw:font-semibold tw:tracking-[.08em] tw:text-ink-2">AKUN</span>
+      <img src="/logo-market.webp" alt="IC Market" width="126" height="24" class="tw:block tw:h-6 tw:w-auto"> <span class="tw:font-mono tw:text-[10px] tw:font-semibold tw:tracking-[.08em] tw:text-ink-2">AKUN</span>
     </NuxtLink>
 
     <div class="tw:flex tw:items-center tw:gap-2.5 tw:px-2 tw:py-1">
