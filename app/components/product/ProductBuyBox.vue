@@ -10,23 +10,38 @@ const props = defineProps({
   seller: { type: Object, default: null }
 })
 const emit = defineEmits(['try'])
+const router = useRouter()
 const cart = useCartStore()
 const ui = useUiStore()
+const busy = ref(false)
 
 const formatLabel = computed(() => (props.product.format === 'JS' ? 'JavaScript' : props.product.format))
 const free = computed(() => Number(props.product.price) === 0)
 
-function addToCart() {
+async function addToCart() {
+  if (busy.value) return
   const p = props.product
   if (cart.has(p.id)) {
     ui.push({ tone: 'info', title: 'Sudah di keranjang', message: p.name })
     return
   }
-  cart.add(p.id)
-  ui.push({ tone: 'success', title: 'Ditambahkan ke keranjang', message: p.name })
+  busy.value = true
+  try {
+    const ok = await cart.add(p.id)
+    if (ok) ui.push({ tone: 'success', title: 'Ditambahkan ke keranjang', message: p.name })
+  } finally {
+    busy.value = false
+  }
 }
-function buyNow() {
-  cart.add(props.product.id)
+async function buyNow() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    const ok = await cart.add(props.product.id)
+    if (ok) await router.push('/checkout')
+  } finally {
+    busy.value = false
+  }
 }
 
 const chip = 'tw:rounded-chip tw:bg-subtle tw:px-[9px] tw:py-[5px] tw:font-mono tw:text-[11px] tw:font-medium tw:tracking-[0.08em] tw:text-ink-2 tw:uppercase tw:max-lg:rounded-[5px] tw:max-lg:px-2 tw:max-lg:py-1 tw:max-lg:text-[10px]'
@@ -58,15 +73,17 @@ const focus = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visi
     </div>
 
     <div class="tw:mt-5 tw:flex tw:flex-col tw:gap-2.5 tw:max-lg:mt-3">
-      <NuxtLink
-        to="/checkout"
-        class="tw:flex tw:min-h-[50px] tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:bg-ink tw:font-sans tw:text-[15px] tw:font-bold tw:text-white tw:no-underline tw:hover:bg-ink-2 tw:max-lg:hidden"
-        :class="focus"
-        @click="buyNow"
-      ><Icon name="material-symbols:shopping-bag-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Beli Sekarang</NuxtLink>
       <button
         type="button"
-        class="tw:m-0 tw:flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-0 tw:font-sans tw:text-[15px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:max-lg:hidden"
+        :disabled="busy"
+        class="tw:m-0 tw:flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:border-0 tw:bg-ink tw:p-0 tw:font-sans tw:text-[15px] tw:font-bold tw:text-white tw:hover:bg-ink-2 tw:disabled:opacity-60 tw:max-lg:hidden"
+        :class="focus"
+        @click="buyNow"
+      ><Icon name="material-symbols:shopping-bag-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Beli Sekarang</button>
+      <button
+        type="button"
+        :disabled="busy"
+        class="tw:m-0 tw:flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-0 tw:font-sans tw:text-[15px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:disabled:opacity-60 tw:max-lg:hidden"
         :class="focus"
         @click="addToCart"
       ><Icon name="material-symbols:shopping-cart-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Tambah ke Keranjang</button>

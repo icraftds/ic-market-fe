@@ -140,22 +140,26 @@ export const useCartStore = defineStore('cart', () => {
     items.value = items.value.filter((i) => i.cartId)
   }
 
-  // Optimistik + rollback. Mock/tamu: lokal saja.
+  // Optimistik + rollback. Mock/tamu: lokal saja. Mengembalikan true jika berhasil, false jika ditolak server.
   async function run(mutate, call, failMsg) {
     const before = items.value.map((i) => ({ ...i }))
+    const beforeCount = serverCount.value
     mutate()
-    if (!useServer()) return persistGuest()
+    if (!useServer()) { persistGuest(); return true }
     try {
       await call()
+      return true
     } catch (e) {
       items.value = before
+      serverCount.value = beforeCount
       notify(e, failMsg)
+      return false
     }
   }
 
-  function add(productId) {
+  async function add(productId) {
     const id = Number(productId)
-    if (has(id)) return // produk digital: satu per keranjang
+    if (has(id)) return true // produk digital: satu per keranjang
     const p = useCatalogStore().byId(id)
     const snap = p ? pickSnap(p) : undefined
     return run(
