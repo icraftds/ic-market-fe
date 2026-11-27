@@ -1,6 +1,7 @@
 <script setup>
 /** CenterOrders: tab Pesanan Masuk papan V2SellerCenter (3 kartu angka + tabel pesanan). */
 const seller = useSellerStore()
+const { page, pageSize, total, pageRows } = usePagination(() => seller.orderRows)
 const detail = ref(null)
 const open = computed({ get: () => detail.value != null, set: (v) => { if (!v) detail.value = null } })
 const th = 'tw:px-2 tw:py-3'
@@ -14,7 +15,7 @@ const th = 'tw:px-2 tw:py-3'
     </div>
   </div>
 
-  <SellerCenterTableCard min-width="tw:min-w-[820px]">
+  <SellerCenterTableCard min-width="tw:min-w-[820px]" :total="total" v-model:page="page" v-model:page-size="pageSize" noun="pesanan">
     <thead>
       <tr class="tw:bg-[#f8fafc] tw:text-left tw:font-semibold tw:text-panel-ink">
         <th class="tw:px-[14px] tw:py-3 tw:text-left">No. pesanan</th>
@@ -27,7 +28,7 @@ const th = 'tw:px-2 tw:py-3'
       </tr>
     </thead>
     <tbody>
-      <tr v-for="o in seller.orderRows" :key="o.no" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
+      <tr v-for="o in pageRows" :key="o.no" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
         <td class="tw:px-[14px] tw:py-3 tw:font-mono tw:text-[12.5px] tw:font-semibold">{{ o.no }}</td>
         <td class="tw:px-2 tw:py-3 tw:font-semibold">{{ o.buyer }}</td>
         <td class="tw:max-w-[280px] tw:px-2 tw:py-3">{{ o.product }}</td>

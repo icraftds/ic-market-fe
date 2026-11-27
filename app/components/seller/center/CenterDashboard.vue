@@ -3,6 +3,7 @@
 
 const seller = useSellerStore()
 const dash = computed(() => seller.dashboard)
+const { page: topPage, pageSize: topSize, total: topTotal, pageRows: topRows } = usePagination(() => dash.value.top, { pageSize: 5 })
 const periodLabel = computed(() => `${seller.period} hari terakhir`)
 
 const deltaTone = { ok: 'tw:text-[#15803d]', muted: 'tw:text-panel-ink', info: 'tw:text-[#1d4ed8]' }
@@ -93,7 +94,7 @@ const mobileBars = computed(() => dash.value.barHeights.slice(-20))
             </tr>
           </thead>
           <tbody>
-            <tr v-for="r in dash.top" :key="r.name">
+            <tr v-for="r in topRows" :key="r.name">
               <td :class="td" class="tw:font-semibold">{{ r.name }}</td>
               <td :class="td">{{ r.sold }}</td>
               <td :class="td">{{ r.rev }}</td>
@@ -102,6 +103,7 @@ const mobileBars = computed(() => dash.value.barHeights.slice(-20))
           </tbody>
         </table>
       </div>
+      <UiTablePager v-model:page="topPage" v-model:page-size="topSize" :total="topTotal" :page-sizes="[5, 10, 25]" noun="produk" label="Paginasi produk terlaris" class="tw:-mx-5 tw:-mb-5 tw:mt-3 tw:rounded-b-2xl" />
     </section>
   </div>
 

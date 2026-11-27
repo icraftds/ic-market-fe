@@ -43,7 +43,7 @@ function publish() {
         <SellerFormPreview />
         <SellerFormSeo />
       </div>
-      <aside class="tw:flex tw:min-w-0 tw:flex-[1_1_300px] tw:flex-col tw:gap-3.5">
+      <aside class="tw:flex tw:min-w-0 tw:flex-[1_1_300px] tw:flex-col tw:gap-3.5 tw:lg:sticky tw:lg:top-6 tw:lg:max-h-[calc(100vh-3rem)] tw:lg:self-start tw:lg:overflow-y-auto">
         <SellerFormPublishCard />
         <SellerFormCatalogCard />
       </aside>

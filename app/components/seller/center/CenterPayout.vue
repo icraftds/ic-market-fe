@@ -3,6 +3,7 @@
 const seller = useSellerStore()
 const ui = useUiStore()
 const fin = computed(() => seller.financeView)
+const { page, pageSize, total, pageRows } = usePagination(() => seller.payoutRows)
 const canPayout = computed(() => seller.finance.ready > 0)
 const label = 'tw:font-mono tw:text-[11px] tw:font-semibold tw:tracking-[.08em] tw:text-[#94a3b8]'
 
@@ -51,9 +52,9 @@ const changeBank = () => ui.push({ tone: 'info', message: 'Ganti rekening dibuka
     </div>
   </div>
 
-  <section aria-labelledby="h-ph" class="tw:overflow-x-auto tw:rounded-2xl tw:border tw:border-solid tw:border-panel-line tw:bg-white">
+  <section aria-labelledby="h-ph" class="tw:overflow-hidden tw:rounded-2xl tw:border tw:border-solid tw:border-panel-line tw:bg-white">
     <h2 id="h-ph" class="tw:m-0 tw:px-[18px] tw:pt-4 tw:pb-1.5 tw:font-sans tw:text-[16px] tw:font-bold">Riwayat payout</h2>
-    <table class="tw:w-full tw:min-w-[600px] tw:border-collapse tw:font-sans tw:text-[13.5px] tw:font-normal">
+    <div class="tw:overflow-x-auto"><table class="tw:w-full tw:min-w-[600px] tw:border-collapse tw:font-sans tw:text-[13.5px] tw:font-normal">
       <thead>
         <tr class="tw:text-left tw:font-semibold tw:text-panel-ink">
           <th class="tw:px-[18px] tw:py-[10px] tw:text-left">Tanggal</th>
@@ -63,13 +64,14 @@ const changeBank = () => ui.push({ tone: 'info', message: 'Ganti rekening dibuka
         </tr>
       </thead>
       <tbody>
-        <tr v-for="p in seller.payoutRows" :key="p.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
+        <tr v-for="p in pageRows" :key="p.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
           <td class="tw:px-[18px] tw:py-3 tw:text-panel-ink">{{ p.date }}</td>
           <td class="tw:px-2 tw:py-3 tw:font-mono tw:text-[12.5px] tw:font-semibold">{{ p.ref }}</td>
           <td class="tw:px-2 tw:py-3 tw:text-right tw:font-bold">{{ p.amountText }}</td>
           <td class="tw:px-[18px] tw:py-3"><SellerCenterChip :tone="p.tone">{{ p.status }}</SellerCenterChip></td>
         </tr>
       </tbody>
-    </table>
+    </table></div>
+    <UiTablePager v-model:page="page" v-model:page-size="pageSize" :total="total" noun="payout" label="Paginasi riwayat payout" />
   </section>
 </template>

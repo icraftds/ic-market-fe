@@ -1,6 +1,7 @@
 <script setup>
 /** CenterProducts: tab Produk papan V2SellerCenter (tab status, cari, bar aksi massal, tabel). */
 const seller = useSellerStore()
+const { page, pageSize, total, pageRows } = usePagination(() => seller.filteredProducts)
 const ui = useUiStore()
 const router = useRouter()
 
@@ -50,7 +51,7 @@ const th = 'tw:px-2 tw:py-3 tw:text-left'
     <button type="button" :class="bulkBtn" @click="makeVoucher"><Icon name="material-symbols:sell-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Buat voucher</button>
   </div>
 
-  <SellerCenterTableCard min-width="tw:min-w-[860px]">
+  <SellerCenterTableCard min-width="tw:min-w-[860px]" :total="total" v-model:page="page" v-model:page-size="pageSize" noun="produk">
     <thead>
       <tr class="tw:bg-[#f8fafc] tw:text-left tw:font-semibold tw:text-panel-ink">
         <th class="tw:w-7 tw:px-[14px] tw:py-3"><input type="checkbox" aria-label="Pilih semua" :checked="seller.allSelected" class="tw:size-[18px]" @change="toggleAll"></th>
@@ -63,7 +64,7 @@ const th = 'tw:px-2 tw:py-3 tw:text-left'
       </tr>
     </thead>
     <tbody>
-      <tr v-for="p in seller.filteredProducts" :key="p.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
+      <tr v-for="p in pageRows" :key="p.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
         <td class="tw:px-[14px] tw:py-3"><input type="checkbox" :checked="p.selected" :aria-label="`Pilih ${p.name}`" class="tw:size-[18px]" @change="seller.toggleSelect(p.id)"></td>
         <td class="tw:px-2 tw:py-3">
           <span class="tw:flex tw:items-center tw:gap-3">

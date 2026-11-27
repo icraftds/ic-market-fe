@@ -1,6 +1,7 @@
 <script setup>
 /** CenterLedger: tab Transaksi papan V2SellerCenter (filter jenis + buku besar). Dipakai /seller/transaksi dan /seller/finance. */
 const seller = useSellerStore()
+const { page, pageSize, total, pageRows } = usePagination(() => seller.ledgerRows)
 const th = 'tw:px-2 tw:py-3'
 const amountTone = (l) => (l.amount > 0 ? 'tw:text-[#15803d]' : l.kind === 'Refund' ? 'tw:text-[#b91c1c]' : 'tw:text-hero')
 const filterItems = computed(() => seller.ledgerFilters.map((f) => ({ value: f.id, label: f.label })))
@@ -9,7 +10,7 @@ const filterItems = computed(() => seller.ledgerFilters.map((f) => ({ value: f.i
 <template>
   <SellerCenterPills v-model="seller.ledgerFilter" :items="filterItems" label="Jenis transaksi" />
 
-  <SellerCenterTableCard min-width="tw:min-w-[760px]">
+  <SellerCenterTableCard min-width="tw:min-w-[760px]" :total="total" v-model:page="page" v-model:page-size="pageSize" noun="transaksi">
     <thead>
       <tr class="tw:bg-[#f8fafc] tw:text-left tw:font-semibold tw:text-panel-ink">
         <th class="tw:px-[14px] tw:py-3 tw:text-left">Tanggal</th>
@@ -20,7 +21,7 @@ const filterItems = computed(() => seller.ledgerFilters.map((f) => ({ value: f.i
       </tr>
     </thead>
     <tbody>
-      <tr v-for="l in seller.ledgerRows" :key="l.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
+      <tr v-for="l in pageRows" :key="l.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
         <td class="tw:px-[14px] tw:py-3 tw:text-panel-ink">{{ l.date }}</td>
         <td class="tw:px-2 tw:py-3"><SellerCenterChip :tone="l.tone">{{ l.kind }}</SellerCenterChip></td>
         <td class="tw:px-2 tw:py-3">{{ l.desc }}</td>

@@ -1,6 +1,7 @@
 <script setup>
 /** CenterCustomers: tab Pelanggan papan V2SellerCenter. Aksi tiruan: umpan balik lewat toast. */
 const seller = useSellerStore()
+const { page, pageSize, total, pageRows } = usePagination(() => seller.customerRows)
 const ui = useUiStore()
 
 const th = 'tw:px-2 tw:py-3 tw:text-left'
@@ -17,7 +18,7 @@ const give = (c) => ui.push({ tone: 'info', message: `Pilih voucher untuk ${c.na
     <button type="button" class="tw:m-0 tw:inline-flex tw:min-h-10 tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:px-[14px] tw:font-sans tw:text-[13px] tw:font-semibold tw:text-hero tw:hover:border-[#cbd5e1] tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none" @click="exportCsv"><Icon name="material-symbols:download" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Ekspor CSV</button>
   </div>
 
-  <SellerCenterTableCard min-width="tw:min-w-[760px]">
+  <SellerCenterTableCard min-width="tw:min-w-[760px]" :total="total" v-model:page="page" v-model:page-size="pageSize" noun="pelanggan">
     <thead>
       <tr class="tw:bg-[#f8fafc] tw:text-left tw:font-semibold tw:text-panel-ink">
         <th class="tw:px-[14px] tw:py-3 tw:text-left">Pelanggan</th>
@@ -28,7 +29,7 @@ const give = (c) => ui.push({ tone: 'info', message: `Pilih voucher untuk ${c.na
       </tr>
     </thead>
     <tbody>
-      <tr v-for="c in seller.customerRows" :key="c.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
+      <tr v-for="c in pageRows" :key="c.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
         <td class="tw:px-[14px] tw:py-3">
           <span class="tw:flex tw:items-center tw:gap-[10px]">
             <span aria-hidden="true" class="tw:grid tw:size-8 tw:place-items-center tw:rounded-full tw:bg-[#e0e7ff] tw:font-sans tw:text-[13px] tw:font-bold tw:text-[#1e3a8a]">{{ c.initial }}</span>

@@ -1,6 +1,7 @@
 <script setup>
 /** Tab "Riwayat transaksi" (V2HostingDash): filter jenis + tabel transaksi. */
 const hosting = useHostingStore()
+const { page, pageSize, total, pageRows } = usePagination(() => hosting.history)
 const kindTone = {
   Hosting: 'tw:bg-[#ecfeff] tw:text-[#0e7490]',
   Produk: 'tw:bg-subtle tw:text-[#33332f]',
@@ -24,8 +25,8 @@ const kindTone = {
     >{{ label }}</button>
   </div>
 
-  <div class="tw:overflow-x-auto tw:rounded-[18px] tw:border tw:border-solid tw:border-line tw:bg-white">
-    <table class="tw:w-full tw:min-w-[760px] tw:border-collapse tw:text-[13.5px]">
+  <div class="tw:overflow-hidden tw:rounded-[18px] tw:border tw:border-solid tw:border-line tw:bg-white">
+    <div class="tw:overflow-x-auto"><table class="tw:w-full tw:min-w-[760px] tw:border-collapse tw:text-[13.5px]">
       <thead>
         <tr class="tw:bg-[#fcfcfb] tw:text-left tw:text-ink-2">
           <th scope="col" class="tw:px-4 tw:py-3 tw:text-left tw:font-semibold">Tanggal</th>
@@ -37,7 +38,7 @@ const kindTone = {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(h, i) in hosting.history" :key="i" class="tw:border-0 tw:border-t tw:border-solid tw:border-subtle">
+        <tr v-for="(h, i) in pageRows" :key="i" class="tw:border-0 tw:border-t tw:border-solid tw:border-subtle">
           <td class="tw:px-4 tw:py-3 tw:whitespace-nowrap tw:text-ink-2">{{ h.date }}</td>
           <td class="tw:px-2 tw:py-3"><span :class="['tw:rounded-full tw:px-2.5 tw:py-[3px] tw:text-[12px] tw:font-semibold tw:whitespace-nowrap', kindTone[h.kind]]">{{ h.kind }}</span></td>
           <td class="tw:px-2 tw:py-3">{{ h.desc }}</td>
@@ -50,6 +51,7 @@ const kindTone = {
           </td>
         </tr>
       </tbody>
-    </table>
+    </table></div>
+    <UiTablePager v-model:page="page" v-model:page-size="pageSize" :total="total" tone="ink" noun="transaksi" label="Paginasi riwayat transaksi" />
   </div>
 </template>
