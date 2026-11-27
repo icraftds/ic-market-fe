@@ -86,8 +86,8 @@ function fullscreen() {
 }
 defineExpose({ fullscreen })
 
-const darkBtn = 'tw:m-0 tw:inline-flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-[9px] tw:rounded-xl tw:border-0 tw:bg-ink tw:px-[26px] tw:font-sans tw:text-[15px] tw:font-bold tw:text-white tw:hover:bg-ink-2 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:ring-offset-2 tw:focus-visible:outline-none'
-const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-center tw:gap-2.5 tw:rounded-[14px] tw:p-6 tw:text-center'
+const darkBtn = 'tw:m-0 tw:inline-flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-[9px] tw:rounded-xl tw:border-0 tw:bg-ink tw:px-[26px] tw:font-sans tw:text-[15px] tw:font-bold tw:text-white tw:hover:bg-ink-2 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:ring-offset-2 tw:focus-visible:outline-none tw:max-sm:w-full tw:max-sm:px-4 tw:max-sm:text-[14px]'
+const panel = 'tw:flex tw:min-h-[300px] tw:flex-col tw:items-center tw:justify-center tw:gap-2.5 tw:rounded-[14px] tw:p-5 tw:text-center tw:sm:aspect-[16/10] tw:sm:min-h-0 tw:sm:p-6'
 </script>
 
 <template>
@@ -100,21 +100,21 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
     </div>
 
     <!-- belum dimulai (tidak ada server yang menyala) -->
-    <div v-else-if="phase === 'idle'" class="tw:relative tw:grid tw:aspect-[16/10] tw:place-items-center tw:overflow-hidden tw:rounded-[14px] tw:bg-linear-160 tw:from-[#334155] tw:to-hero tw:p-6">
-      <div class="tw:max-w-[420px] tw:rounded-[18px] tw:bg-surface tw:px-[30px] tw:py-7 tw:text-center tw:shadow-[0_12px_40px_rgba(0,0,0,.25)] tw:max-lg:px-5 tw:max-lg:py-5">
-        <p class="tw:m-0 tw:font-display tw:text-xl tw:leading-[1.3] tw:font-bold tw:text-ink">Coba aplikasi ini langsung di browser</p>
-        <p class="tw:mx-0 tw:mt-2 tw:mb-0 tw:font-sans tw:text-sm tw:leading-[1.6] tw:font-normal tw:text-ink-2">Server preview dinyalakan khusus untuk Anda. Datanya contoh dan direset setelah sesi selesai.</p>
+    <div v-else-if="phase === 'idle'" class="tw:relative tw:grid tw:min-h-[300px] tw:place-items-center tw:rounded-[14px] tw:bg-linear-160 tw:from-[#334155] tw:to-hero tw:p-4 tw:sm:aspect-[16/10] tw:sm:min-h-0 tw:sm:p-6">
+      <div class="tw:w-full tw:max-w-[420px] tw:rounded-[18px] tw:bg-surface tw:px-[30px] tw:py-7 tw:text-center tw:shadow-[0_12px_40px_rgba(0,0,0,.25)] tw:max-lg:px-5 tw:max-lg:py-5">
+        <p class="tw:m-0 tw:font-display tw:text-xl tw:leading-[1.3] tw:font-bold tw:text-ink tw:max-sm:text-lg">Coba aplikasi ini langsung di browser</p>
+        <p class="tw:mx-0 tw:mt-2 tw:mb-0 tw:font-sans tw:text-sm tw:leading-[1.6] tw:font-normal tw:text-ink-2 tw:max-sm:text-[13px]">Server preview dinyalakan khusus untuk Anda. Datanya contoh dan direset setelah sesi selesai.</p>
         <button type="button" :class="darkBtn" class="tw:mt-[18px]" @click="emit('start')">
           <Icon name="material-symbols:play-arrow" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Mulai Live Preview
         </button>
-        <div class="tw:mt-3.5 tw:flex tw:flex-wrap tw:justify-center tw:gap-3.5 tw:font-sans tw:text-xs tw:font-medium tw:text-ink-2">
-          <span>Siap dalam ±10 detik</span><span aria-hidden="true">·</span><span>Sesi 15 menit</span><span aria-hidden="true">·</span><span>Node.js</span>
+        <div class="tw:mt-3.5 tw:flex tw:flex-wrap tw:justify-center tw:gap-x-3 tw:gap-y-1.5 tw:font-sans tw:text-xs tw:font-medium tw:text-ink-2">
+          <span>Siap dalam ±10 detik</span><span aria-hidden="true">·</span><span>Sesi 15 menit</span>
         </div>
       </div>
     </div>
 
     <!-- menyiapkan (cold start) -->
-    <div v-else-if="phase === 'starting'" role="status" class="tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-center tw:gap-[18px] tw:rounded-[14px] tw:bg-hero tw:p-6 tw:text-center tw:text-white">
+    <div v-else-if="phase === 'starting'" role="status" class="tw:flex tw:min-h-[300px] tw:flex-col tw:items-center tw:justify-center tw:gap-[18px] tw:rounded-[14px] tw:bg-hero tw:p-5 tw:text-center tw:text-white tw:sm:aspect-[16/10] tw:sm:min-h-0 tw:sm:p-6">
       <span aria-hidden="true" class="tw:size-11 tw:rounded-full tw:border-[3px] tw:border-solid tw:border-[#334155] tw:border-t-[#60a5fa] tw:motion-safe:animate-spin" />
       <span class="tw:font-display tw:text-xl tw:font-bold">Menyiapkan preview…</span>
       <ol class="tw:m-0 tw:flex tw:list-none tw:flex-col tw:gap-2 tw:p-0 tw:text-left tw:font-sans tw:text-[13.5px] tw:font-medium">
@@ -150,10 +150,10 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
           </div>
         </div>
       </div>
-      <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3 tw:px-1 tw:pt-3 tw:pb-0.5 tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-ink-2">
+      <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-2.5 tw:px-1 tw:pt-3 tw:pb-0.5 tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-ink-2">
         <span class="tw:flex tw:items-center tw:gap-2"><span aria-hidden="true" class="tw:size-2 tw:rounded-full tw:bg-ok" />Preview aktif<template v-if="timed"> · sisa sesi <b class="tw:font-mono tw:text-ink">{{ time }}</b></template></span>
-        <span class="tw:flex tw:items-center tw:gap-3">
-          <span class="tw:font-mono tw:text-[11.5px] tw:font-medium tw:text-muted">{{ deviceLabel }}</span>
+        <span class="tw:flex tw:flex-wrap tw:items-center tw:gap-x-3 tw:gap-y-2">
+          <span class="tw:font-mono tw:text-[11.5px] tw:font-medium tw:text-muted tw:max-sm:hidden">{{ deviceLabel }}</span>
           <a v-if="sessionUrl" :href="previewRoute" target="_blank" rel="noopener noreferrer" class="tw:inline-flex tw:min-h-9 tw:items-center tw:gap-1.5 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-brand tw:no-underline tw:hover:underline"><Icon name="material-symbols:open-in-new" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Buka di tab baru</a>
           <button type="button" class="tw:m-0 tw:inline-flex tw:min-h-9 tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-[9px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:py-0 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="emit('stop')"><Icon name="material-symbols:stop" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Akhiri sesi</button>
         </span>

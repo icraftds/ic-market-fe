@@ -52,7 +52,7 @@ const free = computed(() => Number(props.product.price) === 0)
       <NuxtLink :to="href" class="tw:min-h-10 tw:font-sans tw:text-[14.5px] tw:leading-[1.4] tw:font-semibold tw:text-ink tw:no-underline tw:hover:text-brand tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">{{ product.pre }}<mark v-if="product.hit" class="tw:rounded-[3px] tw:bg-[#fff1b8] tw:px-px tw:text-inherit">{{ product.hit }}</mark>{{ product.post }}</NuxtLink>
       <span v-if="sellerName" class="tw:font-sans tw:text-[12.5px] tw:font-normal tw:text-ink-2">{{ sellerName }}</span>
       <span class="tw:mt-auto tw:flex tw:items-center tw:gap-[7px] tw:pt-2 tw:font-display tw:text-lg tw:font-extrabold">
-        <span aria-hidden="true" class="tw:grid tw:size-[22px] tw:place-items-center tw:rounded-[7px] tw:bg-ink tw:font-display tw:text-[11px] tw:font-extrabold tw:text-coin">Z</span>{{ free ? 'Gratis' : number(product.price) }}
+        <img v-if="!free" src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-[22px] tw:shrink-0">{{ free ? 'Gratis' : number(product.price) }}
       </span>
     </div>
   </article>

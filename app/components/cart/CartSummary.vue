@@ -23,7 +23,7 @@ function checkout(e) {
     <div class="tw:flex tw:items-baseline tw:justify-between tw:border-0 tw:border-t tw:border-solid tw:border-[#efefea] tw:pt-3">
       <span class="tw:font-sans tw:text-[15px] tw:font-bold">Total</span>
       <span class="tw:flex tw:items-center tw:gap-[7px] tw:font-display tw:text-[26px] tw:font-extrabold">
-        <span aria-hidden="true" class="tw:grid tw:size-6 tw:place-items-center tw:rounded-[7px] tw:bg-ink tw:font-display tw:text-xs tw:font-extrabold tw:text-coin">Z</span>{{ number(cart.selectedTotal) }}
+        <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-6 tw:shrink-0">{{ number(cart.selectedTotal) }}
       </span>
     </div>
     <NuxtLink

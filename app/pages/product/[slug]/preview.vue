@@ -151,7 +151,13 @@ async function bootPreview(forceNew = false) {
   }
 }
 
-onMounted(() => bootPreview(false))
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    if (window.innerWidth < 640) device.value = 'mobile'
+    else if (window.innerWidth < 1024) device.value = 'tablet'
+  }
+  bootPreview(false)
+})
 onBeforeUnmount(clearTick)
 </script>
 

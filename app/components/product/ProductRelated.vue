@@ -36,7 +36,7 @@ const tint = (p) => tintClass[String(p.tint || '').toLowerCase()] || tintClass['
         <span class="tw:flex tw:flex-col tw:gap-2.5 tw:px-4 tw:pt-3.5 tw:pb-4">
           <span class="tw:line-clamp-2 tw:min-h-[39px] tw:font-sans tw:text-sm tw:leading-[1.4] tw:font-semibold">{{ p.name }}</span>
           <span v-if="Number(p.price) === 0" class="tw:font-display tw:text-[17px] tw:font-extrabold">Gratis</span>
-          <span v-else class="tw:flex tw:items-center tw:gap-[7px] tw:font-display tw:text-[17px] tw:font-extrabold"><span aria-hidden="true" class="tw:grid tw:size-5 tw:place-items-center tw:rounded-md tw:bg-ink tw:font-display tw:text-[10px] tw:font-extrabold tw:text-coin">Z</span>{{ number(p.price) }}</span>
+          <span v-else class="tw:flex tw:items-center tw:gap-[7px] tw:font-display tw:text-[17px] tw:font-extrabold"><img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-5 tw:shrink-0">{{ number(p.price) }}</span>
         </span>
       </NuxtLink>
     </div>

@@ -116,7 +116,7 @@ const select = () => { close(); input.value?.blur() }
         <div v-if="!auth.ready" aria-hidden="true" class="tw:h-11 tw:w-[112px] tw:animate-pulse tw:rounded-[12px] tw:bg-[#f0f0f2]" />
         <template v-else-if="auth.isLoggedIn">
           <NuxtLink to="/topup" class="tw:flex tw:min-h-11 tw:items-center tw:gap-[9px] tw:rounded-[10px] tw:border-[1.5px] tw:border-solid tw:border-[#e8f0ff] tw:bg-[#f5f9ff] tw:px-3 tw:py-1.5 tw:text-inherit tw:no-underline tw:hover:text-brand">
-            <span aria-hidden="true" class="tw:grid tw:size-[26px] tw:place-items-center tw:rounded-lg tw:bg-ink tw:font-display tw:text-[13px] tw:font-extrabold tw:text-coin">Z</span>
+            <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-[26px] tw:shrink-0">
             <span class="tw:flex tw:flex-col tw:leading-[1.15]">
               <span class="tw:font-mono tw:text-[9.5px] tw:font-semibold tw:tracking-[.06em] tw:text-brand">ICOINZ</span>
               <span class="tw:font-sans tw:text-[13px] tw:font-bold"><span class="tw:sr-only">Saldo </span>{{ number(wallet.balance) }}</span>

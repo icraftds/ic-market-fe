@@ -50,7 +50,7 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-
           class="tw:flex tw:items-center tw:gap-1.5 tw:rounded-lg tw:border tw:border-solid tw:border-[#e8f0ff] tw:bg-[#f5f9ff] tw:px-2 tw:py-1 tw:font-sans tw:text-[11.5px] tw:font-bold tw:text-ink tw:no-underline"
           :class="hit"
         >
-          <span aria-hidden="true" class="tw:grid tw:size-[18px] tw:place-items-center tw:rounded-[5px] tw:bg-ink tw:font-display tw:text-[10px] tw:font-extrabold tw:text-coin">Z</span>{{ coin }}
+          <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-[18px] tw:shrink-0">{{ coin }}
         </NuxtLink>
         <NuxtLink
           to="/cart"

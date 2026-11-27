@@ -86,7 +86,7 @@ const squareBtn = 'tw:relative tw:z-10 tw:m-0 tw:grid tw:size-11 tw:place-items-
       <div class="tw:mt-auto tw:flex tw:items-center tw:justify-between tw:gap-2.5 tw:pt-2">
         <span v-if="free" class="tw:font-display tw:text-lg tw:font-extrabold">Gratis</span>
         <span v-else class="tw:flex tw:items-center tw:gap-[7px] tw:font-display tw:text-lg tw:font-extrabold">
-          <span aria-hidden="true" class="tw:grid tw:size-[22px] tw:place-items-center tw:rounded-[7px] tw:bg-ink tw:font-display tw:text-[11px] tw:font-extrabold tw:text-coin">Z</span>{{ number(product.price) }}
+          <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-[22px] tw:shrink-0">{{ number(product.price) }}
         </span>
         <span class="tw:flex tw:gap-1.5">
           <NuxtLink

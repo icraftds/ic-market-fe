@@ -51,7 +51,7 @@ const focus = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visi
         <span class="tw:font-display tw:text-[34px] tw:leading-none tw:font-extrabold tw:tracking-[-0.02em]">Gratis</span>
       </template>
       <template v-else>
-        <span aria-hidden="true" class="tw:grid tw:size-8 tw:place-items-center tw:rounded-[9px] tw:bg-ink tw:font-display tw:text-base tw:font-extrabold tw:text-coin">Z</span>
+        <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-8 tw:shrink-0">
         <span class="tw:font-display tw:text-[34px] tw:leading-none tw:font-extrabold tw:tracking-[-0.02em]">{{ number(product.price) }}</span>
         <span class="tw:ml-0.5 tw:font-sans tw:text-[13px] tw:font-medium tw:text-muted">iCoin</span>
       </template>

@@ -53,7 +53,7 @@ const headCls = 'tw:mx-0 tw:mt-0 tw:mb-1 tw:px-3 tw:font-mono tw:text-[10.5px] t
           </span>
         </div>
         <NuxtLink to="/topup" class="tw:flex tw:min-h-11 tw:items-center tw:gap-[9px] tw:rounded-[10px] tw:border-[1.5px] tw:border-solid tw:border-[#e8f0ff] tw:bg-[#f5f9ff] tw:px-3 tw:no-underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">
-          <span aria-hidden="true" class="tw:grid tw:size-[26px] tw:place-items-center tw:rounded-lg tw:bg-ink tw:font-display tw:text-[13px] tw:font-extrabold tw:text-coin">Z</span>
+          <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-[26px] tw:shrink-0">
           <span class="tw:flex tw:flex-col tw:leading-[1.15]">
             <span class="tw:font-mono tw:text-[9.5px] tw:font-semibold tw:tracking-[0.06em] tw:text-brand">ICOINZ</span>
             <span class="tw:font-sans tw:text-[13px] tw:font-bold tw:text-ink">{{ coin }}</span>

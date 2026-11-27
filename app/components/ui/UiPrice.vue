@@ -24,7 +24,7 @@ const coinSizes = { sm: 'tw:size-4 tw:text-[10px]', md: 'tw:size-5 tw:text-xs', 
       <span class="tw:sr-only">Harga asli </span>{{ rupiah(oldValue) }}
     </s>
     <span v-if="coin !== null && coin !== ''" class="tw:inline-flex tw:items-center tw:gap-1 tw:self-center tw:text-[0.7em] tw:font-semibold tw:text-ink-2">
-      <span aria-hidden="true" class="tw:inline-flex tw:items-center tw:justify-center tw:rounded-full tw:bg-coin tw:font-bold tw:text-ink" :class="coinSizes[size] || coinSizes.md">Z</span>
+      <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:shrink-0" :class="coinSizes[size] || coinSizes.md">
       {{ number(coin) }}<span class="tw:sr-only"> koin</span>
     </span>
   </span>

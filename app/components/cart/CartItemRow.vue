@@ -61,7 +61,7 @@ const act = 'tw:m-0 tw:inline-flex tw:min-h-7 tw:items-center tw:gap-2 tw:cursor
       </span>
     </div>
     <span class="tw:flex tw:items-center tw:gap-[7px] tw:font-display tw:text-lg tw:font-extrabold">
-      <span aria-hidden="true" class="tw:grid tw:size-[22px] tw:place-items-center tw:rounded-[7px] tw:bg-ink tw:font-display tw:text-[11px] tw:font-extrabold tw:text-coin">Z</span>{{ number(p.price) }}
+      <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-[22px] tw:shrink-0">{{ number(p.price) }}
     </span>
   </div>
 </template>

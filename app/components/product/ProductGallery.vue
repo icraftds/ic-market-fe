@@ -121,6 +121,10 @@ function tryLive() {
 defineExpose({ tryLive })
 
 onMounted(() => {
+  if (typeof window !== 'undefined') {
+    if (window.innerWidth < 640) device.value = 'mobile'
+    else if (window.innerWidth < 1024) device.value = 'tablet'
+  }
   if (hasLive.value && route.hash === '#live-preview') mode.value = 'live'
   if (phase.value === 'full') {
     queueTimer = setInterval(() => {
@@ -141,23 +145,25 @@ const arrow = 'tw:absolute tw:top-1/2 tw:m-0 tw:grid tw:size-11 tw:-translate-y-
 </script>
 
 <template>
-  <section ref="root" aria-label="Preview produk" class="tw:min-w-0 tw:flex-[999_1_620px] tw:rounded-[22px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-3.5 tw:max-lg:rounded-none tw:max-lg:border-0 tw:max-lg:bg-transparent tw:max-lg:p-0">
+  <section ref="root" aria-label="Preview produk" class="tw:min-w-0 tw:flex-[999_1_620px] tw:rounded-[22px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-3.5 tw:max-lg:w-full tw:max-lg:flex-none tw:max-lg:rounded-none tw:max-lg:border-0 tw:max-lg:bg-transparent tw:max-lg:p-0">
     <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3 tw:px-0.5 tw:pt-0.5 tw:pb-3.5 tw:max-lg:px-0 tw:max-lg:pt-0 tw:max-lg:pb-3">
       <div role="tablist" aria-label="Mode tampilan" class="tw:flex tw:gap-1 tw:rounded-xl tw:bg-subtle tw:p-1 tw:max-lg:w-full tw:max-lg:rounded-[10px] tw:max-lg:p-[3px]">
         <button type="button" role="tab" :aria-selected="mode === 'img'" :class="[tabBase, mode === 'img' ? tabOn : tabOff]" @click="mode = 'img'"><Icon name="material-symbols:image-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Gambar <span class="tw:font-mono tw:text-[11px] tw:font-medium tw:text-muted">{{ total }}</span></button>
         <button v-if="hasLive" type="button" role="tab" :aria-selected="mode === 'live'" :class="[tabBase, mode === 'live' ? tabOn : tabOff]" @click="mode = 'live'"><span aria-hidden="true" class="tw:size-[7px] tw:rounded-full tw:bg-[#22c55e]" />Live Preview</button>
       </div>
-      <div v-if="mode === 'live' && phase === 'running'" class="tw:flex tw:items-center tw:gap-1.5">
-        <button
-          v-for="d in devDefs"
-          :key="d.id"
-          type="button"
-          :aria-label="d.label"
-          :aria-pressed="device === d.id"
-          class="tw:m-0 tw:grid tw:size-10 tw:cursor-pointer tw:place-items-center tw:rounded-[10px] tw:border tw:border-solid tw:p-0 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
-          :class="device === d.id ? 'tw:border-ink tw:bg-ink tw:text-white' : 'tw:border-line tw:bg-surface tw:text-ink'"
-          @click="device = d.id"
-        ><Icon :name="d.icon" class="tw:size-[18px]" aria-hidden="true" /></button>
+      <div v-if="mode === 'live' && phase === 'running'" class="tw:flex tw:flex-wrap tw:items-center tw:gap-1.5 tw:max-lg:w-full tw:max-lg:justify-between">
+        <div class="tw:flex tw:items-center tw:gap-1.5">
+          <button
+            v-for="d in devDefs"
+            :key="d.id"
+            type="button"
+            :aria-label="d.label"
+            :aria-pressed="device === d.id"
+            class="tw:m-0 tw:grid tw:size-10 tw:cursor-pointer tw:place-items-center tw:rounded-[10px] tw:border tw:border-solid tw:p-0 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
+            :class="device === d.id ? 'tw:border-ink tw:bg-ink tw:text-white' : 'tw:border-line tw:bg-surface tw:text-ink'"
+            @click="device = d.id"
+          ><Icon :name="d.icon" class="tw:size-[18px]" aria-hidden="true" /></button>
+        </div>
         <button type="button" class="tw:m-0 tw:flex tw:min-h-10 tw:cursor-pointer tw:items-center tw:gap-[7px] tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3.5 tw:py-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="live?.fullscreen()"><Icon name="material-symbols:fullscreen" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Layar penuh</button>
       </div>
     </div>
@@ -180,13 +186,15 @@ const arrow = 'tw:absolute tw:top-1/2 tw:m-0 tw:grid tw:size-11 tw:-translate-y-
     />
 
     <template v-else>
-      <div class="tw:relative tw:grid tw:aspect-[16/10] tw:place-items-center tw:rounded-[14px] tw:bg-linear-135 tw:from-[#e6ebf5] tw:to-[#f1ede6]">
+      <div class="tw:relative tw:grid tw:aspect-[16/10] tw:place-items-center tw:overflow-hidden tw:rounded-[14px] tw:bg-linear-135 tw:from-[#e6ebf5] tw:to-[#f1ede6]">
         <img v-if="photos.length" :src="photos[img]" :alt="`${product.name}, gambar ${img + 1} dari ${total}`" decoding="async" class="tw:size-full tw:rounded-[14px] tw:object-cover">
         <span v-else role="img" :aria-label="`${product.name}, gambar ${img + 1} dari ${total}`" class="tw:font-mono tw:text-xs tw:font-semibold tw:tracking-[0.08em] tw:text-ink-2 tw:max-lg:text-[11px]">[ GAMBAR {{ img + 1 }} DARI {{ total }} ]</span>
-        <button type="button" aria-label="Gambar sebelumnya" class="tw:left-3" :class="arrow" @click="prev"><Icon name="material-symbols:chevron-left" class="tw:size-5" aria-hidden="true" /></button>
-        <button type="button" aria-label="Gambar berikutnya" class="tw:right-3" :class="arrow" @click="next"><Icon name="material-symbols:chevron-right" class="tw:size-5" aria-hidden="true" /></button>
+        <template v-if="total > 1">
+          <button type="button" aria-label="Gambar sebelumnya" class="tw:left-3" :class="arrow" @click="prev"><Icon name="material-symbols:chevron-left" class="tw:size-5" aria-hidden="true" /></button>
+          <button type="button" aria-label="Gambar berikutnya" class="tw:right-3" :class="arrow" @click="next"><Icon name="material-symbols:chevron-right" class="tw:size-5" aria-hidden="true" /></button>
+        </template>
       </div>
-      <div class="tw:mt-3 tw:flex tw:gap-2.5 tw:overflow-x-auto">
+      <div v-if="total > 1" class="tw:mt-3 tw:flex tw:gap-2.5 tw:overflow-x-auto">
         <button
           v-for="(from, i) in (photos.length ? photos : thumbFrom)"
           :key="i"
