@@ -66,7 +66,7 @@ const headCls = 'tw:mx-0 tw:mt-0 tw:mb-1 tw:px-3 tw:font-mono tw:text-[10.5px] t
           <li v-for="l in main" :key="l.label">
             <NuxtLink :to="l.to" :aria-current="isActive(l) ? 'page' : undefined" :class="[itemCls, isActive(l) ? 'tw:bg-[#eef4ff] tw:text-brand' : l.brand ? 'tw:text-brand' : 'tw:text-[#44443f]']">{{ l.label }}</NuxtLink>
           </li>
-          <li>
+          <li v-if="!auth.isSeller">
             <NuxtLink to="/hosting" :aria-current="route.path.startsWith('/hosting') ? 'page' : undefined" class="tw:flex tw:min-h-11 tw:items-center tw:gap-1.5 tw:px-3 tw:font-sans tw:text-sm tw:font-semibold tw:text-[#44443f] tw:no-underline">Jasa Hosting <UiBadge tone="soon">SEGERA</UiBadge></NuxtLink>
           </li>
         </ul>

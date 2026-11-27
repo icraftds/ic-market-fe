@@ -416,7 +416,7 @@ onBeforeUnmount(() => {
         <NuxtLink to="/seller/register" class="nb-link highlight">
           {{ role === 'seller' ? 'Toko Saya' : 'Buka Toko' }}
         </NuxtLink>
-        <span class="nb-link-wip">
+        <span v-if="role !== 'seller'" class="nb-link-wip">
           Jasa Hosting
           <span class="wip-badge">Segera</span>
         </span>

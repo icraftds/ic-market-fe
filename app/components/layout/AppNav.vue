@@ -18,7 +18,7 @@ const links = computed(() => {
   ]
   if (auth.ready && sellerItem.value.kind === 'store') list.push({ label: 'Toko Saya', to: auth.user?.storeSlug ? `/store/${auth.user.storeSlug}` : '/seller', tone: 'brand' })
   else if (auth.ready) list.push({ label: sellerItem.value.label, to: sellerItem.value.to, tone: 'brand' })
-  list.push({ label: 'Jasa Hosting', to: '/hosting', tone: 'plain', soon: true })
+  if (!auth.isSeller) list.push({ label: 'Jasa Hosting', to: '/hosting', tone: 'plain', soon: true })
   if (auth.isLoggedIn) {
     list.push({ label: 'Pesanan Saya', to: '/orders', tone: 'plain' }, { label: 'Voucher Saya', to: '/vouchers', tone: 'plain' })
   }

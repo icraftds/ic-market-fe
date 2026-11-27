@@ -59,7 +59,7 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
         v-for="c in fan"
         :key="c.key"
         :to="c.to"
-        class="tw:relative tw:-ml-[38px] tw:h-60 tw:w-[195px] tw:flex-none tw:overflow-hidden tw:rounded-[22px] tw:text-white tw:no-underline tw:shadow-[0_14px_30px_rgba(15,23,42,0.22)]"
+        class="tw:relative tw:-ml-[38px] tw:h-60 tw:w-[195px] tw:flex-none tw:cursor-pointer tw:overflow-hidden tw:rounded-[22px] tw:text-white tw:no-underline tw:shadow-[0_14px_30px_rgba(15,23,42,0.22)] tw:transition-all tw:duration-300 tw:ease-out tw:hover:z-30 tw:hover:-translate-y-6 tw:hover:rotate-0 tw:hover:scale-105 tw:hover:shadow-[0_24px_48px_rgba(15,23,42,0.34)] tw:focus-visible:z-30 tw:focus-visible:-translate-y-6 tw:focus-visible:rotate-0 tw:focus-visible:scale-105"
         :class="[c.cls, focusRing]"
       >
         <span class="tw:absolute tw:top-3 tw:left-3 tw:inline-flex tw:items-center tw:gap-1 tw:rounded-full tw:bg-[#ef4444] tw:px-2 tw:py-[3px] tw:font-mono tw:text-[10px] tw:font-bold tw:tracking-[0.04em] tw:text-white">HOT</span>

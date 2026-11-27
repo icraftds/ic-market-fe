@@ -27,12 +27,18 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
     <div class="tw:flex tw:flex-1 tw:flex-col tw:gap-2 tw:px-4 tw:pt-3.5 tw:pb-4">
       <span class="tw:font-mono tw:text-[10.5px] tw:font-medium tw:tracking-[0.08em] tw:text-muted tw:uppercase">{{ product.categoryName }} · {{ product.format }}</span>
       <NuxtLink :to="href" class="tw:line-clamp-2 tw:min-h-10 tw:font-sans tw:text-[14.5px] tw:leading-[1.4] tw:font-semibold tw:text-ink tw:no-underline" :class="focusRing">{{ product.name }}</NuxtLink>
-      <span class="tw:font-sans tw:text-[12.5px] tw:font-normal tw:text-muted">Creative Studio</span>
+      <span class="tw:font-sans tw:text-[12.5px] tw:font-normal tw:text-muted">{{ product.sellerName || 'IC Market' }}</span>
       <div class="tw:mt-auto tw:flex tw:gap-2 tw:pt-2">
         <NuxtLink :to="`${href}#live-preview`" class="tw:flex tw:flex-1 tw:items-center tw:justify-center tw:gap-[7px] tw:rounded-lg tw:border tw:border-solid tw:border-line tw:p-2.5 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink tw:no-underline tw:hover:bg-subtle" :class="focusRing">
           <Icon name="material-symbols:visibility-outline" class="tw:size-[16px] tw:shrink-0" aria-hidden="true" />Coba
         </NuxtLink>
-        <span class="tw:flex tw:flex-1 tw:items-center tw:justify-center tw:gap-1.5 tw:rounded-lg tw:bg-ink tw:p-2.5 tw:font-sans tw:text-[13px] tw:font-bold tw:text-white">Z {{ number(product.price) }}</span>
+        <NuxtLink :to="href" class="tw:flex tw:flex-1 tw:cursor-pointer tw:items-center tw:justify-center tw:gap-1.5 tw:rounded-lg tw:bg-ink tw:p-2.5 tw:font-sans tw:text-[13px] tw:font-bold tw:text-white tw:no-underline tw:transition-colors tw:hover:bg-hero" :class="focusRing">
+          <template v-if="Number(product.price) === 0">Gratis</template>
+          <template v-else>
+            <img src="/icoinz.svg" alt="" aria-hidden="true" class="tw:size-4 tw:shrink-0">
+            <span>{{ number(product.price) }}</span>
+          </template>
+        </NuxtLink>
       </div>
     </div>
   </article>
