@@ -2,6 +2,13 @@
 /** Kartu status situs gelap (V2HostingDash): status, nama situs, stack, tombol unggah / buka situs. */
 import { dotClass, tabPath } from './classMaps'
 const hosting = useHostingStore()
+
+const liveHref = computed(() => {
+  if (hosting.isMock) return '#'
+  const host = hosting.siteName
+  if (!host) return '#'
+  return host.startsWith('http') ? host : `https://${host}`
+})
 </script>
 
 <template>
@@ -11,9 +18,25 @@ const hosting = useHostingStore()
         <span aria-hidden="true" class="tw:size-2 tw:rounded-full" :class="dotClass(hosting.live, hosting.configured)" />{{ hosting.statusText }}
       </span>
       <span class="tw:font-mono tw:text-[26px] tw:font-extrabold tw:tracking-[-0.01em]">{{ hosting.siteName }}</span>
-      <span class="tw:text-[13px] tw:font-medium tw:text-[#cbd5e1]">{{ hosting.stackName }} · VPS · SSL aktif</span>
+      <span class="tw:text-[13px] tw:font-medium tw:text-[#cbd5e1]">{{ hosting.stackName || 'Stack belum dipilih' }} · VPS · SSL aktif</span>
     </div>
-    <UiButton v-if="!hosting.live" :to="tabPath('files')" variant="brand" size="lg" icon="material-symbols:upload-file-outline" class="tw:rounded-[12px]! tw:px-5!">Unggah file project</UiButton>
-    <UiButton v-else href="#" variant="outline" size="lg" icon-right="material-symbols:open-in-new" class="tw:rounded-[12px]! tw:border-white! tw:px-5!">Buka situs</UiButton>
+    <UiButton
+      v-if="!hosting.live"
+      :to="tabPath('files')"
+      variant="brand"
+      size="lg"
+      :icon="hosting.fileUploaded ? 'material-symbols:rocket-launch-outline' : 'material-symbols:upload-file-outline'"
+      class="tw:rounded-[12px]! tw:px-5!"
+    >{{ hosting.fileUploaded ? 'Deploy sekarang' : 'Unggah file project' }}</UiButton>
+    <UiButton
+      v-else
+      :href="liveHref"
+      :target="hosting.isMock ? undefined : '_blank'"
+      :rel="hosting.isMock ? undefined : 'noopener noreferrer'"
+      variant="outline"
+      size="lg"
+      icon-right="material-symbols:open-in-new"
+      class="tw:rounded-[12px]! tw:border-white! tw:px-5!"
+    >Buka situs</UiButton>
   </section>
 </template>

@@ -5,9 +5,38 @@
  */
 const props = defineProps({ tab: { type: String, default: 'acct' } })
 const hosting = useHostingStore()
+const account = useAccountStore()
+
+const HOSTING_TABS = new Set(['home', 'files', 'domain', 'db', 'help', 'billing'])
+const ACCOUNT_TABS = new Set(['acct', 'hist', 'voucher'])
+
+function loadTabData(t) {
+  if (hosting.isMock) return
+  // Ringkasan akun & daftar langganan dibutuhkan sidebar di semua tab
+  account.loadSummary()
+  hosting.loadSubscriptions()
+  if (ACCOUNT_TABS.has(t)) {
+    account.ensure(t)
+    if (t === 'acct') account.loadVouchers()
+  }
+  if (HOSTING_TABS.has(t)) {
+    hosting.ensure(t)
+  }
+}
 
 hosting.setTab(props.tab)
-watch(() => props.tab, (t) => hosting.setTab(t))
+onMounted(() => loadTabData(props.tab))
+watch(() => props.tab, (t) => {
+  hosting.setTab(t)
+  if (import.meta.client) loadTabData(t)
+})
+
+const siteHref = computed(() => {
+  if (hosting.isMock) return '#'
+  const host = hosting.siteName
+  if (!host || !hosting.activeSubscription) return null
+  return host.startsWith('http') ? host : `https://${host}`
+})
 
 useSeoMeta({ title: () => `${hosting.title} | Akun IC Market`, robots: 'noindex' })
 </script>
@@ -21,7 +50,15 @@ useSeoMeta({ title: () => `${hosting.title} | Akun IC Market`, robots: 'noindex'
         <p v-if="tab === 'acct'" class="tw:m-0 tw:font-display tw:text-[20px] tw:font-extrabold">{{ hosting.title }}</p>
         <h1 v-else class="tw:m-0 tw:font-display tw:text-[20px] tw:font-extrabold">{{ hosting.title }}</h1>
         <div class="tw:flex tw:items-center tw:gap-3">
-          <UiButton v-if="hosting.inHosting" href="#" variant="outline" icon-right="material-symbols:open-in-new" class="tw:min-h-10! tw:px-3.5! tw:font-semibold! tw:text-[13px]! tw:hover:text-brand!">Buka situs</UiButton>
+          <UiButton
+            v-if="hosting.inHosting && siteHref"
+            :href="siteHref"
+            :target="hosting.isMock ? undefined : '_blank'"
+            :rel="hosting.isMock ? undefined : 'noopener noreferrer'"
+            variant="outline"
+            icon-right="material-symbols:open-in-new"
+            class="tw:min-h-10! tw:px-3.5! tw:font-semibold! tw:text-[13px]! tw:hover:text-brand!"
+          >Buka situs</UiButton>
           <UiButton to="/" icon="material-symbols:shopping-bag-outline" class="tw:min-h-10! tw:px-3.5! tw:font-semibold! tw:text-[13px]!">Belanja produk</UiButton>
         </div>
       </header>

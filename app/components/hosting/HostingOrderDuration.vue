@@ -4,7 +4,7 @@ const hosting = useHostingStore()
 </script>
 
 <template>
-  <section aria-labelledby="h-per" class="tw:rounded-[20px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-[22px] tw:py-5">
+  <section v-if="hosting.durations.length" aria-labelledby="h-per" class="tw:rounded-[20px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-[22px] tw:py-5">
     <div class="tw:mb-3.5 tw:flex tw:items-baseline tw:justify-between tw:gap-3">
       <h2 id="h-per" class="tw:m-0 tw:font-display tw:text-[17px] tw:font-bold">Durasi langganan</h2>
       <span class="tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-ink-2">Bisa diperpanjang kapan saja</span>

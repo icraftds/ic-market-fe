@@ -1,6 +1,7 @@
 <script setup>
 /** HostingHero: hero papan V2Hosting (badge, satu-satunya H1, paragraf, chip stack). */
-import { hostingStacks } from '~/mocks/hosting'
+const hosting = useHostingStore()
+const loading = computed(() => !hosting.isMock && hosting.loadState.plans.loading && !hosting.stacks.length)
 </script>
 
 <template>
@@ -9,9 +10,14 @@ import { hostingStacks } from '~/mocks/hosting'
     <h1 class="tw:mx-auto tw:mt-5 tw:mb-0 tw:max-w-[900px] tw:font-display tw:text-[length:clamp(38px,5.4vw,64px)] tw:leading-[1.05] tw:font-extrabold tw:tracking-[-0.03em] tw:text-hero">Project kamu, <em class="tw:bg-linear-90 tw:from-brand tw:to-[#7c5cff] tw:bg-clip-text tw:text-transparent tw:italic">langsung online</em>.</h1>
     <p class="tw:mx-auto tw:mt-4 tw:mb-0 tw:max-w-[600px] tw:font-sans tw:text-[16.5px] tw:leading-[1.6] tw:text-[#475569]">Mulai dari tugas kuliah sampai project kelompok. Tinggal sesuaikan kebutuhan.</p>
 
-    <p class="tw:mt-7 tw:mb-2.5 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink-2">Satu paket untuk semua stack</p>
-    <ul aria-label="Stack yang didukung" class="tw:m-0 tw:flex tw:list-none tw:flex-wrap tw:justify-center tw:gap-2 tw:p-0">
-      <li v-for="s in hostingStacks" :key="s" class="tw:rounded-full tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3.5 tw:py-2 tw:font-sans tw:text-[13px] tw:font-semibold">{{ s }}</li>
-    </ul>
+    <template v-if="hosting.stacks.length || loading">
+      <p class="tw:mt-7 tw:mb-2.5 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink-2">Satu paket untuk semua stack</p>
+      <ul v-if="hosting.stacks.length" aria-label="Stack yang didukung" class="tw:m-0 tw:flex tw:list-none tw:flex-wrap tw:justify-center tw:gap-2 tw:p-0">
+        <li v-for="s in hosting.stacks" :key="s" class="tw:rounded-full tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3.5 tw:py-2 tw:font-sans tw:text-[13px] tw:font-semibold">{{ s }}</li>
+      </ul>
+      <div v-else aria-hidden="true" class="tw:flex tw:flex-wrap tw:justify-center tw:gap-2">
+        <span v-for="n in 6" :key="n" class="tw:h-9 tw:w-28 tw:animate-pulse tw:rounded-full tw:bg-subtle" />
+      </div>
+    </template>
   </section>
 </template>

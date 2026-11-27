@@ -14,17 +14,21 @@ const makeUser = (role) => {
   return { name: 'IC Market Buyer', initial: 'I', role: 'buyer', hasStore: false, storeName: null, storeSlug: null }
 }
 
-const fromSession = (s, store) => {
+const fromSession = (s, store, appStatus = null) => {
   const name = s.name || s.email || 'Pengguna'
+  const storeStatus = store?.status ?? s.store_status ?? null
+  const applicationStatus = appStatus ?? s.application_status ?? null
   return {
     id: s.id ?? null,
     name,
     initial: String(name).trim().charAt(0).toUpperCase() || 'U',
     email: s.email ?? null,
     role: s.role || 'buyer',
-    hasStore: !!store,
+    hasStore: !!store || !!storeStatus,
     storeName: store?.name ?? null,
-    storeSlug: store?.slug ?? null
+    storeSlug: store?.slug ?? null,
+    storeStatus,
+    applicationStatus
   }
 }
 
@@ -36,35 +40,52 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(mock ? makeUser('seller') : null)
   const status = ref(mock ? 'ready' : 'idle') // 'idle' | 'loading' | 'ready'
   const store = ref(mock ? { name: 'Creative Studio', slug: 'creative-studio', status: 'active' } : null)
+  const storeStatus = ref(mock ? 'active' : null)
   const applicationStatus = ref(null)
   const isMock = mock
 
   const isLoggedIn = computed(() => user.value !== null)
   const role = computed(() => user.value?.role ?? null)
   const isSeller = computed(() => user.value?.role === 'seller')
-  const hasStore = computed(() => !!store.value || !!user.value?.hasStore)
+  const hasStore = computed(() => !!store.value || !!storeStatus.value || !!user.value?.hasStore)
   const ready = computed(() => status.value === 'ready')
 
   let inflight = null
 
-  async function loadStore(r) {
+  async function loadStore(r, initialAppStatus = null, initialStoreStatus = null) {
     store.value = null
-    applicationStatus.value = null
+    storeStatus.value = initialStoreStatus
+    applicationStatus.value = initialAppStatus
     if (r !== 'seller' && r !== 'buyer') return
     try {
       const api = useApi()
       const res = await api('seller/store', { auth: 'required', raw: true })
       const data = res?.data ?? null
       store.value = data && typeof data === 'object' ? data : null
-      applicationStatus.value = res?.application_status ?? data?.application_status ?? null
+      if (store.value?.status) storeStatus.value = store.value.status
+      const nextAppStatus = res?.application_status ?? data?.application_status ?? null
+      if (nextAppStatus) applicationStatus.value = nextAppStatus
       // Kontrak: GET /seller/store seharusnya memuat application_status; kode BE saat ini hanya mengembalikan toko.
       // Tanpa toko dan tanpa status -> tanyakan status aplikasi ke GET /seller/application.
       if (!store.value && !applicationStatus.value) {
         const app = await api('seller/application', { auth: 'required' })
-        applicationStatus.value = app?.application?.status ?? null
+        if (app?.application?.status) applicationStatus.value = app.application.status
       }
     } catch {
-      // Gagal memuat toko tidak boleh memutus sesi; dianggap belum punya toko.
+      // Gagal memuat toko tidak boleh memutus sesi; pertahankan status dari /api/user jika ada.
+    }
+  }
+
+  function syncAccountStatus({ storeStatus: nextStoreStatus, applicationStatus: nextAppStatus } = {}) {
+    if (nextStoreStatus !== undefined) storeStatus.value = nextStoreStatus
+    if (nextAppStatus !== undefined) applicationStatus.value = nextAppStatus
+    if (user.value) {
+      user.value = {
+        ...user.value,
+        hasStore: !!store.value || !!storeStatus.value || !!user.value.hasStore,
+        storeStatus: storeStatus.value,
+        applicationStatus: applicationStatus.value
+      }
     }
   }
 
@@ -76,12 +97,14 @@ export const useAuthStore = defineStore('auth', () => {
     if (!s) {
       user.value = null
       store.value = null
+      storeStatus.value = null
       applicationStatus.value = null
       return
     }
-    applicationStatus.value = s.application_status ?? null
-    await loadStore(s.role)
-    user.value = fromSession(s, store.value)
+    const userStoreStatus = s.store_status ?? null
+    const userAppStatus = s.application_status ?? null
+    await loadStore(s.role, userAppStatus, userStoreStatus)
+    user.value = fromSession(s, store.value, applicationStatus.value)
   }
 
   /** Dipakai middleware (SSR + klien): tunggu sesi terbaca sekali. */
@@ -124,11 +147,12 @@ export const useAuthStore = defineStore('auth', () => {
     if (!isMock) {
       try { await useDemoAuth().logout() } catch { /* sesi lokal tetap dibersihkan */ }
       store.value = null
+      storeStatus.value = null
       applicationStatus.value = null
     }
     user.value = null
     status.value = 'ready'
   }
 
-  return { user, status, ready, role, store, applicationStatus, hasStore, isMock, isLoggedIn, isSeller, init, ensureSession, refresh, loginMock, loginHref, requireLogin, logout }
+  return { user, status, ready, role, store, storeStatus, applicationStatus, hasStore, isMock, isLoggedIn, isSeller, init, ensureSession, refresh, syncAccountStatus, loginMock, loginHref, requireLogin, logout }
 })
