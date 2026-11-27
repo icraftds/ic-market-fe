@@ -1,29 +1,56 @@
 <script setup>
-/** SellerFormProduct: form tambah/edit produk (papan V2SellerProductForm). Dipakai create.vue dan [id]/edit.vue. */
+/** SellerFormProduct: form tambah/edit produk (papan V2SellerProductForm). Dipakai create.vue dan [id]/edit.vue (edit memuat produk lebih dulu). */
 const props = defineProps({
   productId: { type: [String, Number], default: null }
 })
 const seller = useSellerStore()
 const ui = useUiStore()
+const api = !seller.isMock
 const isEdit = props.productId != null
 const title = isEdit ? 'Edit produk' : 'Tambah produk'
+const saving = ref(false)
 
 if (isEdit) seller.loadForm(props.productId)
 else seller.newForm()
 
-function saveDraft() {
-  const { product } = seller.saveProduct('draf')
-  ui.push({ tone: 'success', title: 'Draf disimpan', message: product?.name || 'Produk tanpa nama' })
+// Kunci error server -> bagian form yang memuatnya (untuk menggulir ke field bermasalah).
+const SECTION = { name: 'info', category: 'info', price: 'info', license: 'info', summary: 'info', description: 'info', tags: 'info', features: 'fitur', tech: 'fitur', gallery: 'galeri', file: 'file', version: 'file', slug: 'seo', seoTitle: 'seo', seoDescription: 'seo', status: 'h-pub' }
+function scrollTo(id) {
+  if (import.meta.client) document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
-function publish() {
-  const res = seller.saveProduct('aktif')
-  if (!res.ok) {
-    ui.push({ tone: 'warn', title: 'Belum bisa dipublikasikan', message: 'Lengkapi: ' + res.missing.join(', ') + '.' })
-    const first = seller.checklist.find((c) => !c.done && c.t !== 'Live preview (opsional)')
-    if (import.meta.client && first) document.getElementById(first.go)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+function showFieldErrors(errors) {
+  const keys = Object.keys(errors || {})
+  if (!keys.length) return false
+  ui.push({ tone: 'warn', title: 'Periksa isian', message: 'Beberapa isian belum sesuai. Lihat pesan di bawah kolom yang ditandai.' })
+  scrollTo(SECTION[keys[0]] || 'info')
+  return true
+}
+
+async function saveDraft() {
+  if (saving.value) return
+  saving.value = true
+  const res = await seller.saveProduct('draf')
+  saving.value = false
+  if (!api) {
+    ui.push({ tone: 'success', title: 'Draf disimpan', message: res.product?.name || 'Produk tanpa nama' })
     return
   }
-  ui.push({ tone: 'success', title: 'Produk dipublikasikan', message: res.product.name })
+  if (!res.ok) showFieldErrors(res.errors)
+}
+async function publish() {
+  if (saving.value) return
+  saving.value = true
+  const res = await seller.saveProduct('aktif')
+  saving.value = false
+  if (!res.ok) {
+    if (res.missing?.length) {
+      ui.push({ tone: 'warn', title: 'Belum bisa dipublikasikan', message: 'Lengkapi: ' + res.missing.join(', ') + '.' })
+      const first = seller.checklist.find((c) => !c.done && c.t !== 'Live preview (opsional)')
+      if (first) scrollTo(first.go)
+    } else if (api) showFieldErrors(res.errors)
+    return
+  }
+  if (!api) ui.push({ tone: 'success', title: 'Produk dipublikasikan', message: res.product.name })
   navigateTo('/seller/products')
 }
 </script>
@@ -31,7 +58,7 @@ function publish() {
 <template>
   <div class="tw:contents">
     <div class="tw:-mx-4 tw:-mt-3.5 tw:lg:-mx-7 tw:lg:-mt-6">
-      <SellerFormHeader :title="title" @save-draft="saveDraft" @publish="publish" />
+      <SellerFormHeader :title="title" :busy="saving" @save-draft="saveDraft" @publish="publish" />
       <SellerFormJump />
     </div>
     <div class="tw:flex tw:flex-wrap tw:items-start tw:gap-5">

@@ -15,18 +15,27 @@ const tiles = [
   'tw:bg-[linear-gradient(135deg,#efe8e4,#f7f7f5)]'
 ]
 const count = computed(() => seller.form.gallery)
+const api = !seller.isMock
+const images = computed(() => seller.form.images || [])
+const error = computed(() => seller.errors.product?.gallery || '')
+const uploading = ref(false)
 
-function onPick(event) {
+async function onPick(event) {
   const files = Array.from(event.target.files || [])
   event.target.value = ''
   const okType = /^image\/(jpeg|png|webp)$/
   let added = 0
   let rejected = 0
+  const accepted = []
   for (const f of files) {
     if (!okType.test(f.type) || f.size > MAX_BYTES || seller.form.gallery + added >= MAX) rejected++
-    else added++
+    else { added++; accepted.push(f) }
   }
-  seller.form.gallery = Math.min(MAX, seller.form.gallery + added)
+  if (api) {
+    uploading.value = true
+    for (const f of accepted) await seller.uploadFormImage(f)
+    uploading.value = false
+  } else seller.form.gallery = Math.min(MAX, seller.form.gallery + added)
   if (rejected) ui.push({ tone: 'warn', title: 'Sebagian gambar ditolak', message: 'Maks. 6 gambar, JPG/PNG/WebP, 5 MB per file.' })
 }
 </script>
@@ -41,12 +50,14 @@ function onPick(event) {
         class="tw:relative tw:aspect-[4/3] tw:rounded-xl tw:border-solid"
         :class="[tiles[(n - 1) % tiles.length], n === 1 ? 'tw:border-2 tw:border-seller' : 'tw:border tw:border-panel-line']"
       >
+        <img v-if="images[n - 1]" :src="images[n - 1]" alt="" class="tw:absolute tw:inset-0 tw:size-full tw:rounded-[10px] tw:object-cover">
         <span v-if="n === 1" class="tw:absolute tw:top-2 tw:left-2 tw:rounded-full tw:bg-seller tw:px-2 tw:py-[3px] tw:font-sans tw:text-[10.5px] tw:font-bold tw:text-white">Sampul</span>
         <span class="tw:sr-only">Gambar {{ n }}{{ n === 1 ? ', sampul' : '' }}</span>
       </li>
       <li v-if="count < MAX" class="tw:contents">
         <button
           type="button"
+          :disabled="uploading"
           class="tw:flex tw:aspect-[4/3] tw:cursor-pointer tw:flex-col tw:items-center tw:justify-center tw:gap-1 tw:rounded-xl tw:border-[1.5px] tw:border-dashed tw:border-[#94a3b8] tw:bg-[#f8fafc] tw:font-sans tw:text-hero tw:hover:border-seller tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"
           @click="picker?.click()"
         >
@@ -56,6 +67,7 @@ function onPick(event) {
         </button>
       </li>
     </ul>
+ <p v-if="error" role="alert" class="tw:m-0 tw:font-sans tw:text-[12px] tw:font-medium tw:text-bad">{{ error }}</p>
     <input ref="picker" type="file" accept="image/jpeg,image/png,image/webp" multiple class="tw:sr-only" tabindex="-1" aria-hidden="true" @change="onPick">
   </SellerFormSection>
 </template>

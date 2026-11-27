@@ -5,6 +5,12 @@ const { page, pageSize, total, pageRows } = usePagination(() => seller.filteredP
 const ui = useUiStore()
 const router = useRouter()
 
+const api = !seller.isMock
+const st = computed(() => seller.loadState.products)
+const busy = computed(() => api && st.value.loading && !st.value.loaded)
+const failed = computed(() => api && !!st.value.error && !st.value.loaded)
+const retry = () => seller.loadProducts({ force: true })
+
 const priceOpen = ref(false)
 const actionId = ref(null)
 
@@ -21,10 +27,11 @@ const thumbs = {
   '#efe8e4': 'tw:from-[#efe8e4]'
 }
 
+// Mode API: toast hasil dikirim store setelah server menjawab; mode mock: toast di sini.
 function deactivateSelected() {
   const n = seller.selectedCount
   seller.bulkSetStatus('nonaktif')
-  ui.push({ tone: 'success', message: `${n} produk dinonaktifkan.` })
+  if (!api) ui.push({ tone: 'success', message: `${n} produk dinonaktifkan.` })
 }
 function openPrice() { priceOpen.value = true }
 function makeVoucher() { router.push('/seller/voucher') }
@@ -35,6 +42,14 @@ const th = 'tw:px-2 tw:py-3 tw:text-left'
 </script>
 
 <template>
+  <div v-if="busy" class="tw:flex tw:flex-col tw:gap-2" role="status" aria-busy="true" aria-label="Memuat produk">
+    <UiSkeleton v-for="n in 5" :key="n" height-class="tw:h-12" />
+  </div>
+  <UiAlert v-else-if="failed" tone="danger" title="Produk gagal dimuat">
+    {{ st.error.message }}
+    <template #action><UiButton variant="outline" icon="material-symbols:refresh" @click="retry">Coba lagi</UiButton></template>
+  </UiAlert>
+  <template v-else>
   <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3">
     <SellerCenterPills v-model="seller.productTab" :items="tabItems" label="Status produk" tabs />
     <label class="tw:flex tw:items-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:px-3 tw:focus-within:ring-[3px] tw:focus-within:ring-seller/30">
@@ -85,10 +100,11 @@ const th = 'tw:px-2 tw:py-3 tw:text-left'
         </td>
       </tr>
       <tr v-if="!seller.filteredProducts.length">
-        <td colspan="7" class="tw:px-[14px] tw:py-10 tw:text-center tw:font-medium tw:text-panel-ink">Tidak ada produk yang cocok.</td>
+        <td colspan="7" class="tw:px-[14px] tw:py-10 tw:text-center tw:font-medium tw:text-panel-ink">{{ api && !seller.products.length ? 'Belum ada produk. Tambahkan produk pertama Anda.' : 'Tidak ada produk yang cocok.' }}</td>
       </tr>
     </tbody>
   </SellerCenterTableCard>
+  </template>
 
   <SellerCenterProductDialogs v-model:price-open="priceOpen" v-model:action-id="actionId" />
 </template>

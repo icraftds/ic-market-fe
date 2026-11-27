@@ -2,6 +2,7 @@
 /** SellerFormPublishCard: "Siap dipublikasikan?" (progres, checklist, status). */
 const seller = useSellerStore()
 const form = computed(() => seller.form)
+const statusError = computed(() => seller.errors.product?.status || '')
 const statusOptions = computed(() => seller.formStatuses.map((s) => ({ value: s.id, label: s.label })))
 const widths = ['tw:w-0', 'tw:w-1/6', 'tw:w-1/3', 'tw:w-1/2', 'tw:w-2/3', 'tw:w-5/6', 'tw:w-full']
 const barWidth = computed(() => widths[seller.checklistDone] || 'tw:w-0')
@@ -22,7 +23,7 @@ const barWidth = computed(() => widths[seller.checklistDone] || 'tw:w-0')
         <a v-if="!c.done" :href="`#${c.go}`" class="tw:text-[12px] tw:font-semibold tw:text-seller tw:no-underline tw:hover:underline">{{ c.link }}</a>
       </li>
     </ul>
-    <SellerFormField label="Status" as="div" class="tw:mt-1">
+    <SellerFormField label="Status" :error="statusError" as="div" class="tw:mt-1">
       <UiSelect v-model="form.status" :options="statusOptions" aria-label="Status produk" />
     </SellerFormField>
   </section>

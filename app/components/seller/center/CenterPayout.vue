@@ -2,19 +2,60 @@
 /** CenterPayout: tab Payout papan V2SellerCenter (saldo, rekening tujuan, riwayat). */
 const seller = useSellerStore()
 const ui = useUiStore()
+const api = !seller.isMock
 const fin = computed(() => seller.financeView)
-const { page, pageSize, total, pageRows } = usePagination(() => seller.payoutRows)
+const local = usePagination(() => seller.payoutRows)
+const st = computed(() => seller.loadState.payouts)
+const fst = computed(() => seller.loadState.finance)
+// Mode API: halaman, ukuran, dan total dari meta server (tanpa usePagination lokal).
+const page = computed({
+  get: () => (api ? st.value.meta?.page || 1 : local.page.value),
+  set: (v) => { if (api) seller.loadPayouts({ page: v }); else local.page.value = v }
+})
+const pageSize = computed({
+  get: () => (api ? seller.queries.payouts.limit : local.pageSize.value),
+  set: (v) => { if (api) seller.loadPayouts({ page: 1, limit: v }); else local.pageSize.value = v }
+})
+const total = computed(() => (api ? st.value.meta?.total ?? 0 : local.total.value))
+const rows = computed(() => (api ? seller.payoutRows : local.pageRows.value))
+const first = computed(() => api && ((st.value.loading && !st.value.loaded) || (fst.value.loading && !fst.value.loaded)))
+const failed = computed(() => api && !first.value && (st.value.error || fst.value.error))
 const canPayout = computed(() => seller.finance.ready > 0)
 const label = 'tw:font-mono tw:text-[11px] tw:font-semibold tw:tracking-[.08em] tw:text-[#94a3b8]'
 
+if (api) seller.ensure('payout')
+const retry = () => { seller.loadFinance({ force: true }); seller.loadPayouts({}, { force: true }) }
+
+const confirmOpen = ref(false)
+const sending = ref(false)
+const payoutError = computed(() => Object.values(seller.errors.payout || {})[0] || '')
+
 function payout() {
-  const row = seller.requestPayout()
-  if (row) ui.push({ tone: 'success', title: 'Payout diproses', message: `${row.ref} · ${seller.rupiah(row.amount)} ke rekening terverifikasi.` })
+  if (!api) {
+    const row = seller.requestPayout()
+    if (row) ui.push({ tone: 'success', title: 'Payout diproses', message: `${row.ref} · ${seller.rupiah(row.amount)} ke rekening terverifikasi.` })
+    return
+  }
+  seller.clearErrors('payout')
+  confirmOpen.value = true
 }
-const changeBank = () => ui.push({ tone: 'info', message: 'Ganti rekening dibuka di Pengaturan (contoh).' })
+async function confirmPayout() {
+  sending.value = true
+  const row = await seller.requestPayout()
+  sending.value = false
+  // 422 dengan pesan field: tetap di dialog; 409/lainnya: toast dari store, tutup dialog.
+  if (row || !payoutError.value) confirmOpen.value = false
+}
+const changeBank = () => ui.push({ tone: 'info', message: api ? 'Penggantian rekening dilakukan lewat dukungan IC Market.' : 'Ganti rekening dibuka di Pengaturan (contoh).' })
 </script>
 
 <template>
+  <div v-if="first" class="tw:flex tw:flex-col tw:gap-[14px]"><UiSkeleton height-class="tw:h-44" /><UiSkeleton height-class="tw:h-56" /></div>
+  <div v-else-if="failed" role="alert" class="tw:flex tw:flex-col tw:items-start tw:gap-3 tw:rounded-2xl tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:p-6">
+    <p class="tw:m-0 tw:font-medium tw:text-[#b91c1c]">{{ (st.error || fst.error).message }}</p>
+    <UiButton variant="outline" size="sm" icon="material-symbols:refresh" @click="retry">Coba lagi</UiButton>
+  </div>
+  <template v-else>
   <div class="tw:flex tw:flex-wrap tw:gap-[14px]">
     <div class="tw:flex tw:min-w-0 tw:flex-[2_1_420px] tw:flex-col tw:gap-[18px] tw:rounded-[18px] tw:bg-side tw:p-6 tw:text-white">
       <div class="tw:flex tw:flex-wrap tw:justify-between tw:gap-4">
@@ -64,14 +105,27 @@ const changeBank = () => ui.push({ tone: 'info', message: 'Ganti rekening dibuka
         </tr>
       </thead>
       <tbody>
-        <tr v-for="p in pageRows" :key="p.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
+        <tr v-for="p in rows" :key="p.id" class="tw:border-0 tw:border-t tw:border-solid tw:border-[#eef1f7]">
           <td class="tw:px-[18px] tw:py-3 tw:text-panel-ink">{{ p.date }}</td>
           <td class="tw:px-2 tw:py-3 tw:font-mono tw:text-[12.5px] tw:font-semibold">{{ p.ref }}</td>
           <td class="tw:px-2 tw:py-3 tw:text-right tw:font-bold">{{ p.amountText }}</td>
           <td class="tw:px-[18px] tw:py-3"><SellerCenterChip :tone="p.tone">{{ p.status }}</SellerCenterChip></td>
         </tr>
+        <tr v-if="!rows.length">
+          <td colspan="4" class="tw:px-[18px] tw:py-10 tw:text-center tw:font-medium tw:text-panel-ink">Belum ada riwayat payout.</td>
+        </tr>
       </tbody>
     </table></div>
     <UiTablePager v-model:page="page" v-model:page-size="pageSize" :total="total" noun="payout" label="Paginasi riwayat payout" />
   </section>
+
+  <UiModal v-model:open="confirmOpen" size="sm" title="Cairkan saldo?" :description="`${fin.readyText} akan dikirim ke ${fin.bank}.`">
+    <p v-if="payoutError" role="alert" class="tw:m-0 tw:text-[13px] tw:font-medium tw:text-bad">{{ payoutError }}</p>
+    <p v-else class="tw:m-0 tw:text-[13px] tw:text-panel-ink">Permintaan payout diproses sesuai jadwal. {{ fin.scheduleNote }}</p>
+    <template #footer>
+      <UiButton variant="outline" icon="material-symbols:close" @click="confirmOpen = false">Batal</UiButton>
+      <UiButton variant="brand" :loading="sending" icon="material-symbols:account-balance-wallet-outline" @click="confirmPayout">Ya, cairkan</UiButton>
+    </template>
+  </UiModal>
+  </template>
 </template>

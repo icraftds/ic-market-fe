@@ -5,7 +5,7 @@ const ui = useUiStore()
 const form = computed(() => seller.form)
 
 function onZip(files) {
-  if (files[0]) form.value.previewZip = { name: files[0].name }
+  if (files[0]) form.value.previewZip = { name: files[0].name, file: files[0] }
 }
 function onReject() {
   ui.push({ tone: 'warn', title: 'File ditolak', message: 'Unggah satu file ZIP, maks. 50 MB.' })

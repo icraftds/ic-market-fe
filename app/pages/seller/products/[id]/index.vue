@@ -10,6 +10,22 @@ const product = computed(() => seller.productById(id.value))
 const detail = computed(() => seller.detailFor(id.value))
 const reviews = computed(() => seller.reviewsOf(id.value))
 const tab = ref('sum')
+const api = !seller.isMock
+const st = computed(() => seller.loadState.products)
+const loading = computed(() => api && !st.value.loaded && (st.value.loading || !st.value.error))
+const failed = computed(() => api && !!st.value.error && !st.value.loaded)
+const retry = () => seller.ensure('detail', id.value)
+onMounted(() => { seller.ensure('detail', id.value) })
+
+// Mode API: riwayat versi belum ada endpoint; tampilkan versi saat ini + berkas dari data produk (tanpa unduhan/catatan fiktif).
+const versions = computed(() => {
+  if (!api) return detail.value.versions
+  const p = product.value
+  const f = p ? digitalFileView(p.digitalFiles) : null
+  if (!p || !f) return []
+  const sz = f.meta.replace(' · tersimpan', '')
+  return [{ v: p.version, tag: 'Terbaru', tone: 'ok', date: seller.shortDate(p.updatedAt), size: sz === 'tersimpan' ? f.name : `${f.name} (${sz})`, dl: null, notes: [] }]
+})
 
 const tabs = computed(() => [
   { value: 'sum', label: 'Ringkasan' },
@@ -30,14 +46,23 @@ const health = computed(() =>
 </script>
 
 <template>
-  <UiEmptyState v-if="!product" icon="material-symbols:inventory-2-outline" title="Produk tidak ditemukan" text="Produk ini tidak ada atau sudah dihapus.">
+  <div v-if="loading" class="tw:flex tw:flex-col tw:gap-3" role="status" aria-busy="true" aria-label="Memuat detail produk">
+    <UiSkeleton height-class="tw:h-24" />
+    <UiSkeleton height-class="tw:h-48" />
+  </div>
+  <UiAlert v-else-if="failed" tone="danger" title="Detail produk gagal dimuat">
+    {{ st.error.message }}
+    <template #action><UiButton variant="outline" icon="material-symbols:refresh" @click="retry">Coba lagi</UiButton></template>
+  </UiAlert>
+  <UiEmptyState v-else-if="!product" icon="material-symbols:inventory-2-outline" title="Produk tidak ditemukan" text="Produk ini tidak ada atau sudah dihapus.">
     <template #actions><UiButton to="/seller/products" variant="outline" icon="material-symbols:arrow-back">Kembali ke Produk Saya</UiButton></template>
   </UiEmptyState>
   <template v-else>
     <SellerDetailHeader v-model:tab="tab" :product="product" :version="detail.version" :tabs="tabs" />
     <div :id="`detail-panel-${tab}`" role="tabpanel" :aria-labelledby="`detail-tab-${tab}`" class="tw:contents">
       <SellerDetailSummary v-if="tab === 'sum'" :detail="detail" :health="health" />
-      <SellerDetailVersions v-else-if="tab === 'ver'" :versions="detail.versions" :product-id="product.id" />
+      <SellerDetailVersions v-else-if="tab === 'ver'" :versions="versions" :product-id="product.id" />
+      <SellerDetailPreviewLive v-else-if="tab === 'prev' && api" :product-id="product.id" />
       <SellerDetailPreview v-else-if="tab === 'prev'" :product-id="product.id" :preview="detail.preview" :builds="detail.builds" :log="detail.buildLog" />
       <SellerDetailOrders v-else-if="tab === 'ord'" :orders="detail.orders" />
       <SellerDetailReviews v-else :product-id="product.id" />

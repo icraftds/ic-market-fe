@@ -22,9 +22,9 @@ defineProps({
           <span class="tw:font-mono tw:text-base tw:font-bold">v{{ v.v }}</span>
           <SellerDetailChip :tone="v.tone" wide>{{ v.tag }}</SellerDetailChip>
         </span>
-        <span class="tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-panel-ink">{{ v.date }} · {{ v.size }} · diunduh {{ v.dl }}×</span>
+        <span class="tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-panel-ink">{{ [v.date, v.size, v.dl == null ? '' : `diunduh ${v.dl}×`].filter(Boolean).join(' · ') }}</span>
       </div>
-      <ul class="tw:m-0 tw:list-disc tw:pl-[18px] tw:font-sans tw:text-[13.5px] tw:leading-[1.6] tw:font-normal tw:text-[#33415a]">
+      <ul v-if="v.notes?.length" class="tw:m-0 tw:list-disc tw:pl-[18px] tw:font-sans tw:text-[13.5px] tw:leading-[1.6] tw:font-normal tw:text-[#33415a]">
         <li v-for="n in v.notes" :key="n">{{ n }}</li>
       </ul>
     </article>

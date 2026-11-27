@@ -19,12 +19,17 @@ const avgStars = computed(() => {
   return '★'.repeat(full + round) + (half ? '½' : '')
 })
 
-function reply(r) {
-  const ok = seller.replyReview(r.id, drafts.value[r.id])
+const sending = ref(null)
+const replyError = computed(() => seller.errors.reply?.reply || '')
+async function reply(r) {
+  if (sending.value != null) return
+  sending.value = r.id
+  const ok = await seller.replyReview(r.id, drafts.value[r.id])
+  sending.value = null
   if (ok) {
     delete drafts.value[r.id]
-    ui.push({ tone: 'success', message: 'Balasan terkirim.' })
-  } else ui.push({ tone: 'warn', message: 'Tulis balasan terlebih dahulu.' })
+    if (seller.isMock) ui.push({ tone: 'success', message: 'Balasan terkirim.' })
+  } else if (!String(drafts.value[r.id] || '').trim()) ui.push({ tone: 'warn', message: 'Tulis balasan terlebih dahulu.' })
 }
 </script>
 
@@ -43,6 +48,7 @@ function reply(r) {
           <span v-if="r.needsReply" class="tw:rounded-full tw:bg-amber-100 tw:px-2.5 tw:py-1 tw:font-sans tw:text-[11.5px] tw:font-semibold tw:text-amber-800">Belum dibalas</span>
         </div>
         <p class="tw:m-0 tw:font-sans tw:text-sm tw:leading-[1.6] tw:font-normal">{{ r.text }}</p>
+        <p v-if="r.needsReply && replyError" role="alert" class="tw:m-0 tw:font-sans tw:text-[12px] tw:font-medium tw:text-bad">{{ replyError }}</p>
         <form v-if="r.needsReply" class="tw:flex tw:gap-2" @submit.prevent="reply(r)">
           <label class="tw:flex tw:flex-1">
             <span class="tw:sr-only">Balasan</span>
@@ -55,6 +61,7 @@ function reply(r) {
           </label>
           <button
             type="submit"
+            :disabled="sending === r.id"
             class="tw:m-0 tw:inline-flex tw:min-h-[42px] tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-[10px] tw:border-0 tw:bg-seller tw:px-4 tw:font-sans tw:text-[13px] tw:font-bold tw:text-white tw:hover:bg-blue-700 tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"
           ><Icon name="material-symbols:reply" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Balas</button>
         </form>

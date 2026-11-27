@@ -25,23 +25,27 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onEsc)
 })
 
-function duplicate() {
+// Mode API: aksi async, toast hasil dikirim store setelah server menjawab; mode mock: toast di sini.
+const note = (message) => { if (seller.isMock) ui.push({ tone: 'success', message }) }
+async function duplicate() {
   open.value = false
-  const copy = seller.duplicateProduct(props.product.id)
+  const copy = await seller.duplicateProduct(props.product.id)
   if (!copy) return
-  ui.push({ tone: 'success', message: 'Produk diduplikat sebagai draf.' })
+  note('Produk diduplikat sebagai draf.')
   navigateTo(`/seller/products/${copy.id}`)
 }
-function toggleActive() {
+async function toggleActive() {
   open.value = false
   const to = props.product.status === 'aktif' ? 'nonaktif' : 'aktif'
-  seller.setProductStatus(props.product.id, to)
-  ui.push({ tone: 'success', message: to === 'aktif' ? 'Produk diaktifkan.' : 'Produk dinonaktifkan.' })
+  const ok = await seller.setProductStatus(props.product.id, to)
+  if (ok === false) return
+  note(to === 'aktif' ? 'Produk diaktifkan.' : 'Produk dinonaktifkan.')
 }
-function remove() {
+async function remove() {
   open.value = false
-  seller.deleteProduct(props.product.id)
-  ui.push({ tone: 'success', message: 'Produk dihapus.' })
+  const ok = await seller.deleteProduct(props.product.id)
+  if (ok === false) return
+  note('Produk dihapus.')
   navigateTo('/seller/products')
 }
 const item = 'tw:m-0 tw:flex tw:min-h-10 tw:w-full tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-lg tw:border-0 tw:bg-transparent tw:px-2.5 tw:text-left tw:font-sans tw:text-[13px] tw:font-semibold tw:hover:bg-panel tw:focus-visible:ring-2 tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none'

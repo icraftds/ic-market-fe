@@ -1,9 +1,13 @@
 <script setup>
 /** SellerFormHeader: header putih form produk (breadcrumb, judul, draf tersimpan otomatis, Simpan draf, Publikasikan). */
 defineProps({
-  title: { type: String, default: 'Tambah produk' }
+  title: { type: String, default: 'Tambah produk' },
+  busy: { type: Boolean, default: false }
 })
 defineEmits(['save-draft', 'publish'])
+const seller = useSellerStore()
+// Mode API tidak menyimpan otomatis: tampilkan status simpan yang sebenarnya.
+const saveNote = computed(() => (seller.isMock ? 'Draf tersimpan otomatis' : seller.form.id != null ? 'Tersimpan di server' : 'Belum disimpan'))
 </script>
 
 <template>
@@ -16,9 +20,9 @@ defineEmits(['save-draft', 'publish'])
       <h1 class="tw:m-0 tw:font-display tw:text-[20px] tw:font-extrabold">{{ title }}</h1>
     </div>
     <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2.5">
-      <span class="tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-panel-ink">Draf tersimpan otomatis</span>
-      <UiButton variant="outline" icon="material-symbols:save-outline" class="tw:min-h-[42px] tw:rounded-[10px] tw:border-panel-line tw:text-[13.5px] tw:font-semibold" @click="$emit('save-draft')">Simpan draf</UiButton>
-      <UiButton variant="brand" icon="material-symbols:publish" class="tw:min-h-[42px] tw:rounded-[10px] tw:border-seller! tw:bg-seller! tw:text-[13.5px]" @click="$emit('publish')">Publikasikan</UiButton>
+      <span class="tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-panel-ink">{{ saveNote }}</span>
+      <UiButton variant="outline" icon="material-symbols:save-outline" :disabled="busy" class="tw:min-h-[42px] tw:rounded-[10px] tw:border-panel-line tw:text-[13.5px] tw:font-semibold" @click="$emit('save-draft')">Simpan draf</UiButton>
+      <UiButton variant="brand" icon="material-symbols:publish" :disabled="busy" class="tw:min-h-[42px] tw:rounded-[10px] tw:border-seller! tw:bg-seller! tw:text-[13.5px]" @click="$emit('publish')">Publikasikan</UiButton>
     </div>
   </header>
 </template>

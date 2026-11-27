@@ -3,6 +3,12 @@
 
 const seller = useSellerStore()
 const dash = computed(() => seller.dashboard)
+const st = computed(() => seller.loadState.dashboard)
+const busy = computed(() => !seller.isMock && !st.value.loaded && !st.value.error)
+const failed = computed(() => !seller.isMock && !!st.value.error && !st.value.loaded)
+const empty = computed(() => !seller.isMock && st.value.loaded && !dash.value.kpis.length)
+const pickPeriod = (id) => { seller.setPeriod(id); if (!seller.isMock) seller.loadDashboard({ period: id }) }
+const retry = () => seller.loadDashboard({}, { force: true })
 const { page: topPage, pageSize: topSize, total: topTotal, pageRows: topRows } = usePagination(() => dash.value.top, { pageSize: 5 })
 const periodLabel = computed(() => `${seller.period} hari terakhir`)
 
@@ -15,10 +21,10 @@ const td = 'tw:border-0 tw:border-b tw:border-solid tw:border-[#eef1f7] tw:px-2 
 
 // Ponsel: angka ringkas "Rp 3,15 jt" (papan V2Mobile).
 const jt = (n) => 'Rp ' + (Number(n) / 1000000).toFixed(2).replace('.', ',') + ' jt'
-const grossJt = computed(() => jt(String(dash.value.kpis[0].value).replace(/\D/g, '')))
+const grossJt = computed(() => jt(dash.value.kpis.length ? String(dash.value.kpis[0].value).replace(/\D/g, '') : 0))
 const mobileTodos = computed(() => [
   { tone: 'bad', text: `${seller.failedBuildCount} build preview gagal`, to: '/seller/products' },
-  { tone: 'warn', text: `${seller.orderStats[1].value} pesanan minta bantuan`, to: '/seller/orders' },
+  { tone: 'warn', text: `${seller.orderStats[1]?.value ?? 0} pesanan minta bantuan`, to: '/seller/orders' },
   { tone: 'ok', text: `${jt(seller.finance.ready)} siap dicairkan`, to: '/seller/payout' }
 ])
 const mobileBars = computed(() => dash.value.barHeights.slice(-20))
@@ -37,11 +43,21 @@ const mobileBars = computed(() => dash.value.barHeights.slice(-20))
           :aria-selected="seller.period === p.id"
           class="tw:m-0 tw:min-h-[34px] tw:cursor-pointer tw:rounded-[7px] tw:border-0 tw:px-3 tw:font-sans tw:text-[13px] tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"
           :class="seller.period === p.id ? 'tw:bg-hero tw:font-semibold tw:text-white' : 'tw:bg-transparent tw:font-medium tw:text-panel-ink'"
-          @click="seller.setPeriod(p.id)"
+          @click="pickPeriod(p.id)"
         >{{ p.label }}</button>
       </div>
     </div>
 
+    <div v-if="busy" class="tw:flex tw:flex-col tw:gap-[14px]" role="status" aria-busy="true" aria-label="Memuat ringkasan">
+      <div class="tw:grid tw:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] tw:gap-[14px]"><UiSkeleton v-for="n in 4" :key="n" height-class="tw:h-[104px]" /></div>
+      <UiSkeleton height-class="tw:h-[260px]" />
+    </div>
+    <UiAlert v-else-if="failed" tone="danger" title="Ringkasan gagal dimuat">
+      {{ st.error.message }}
+      <template #action><UiButton variant="outline" icon="material-symbols:refresh" @click="retry">Coba lagi</UiButton></template>
+    </UiAlert>
+    <UiEmptyState v-else-if="empty" icon="material-symbols:bar-chart" title="Belum ada data" text="Ringkasan toko akan muncul setelah ada penjualan." />
+    <template v-else>
     <div class="tw:grid tw:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] tw:gap-[14px]">
       <div v-for="k in dash.kpis" :key="k.label" class="tw:rounded-2xl tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:p-[18px]">
         <div class="tw:font-sans tw:text-[13px] tw:font-semibold tw:text-panel-ink">{{ k.label }}</div>
@@ -56,7 +72,7 @@ const mobileBars = computed(() => dash.value.barHeights.slice(-20))
           <h2 id="h-chart" class="tw:m-0 tw:font-sans tw:text-[16px] tw:font-bold">Penjualan harian</h2>
           <span class="tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-panel-ink">Rp, {{ periodLabel }}</span>
         </div>
-        <div role="img" aria-label="Grafik batang penjualan harian 30 hari" class="tw:mt-[18px] tw:flex tw:h-[190px] tw:items-end tw:gap-[5px] tw:border-0 tw:border-b tw:border-solid tw:border-panel-line">
+        <div role="img" :aria-label="`Grafik batang penjualan harian ${seller.period} hari`" class="tw:mt-[18px] tw:flex tw:h-[190px] tw:items-end tw:gap-[5px] tw:border-0 tw:border-b tw:border-solid tw:border-panel-line">
           <span v-for="(b, i) in bars" :key="i" class="tw:min-w-1 tw:flex-1 tw:rounded-t-[4px] tw:bg-seller" :class="b" />
         </div>
         <div class="tw:mt-2 tw:flex tw:justify-between tw:font-mono tw:text-[11.5px] tw:font-medium tw:text-panel-ink">
@@ -105,14 +121,15 @@ const mobileBars = computed(() => dash.value.barHeights.slice(-20))
       </div>
       <UiTablePager v-model:page="topPage" v-model:page-size="topSize" :total="topTotal" :page-sizes="[5, 10, 25]" noun="produk" label="Paginasi produk terlaris" class="tw:-mx-5 tw:-mb-5 tw:mt-3 tw:rounded-b-2xl" />
     </section>
+    </template>
   </div>
 
   <!-- Ponsel (V2Mobile #4): 2 kartu angka, grafik 20 hari, perlu tindakan -->
   <div class="tw:flex tw:flex-col tw:gap-3 tw:lg:hidden">
     <h1 class="tw:sr-only">Ringkasan toko</h1>
     <div class="tw:grid tw:grid-cols-2 tw:gap-2.5">
-      <LayoutMobileStatCard label="Penjualan 30h" :value="grossJt" />
-      <LayoutMobileStatCard label="Pesanan" :value="seller.orderStats[0].value" />
+      <LayoutMobileStatCard :label="`Penjualan ${seller.period}h`" :value="grossJt" />
+      <LayoutMobileStatCard label="Pesanan" :value="seller.orderStats[0]?.value ?? 0" />
     </div>
     <LayoutMobileBarChart :values="mobileBars" />
     <LayoutMobileActionList :items="mobileTodos" />
