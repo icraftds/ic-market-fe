@@ -4,7 +4,7 @@
  * Presentasional. Mesin status ada di ProductGallery.
  * phase: static | idle | starting | running | full | ended
  */
-import { ref } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   phase: { type: String, default: 'idle' },
@@ -20,7 +20,64 @@ const props = defineProps({
 const emit = defineEmits(['start', 'stop', 'images'])
 
 const frame = ref(null)
-const frameWidth = { desktop: 'tw:w-full', tablet: 'tw:w-[560px]', mobile: 'tw:w-[320px]' }
+const viewportEl = ref(null)
+const viewportWidth = ref(760)
+const isFullscreen = ref(false)
+
+// Lebar viewport nyata tiap perangkat agar media query di dalam iframe tampil sesuai (desktop 1280px tidak jatuh ke tampilan hamburger ponsel)
+const deviceSpec = {
+  desktop: { width: 1280, height: 840, frameClass: 'tw:w-full' },
+  tablet: { width: 768, height: 900, frameClass: 'tw:w-[600px]' },
+  mobile: { width: 390, height: 740, frameClass: 'tw:w-[390px]' }
+}
+const spec = computed(() => deviceSpec[props.device] || deviceSpec.desktop)
+const scale = computed(() => {
+  if (isFullscreen.value) return 1
+  const avail = viewportWidth.value || spec.value.width
+  return Math.min(1, avail / spec.value.width)
+})
+const stageStyle = computed(() => {
+  if (isFullscreen.value) return { height: 'calc(100vh - 42px)' }
+  const scaledH = Math.round(spec.value.height * scale.value)
+  return { height: `${Math.max(460, Math.min(680, scaledH))}px` }
+})
+const iframeStyle = computed(() => {
+  if (isFullscreen.value) return { width: '100%', height: '100%' }
+  const s = scale.value
+  const visibleH = Math.max(460, Math.min(680, Math.round(spec.value.height * s)))
+  return {
+    width: `${spec.value.width}px`,
+    height: `${Math.round(visibleH / s)}px`,
+    transform: `scale(${s})`,
+    transformOrigin: 'top left'
+  }
+})
+
+let ro = null
+function attachObserver(el) {
+  ro?.disconnect()
+  if (!el || typeof ResizeObserver === 'undefined') return
+  viewportWidth.value = el.getBoundingClientRect().width || viewportWidth.value
+  ro = new ResizeObserver((entries) => {
+    const w = entries[0]?.contentRect?.width
+    if (w > 0) viewportWidth.value = w
+  })
+  ro.observe(el)
+}
+watch(viewportEl, (el) => attachObserver(el), { flush: 'post' })
+
+function syncFullscreen() {
+  isFullscreen.value = document.fullscreenElement === frame.value
+}
+onMounted(() => {
+  if (viewportEl.value) attachObserver(viewportEl.value)
+  document.addEventListener('fullscreenchange', syncFullscreen)
+})
+onBeforeUnmount(() => {
+  ro?.disconnect()
+  document.removeEventListener('fullscreenchange', syncFullscreen)
+})
+
 const host = computed(() => {
   if (!props.sessionUrl) return `preview.icraftds.id/${props.slug.split('-').slice(0, 2).join('-')}`
   try { return new URL(props.sessionUrl).host } catch { return 'preview' }
@@ -72,21 +129,23 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
 
     <!-- berjalan -->
     <template v-else-if="phase === 'running'">
-      <div class="tw:flex tw:justify-center tw:rounded-[14px] tw:bg-subtle tw:p-[18px] tw:max-lg:p-2.5">
-        <div ref="frame" class="tw:max-w-full tw:overflow-hidden tw:rounded-xl tw:border tw:border-solid tw:border-[#2e2e2b] tw:shadow-[0_12px_40px_rgba(0,0,0,.10)] tw:transition-[width] tw:duration-250" :class="frameWidth[device] || frameWidth.desktop">
+      <div class="tw:flex tw:justify-center tw:rounded-[14px] tw:bg-subtle tw:p-3 tw:max-lg:p-2">
+        <div ref="frame" class="tw:max-w-full tw:overflow-hidden tw:rounded-xl tw:border tw:border-solid tw:border-[#2e2e2b] tw:bg-white tw:shadow-[0_12px_40px_rgba(0,0,0,.10)] tw:transition-[width] tw:duration-250" :class="isFullscreen ? 'tw:w-full tw:rounded-none tw:border-0' : spec.frameClass">
           <div class="tw:flex tw:items-center tw:gap-1.5 tw:border-0 tw:border-b tw:border-solid tw:border-[#2e2e2b] tw:bg-[#1d1d1b] tw:px-3 tw:py-2.5">
             <span aria-hidden="true" class="tw:size-[9px] tw:rounded-full tw:bg-[#ef4444]" /><span aria-hidden="true" class="tw:size-[9px] tw:rounded-full tw:bg-[#f59e0b]" /><span aria-hidden="true" class="tw:size-[9px] tw:rounded-full tw:bg-[#22c55e]" />
             <span class="tw:ml-2 tw:min-w-0 tw:flex-1 tw:overflow-hidden tw:rounded-md tw:bg-ink tw:px-2.5 tw:py-[5px] tw:font-mono tw:text-[11px] tw:font-medium tw:text-ellipsis tw:whitespace-nowrap tw:text-[#a3a39c]">{{ host }}</span>
           </div>
-          <iframe
-            v-if="sessionUrl"
-            :src="sessionUrl"
-            :title="`Live preview ${slug}`"
-            class="tw:block tw:h-[520px] tw:w-full tw:border-0 tw:bg-white tw:max-lg:h-[460px]"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-            allow="fullscreen"
-            referrerpolicy="no-referrer"
-          />
+          <div v-if="sessionUrl" ref="viewportEl" class="tw:relative tw:w-full tw:overflow-hidden tw:bg-white" :style="stageStyle">
+            <iframe
+              :src="sessionUrl"
+              :title="`Live preview ${slug}`"
+              :style="iframeStyle"
+              class="tw:block tw:border-0 tw:bg-white"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+              allow="fullscreen"
+              referrerpolicy="no-referrer"
+            />
+          </div>
           <div v-else class="tw:flex tw:h-[420px] tw:flex-col tw:items-center tw:justify-center tw:gap-2.5 tw:bg-hero tw:p-6 tw:text-center">
             <span class="tw:font-mono tw:text-xs tw:font-semibold tw:tracking-[0.08em] tw:text-[#93c5fd]">[ APLIKASI BERJALAN DI SINI ]</span>
             <span class="tw:max-w-[360px] tw:font-sans tw:text-[13px] tw:leading-[1.6] tw:font-normal tw:text-[#cbd5e1]">iframe sandbox dari layanan ic-preview. Pembeli bisa klik dan mencoba semua fitur.</span>
