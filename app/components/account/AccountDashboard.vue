@@ -1,4 +1,5 @@
 <script setup>
+import { safeUrl } from "~/utils/safeUrl.js"
 /**
  * Kerangka dashboard pengguna (V2HostingDash): sidebar + header + isi per tab.
  * Tab berasal dari rute (/akun, /akun/<tab>) dan disinkronkan ke useHostingStore().tab.
@@ -35,7 +36,7 @@ const siteHref = computed(() => {
   if (hosting.isMock) return '#'
   const host = hosting.siteName
   if (!host || !hosting.activeSubscription) return null
-  return host.startsWith('http') ? host : `https://${host}`
+  return safeUrl(/^https?:\/\//i.test(host) ? host : `https://${host}`) || null
 })
 
 useSeoMeta({ title: () => `${hosting.title} | Akun IC Market`, robots: 'noindex' })

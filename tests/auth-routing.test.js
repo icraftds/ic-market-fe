@@ -11,8 +11,13 @@ test('halaman publik v2 vs privat', () => {
 })
 
 test('mode mock', () => {
-  assert.equal(isMockMode({ designMock: true }), true)
-  assert.equal(isMockMode({ dev: true, ssoEnabled: false }), true)
+  assert.equal(isMockMode({ designMock: true, dev: true }), true)
+  // produksi (dev=false) mengabaikan designMock: tidak ada bypass
+  assert.equal(isMockMode({ designMock: true }), false)
+  assert.equal(isMockMode({ designMock: true, dev: false }), false)
+  assert.equal(isMockMode({ dev: true }), false)
+  // dev tanpa SSO TIDAK lagi otomatis mock: data harus dari API/DB kecuali diminta eksplisit
+  assert.equal(isMockMode({ dev: true, ssoEnabled: false }), false)
   assert.equal(isMockMode({ dev: true, ssoEnabled: true }), false)
   assert.equal(isMockMode({}), false)
 })

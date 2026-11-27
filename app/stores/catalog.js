@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { categories as categoriesMock, sellers as sellersMock, products as productsMock, catalogTintById, tints } from '~/mocks/products'
 import { storeChips } from '~/mocks/content'
+import { isMockMode } from '~/utils/authRouting'
 import * as catalogApi from '~/services/catalog'
 import { normalizeError } from '~/services/errors'
 import { highlight, queryKey, catalogSlug } from '~/utils/catalogMap'
@@ -18,7 +19,7 @@ const haystack = (p) => (p.name + ' ' + p.categoryName + ' ' + p.tags.join(' '))
 
 /**
  * Store katalog. Dibuat per request (Pinia + Nuxt), jadi aman SSR; state-nya ikut payload ke klien.
- * - Mode mock (public.designMock === true, atau dev tanpa SSO): data dari ~/mocks, perilaku papan desain.
+ * - Mode mock (hanya dev + public.designMock === true): data dari ~/mocks, perilaku papan desain.
  * - Mode API: semua lewat ~/services/catalog (publik, tanpa sesi). Koreksi ejaan dilakukan server (meta.search.corrected).
  *
  * Pemakaian di halaman SSR:
@@ -27,7 +28,10 @@ const haystack = (p) => (p.name + ' ' + p.categoryName + ' ' + p.tags.join(' '))
  */
 export const useCatalogStore = defineStore('catalog', () => {
   const config = useRuntimeConfig()
-  const mock = config.public.designMock === true || (import.meta.dev && !config.public.ssoEnabled)
+  // Konteks Nuxt untuk panggilan service setelah `await` (SSR): tanpa ini useApi() -> useRuntimeConfig() gagal (NUXT_E1001)
+  // pada permintaan kedua dalam satu alur (mis. facets setelah daftar), dan halaman kategori/cari tampil "Produk gagal dimuat".
+  const nuxtApp = tryUseNuxtApp()
+  const mock = isMockMode({ designMock: config.public.designMock, dev: import.meta.dev })
 
   // Salinan per instance (aman SSR; mock modul tidak pernah dimutasi). Mode API: kolam produk yang sudah dimuat.
   const products = ref(mock ? productsMock.map((p) => ({ ...p })) : [])
@@ -69,7 +73,7 @@ export const useCatalogStore = defineStore('catalog', () => {
 
   function once(key, task) {
     if (inflight.has(key)) return inflight.get(key)
-    const p = track(task).finally(() => inflight.delete(key))
+    const p = track(() => (nuxtApp ? nuxtApp.runWithContext(task) : task())).finally(() => inflight.delete(key))
     inflight.set(key, p)
     return p
   }

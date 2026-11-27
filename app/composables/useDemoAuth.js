@@ -117,15 +117,17 @@ export const useDemoAuth = () => {
         return app._profileRequest
     }
 
-    const syncSession = async (force = false) => {
+    // opts.background: jangan tunggu wallet (store auth baru memuat toko paralel). Default tetap menunggu, dipakai halaman lama.
+    const syncSession = async (force = false, opts = {}) => {
         if (!force && app._sessionToken === sessionCookie.value && app._sessionSyncedAt && Date.now() - app._sessionSyncedAt < 30000) return session.value
         if (app._sessionToken === sessionCookie.value && app._sessionRequest) return app._sessionRequest
         app._sessionToken = sessionCookie.value
         app._sessionRequest = (async () => {
             await fetchUser()
             if (sessionCookie.value) {
-                await initializeWallet()
-                await fetchWallet()
+                const walletTask = initializeWallet().then(() => fetchWallet())
+                app._walletSync = walletTask.catch(() => {}) // yang butuh saldo bisa menunggu ini
+                if (!opts.background) await walletTask
             }
             app._sessionSyncedAt = Date.now()
             return session.value

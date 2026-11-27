@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import process from 'node:process'
 import tailwindcss from '@tailwindcss/vite'
+import { securityHeaders } from './server/utils/securityHeaders.js'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -63,7 +64,7 @@ export default defineNuxtConfig({
     '/seller/register': { ssr: true },
     '/akun/**': { ssr: false },
     '/hosting/pesan': { ssr: false },
-    '/**': { headers: { 'x-content-type-options': 'nosniff', 'permissions-policy': 'camera=(), microphone=(), geolocation=()' } }
+    '/**': { headers: securityHeaders({ apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api', authApiBase: process.env.NUXT_PUBLIC_AUTH_API_BASE || 'http://localhost:8003/api', production: process.env.NODE_ENV === 'production' }) }
   },
 
   runtimeConfig: {

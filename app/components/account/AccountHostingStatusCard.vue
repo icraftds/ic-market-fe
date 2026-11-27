@@ -1,13 +1,14 @@
 <script setup>
 /** Kartu status situs gelap (V2HostingDash): status, nama situs, stack, tombol unggah / buka situs. */
 import { dotClass, tabPath } from './classMaps'
+import { safeUrl } from '~/utils/safeUrl.js'
 const hosting = useHostingStore()
 
 const liveHref = computed(() => {
   if (hosting.isMock) return '#'
   const host = hosting.siteName
   if (!host) return '#'
-  return host.startsWith('http') ? host : `https://${host}`
+  return safeUrl(/^https?:\/\//i.test(host) ? host : `https://${host}`) || '#'
 })
 </script>
 

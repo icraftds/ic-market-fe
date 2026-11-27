@@ -6,6 +6,8 @@
 // Respons { success, data, meta? }; uang integer rupiah. Daftar mengembalikan { rows, meta } (meta dipetakan: page, lastPage, perPage, total).
 // Error: ApiError (422 -> fieldErrors, 409/501 -> pesan informatif). Pemetaan bentuk ada di utils/sellerMap.js.
 import { useApi } from './http.js'
+import { ApiError } from './errors.js'
+import { validateUpload } from '../utils/uploadGuard.js'
 import {
   mapDashboard, mapOrder, mapOrderStats, mapCustomer, mapFinance, mapBank, mapPayout, mapLedger, ledgerTypeParam, mapReview,
   mapVoucher, voucherToBody, mapSettings, settingsToBody, notificationsToBody, mapProduct, mapUpload, mapPreview, mapMeta
@@ -198,10 +200,13 @@ export async function deleteProduct(id) {
 // ---------------- unggah & preview
 
 /** uploadFile(file) -> { path, url, fileName, mimeType, fileSizeBytes } (maks 100 MB; /seller/files/upload). */
-export async function uploadFile(file) {
+export async function uploadFile(file, kind = 'archive') {
+  const problem = validateUpload(file, kind)
+  if (problem) throw new ApiError({ status: 422, code: 'invalid_file', message: problem, fieldErrors: { file: problem } })
   const api = useApi()
   const body = new FormData()
   body.append('file', file)
+  body.append('kind', kind)
   return mapUpload(await api('seller/files/upload', { ...REQ, method: 'POST', body }))
 }
 
@@ -213,6 +218,8 @@ export async function getPreview(id) {
 
 /** startPreview(id, { archive: File(.zip, <=50 MB), profile: static|node-spa|node-server|php-laravel }) -> 202; unggah ulang = ganti (409 bila build berjalan, 503 engine mati). */
 export async function startPreview(id, { archive, profile }) {
+  const problem = validateUpload(archive, 'previewZip')
+  if (problem) throw new ApiError({ status: 422, code: 'invalid_file', message: problem, fieldErrors: { archive: problem } })
   const api = useApi()
   const body = new FormData()
   body.append('archive', archive)

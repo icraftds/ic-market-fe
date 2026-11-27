@@ -1,6 +1,7 @@
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
 import OtpForm from '~/components/OtpForm.vue'
+import { safeReturnTo } from '~/utils/authRouting'
 
 definePageMeta({ layout: 'blank' })
 
@@ -28,7 +29,7 @@ const resendMessage = ref('')
 
 onMounted(() => {
   if (config.public.ssoEnabled) {
-    redirectAuth('/auth/start?return_to=' + encodeURIComponent(typeof route.query.redirect === 'string' ? route.query.redirect : '/'), { replace: true })
+    redirectAuth('/auth/start?return_to=' + encodeURIComponent(safeReturnTo(route.query.redirect)), { replace: true })
     return
   }
   const savedEmail = sessionStorage.getItem('icmarket_login_email')
@@ -70,8 +71,7 @@ const DUMMY_ACCOUNTS = [
 ]
 
 const redirectTarget = computed(() => {
-  const redirect = String(route.query.redirect || '/')
-  return redirect.startsWith('/') ? redirect : '/'
+  return safeReturnTo(route.query.redirect)
 })
 
 const ensureSellerDummyContext = (user) => {

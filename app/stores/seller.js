@@ -35,7 +35,7 @@ const apiEmptyForm = () => ({
 
 /**
  * Store Seller Center.
- * - Mode mock (public.designMock === true, atau dev tanpa SSO): data dari ~/mocks, perilaku papan (aksi sinkron).
+ * - Mode mock (hanya dev + public.designMock === true): data dari ~/mocks, perilaku papan (aksi sinkron).
  * - Mode API: data dimuat per halaman (lazy) lewat ~/services/seller. Aksi mutasi mengembalikan Promise (await di komponen),
  *   memunculkan toast sendiri (error 422 -> `errors.<area>` per field, tanpa toast; 409/501 -> toast informatif) dan menginvalidasi cache terkait.
  *   Loader: loadDashboard/Orders/OrderStats/Customers/Finance/Ledger/Payouts/Reviews/Vouchers/Settings/Products, atau ensure('<halaman>').
@@ -628,7 +628,7 @@ export const useSellerStore = defineStore('seller', () => {
     if (mock) { form.value.gallery = Math.min(6, form.value.gallery + 1); return null }
     if (form.value.images.length >= 6) { notify('warn', 'Maksimal 6 gambar.'); return null }
     try {
-      const up = await sellerApi.uploadFile(file)
+      const up = await sellerApi.uploadFile(file, 'image')
       form.value.images = [...form.value.images, up.url]
       form.value.gallery = form.value.images.length
       return up

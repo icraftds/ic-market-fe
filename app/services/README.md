@@ -7,7 +7,7 @@ Lapisan klien API v2. Aturan:
 - `auth`: `'none'` publik, `'optional'` (default, kirim sesi bila ada), `'required'` (tanpa sesi lempar `ApiError` 401 `login_required`). Halaman publik SSR memakai `none`/`optional` dan tidak bergantung pada sesi.
 - Respons di-unwrap (`{success,data}` -> `data`), error dinormalisasi: `{ status, message, code, fieldErrors:{field:'pesan'}, retryAfter }`.
 - Pemetaan bentuk backend -> bentuk store ditaruh di file murni (`app/utils/catalogMap.js`) agar bisa dites dengan `node:test`.
-- Mode mock: store yang memutuskan (`useRuntimeConfig().public.designMock === true`, atau `import.meta.dev` tanpa `ssoEnabled`). Service tidak tahu soal mock.
+- Mode mock: store yang memutuskan (`isMockMode({ designMock, dev: import.meta.dev })`: hanya dev server + `public.designMock`; build produksi mengabaikan flag). Service tidak tahu soal mock.
 
 Contoh (di store):
 

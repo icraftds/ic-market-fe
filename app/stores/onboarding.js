@@ -11,7 +11,7 @@ import {
 import * as onboardingApi from '~/services/onboarding.js'
 
 // Status wizard: draf -> dikirim -> ditinjau -> disetujui | ditolak.
-// Mode mock (designMock / dev tanpa SSO): perilaku papan, tanpa API.
+// Mode mock (hanya dev + designMock): perilaku papan, tanpa API.
 // Mode API: status, langkah, dan linimasa datang dari server (/seller/application).
 // Keamanan: store ini TIDAK memakai persist/localStorage. Nomor rekening dan berkas identitas hanya
 // ada di memori selama halaman terbuka; server hanya mengembalikan nomor tersamar dan penanda "terunggah".

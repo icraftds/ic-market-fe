@@ -56,33 +56,10 @@ test('Failed refresh remains recoverable without issuing a payment or granting a
   h.reward.dispose(); assert.equal(h.stops(), 1)
 })
 
-test('Voucher selected at checkout is validated once and flat discount is carried to order totals', async () => {
-  let done, calls = 0
-  const states = new Map(), stored = new Map()
-  const context = vm.createContext({
-    ref, reactive: x => x, computed: fn => ({ get value() { return fn() } }), definePageMeta() {},
-    useRouter: () => ({}), useDemoAuth: () => ({ session: ref({ id: 7 }), syncSession() {} }),
-    useRuntimeConfig: () => ({ public: { apiBase: 'https://market/api' } }), useState: (key, fn) => { if (!states.has(key)) states.set(key, ref(fn())); return states.get(key) },
-    useCart: () => ({ fetchCart() {} }), useAuthCredential: () => ref('bff-session'),
-    onMounted() {}, onUnmounted() {},
-    localStorage: { setItem: (k, v) => stored.set(k, v), removeItem: k => stored.delete(k) },
-    useProductApi: () => async (url, options) => { calls++; assert.match(url, /vouchers\/validate$/); assert.equal(options.body.code, 'T500K_TEST'); assert.equal(options.body.subtotal, 100000); return await new Promise(resolve => { done = resolve }) }
-  })
-  let script = fs.readFileSync(new URL('../app/pages/checkout.vue', import.meta.url), 'utf8').split('<script setup>')[1].split('</script>')[0].replace(/^import .*$/gm, '').replace(/import\.meta\.client/g, 'true')
-  vm.runInContext(script + '\nglobalThis.page = { checkoutCart, useVoucherCard, appliedVoucher, promoPending }', context)
-  const page = context.page
-  page.checkoutCart.value = [{ price: 100000, quantity: 1 }]
-  page.useVoucherCard({ code: 'T500K_TEST' }); page.useVoucherCard({ code: 'SECOND' }); assert.equal(calls, 1)
-  done({ success: true, data: { code: 'T500K_TEST', type: 'flat', amount: 25000, discount: 25000 } })
-  await Promise.resolve(); await Promise.resolve(); await Promise.resolve()
-  assert.equal(page.appliedVoucher.value.type, 'flat'); assert.equal(stored.get('icmarket_total'), 75000)
-  assert.equal(page.promoPending.value, false)
-})
-
 test('Confirmed topup fulfillment refreshes wallet, voucher list, and badge profile together', async () => {
   let refresh, profileResult = { id: 7 }, walletCalls = 0, profileCalls = 0, voucherCalls = 0
   const context = vm.createContext({
-    ref, computed: fn => ({ get value() { return fn() } }), onMounted() {}, onUnmounted() {},
+    ref, definePageMeta() {}, computed: fn => ({ get value() { return fn() } }), onMounted() {}, onUnmounted() {},
     useRouter: () => ({}), useRuntimeConfig: () => ({ public: { apiBase: 'https://market/api' } }),
     useAuthCredential: () => ref('bff-session'),
     useDemoAuth: () => ({ session: ref({ id: 7 }), fetchWallet: async () => { walletCalls++; return true }, syncSession: async force => { assert.equal(force, true); profileCalls++; return profileResult } }),
@@ -104,7 +81,7 @@ test('DOKU topup checkout creates invoice with selected method, stores expires_a
   let postPayload = null
   let redirectedUrl = null
   const context = vm.createContext({
-    ref, computed: fn => ({ get value() { return fn() } }), onMounted() {}, onUnmounted() {},
+    ref, definePageMeta() {}, computed: fn => ({ get value() { return fn() } }), onMounted() {}, onUnmounted() {},
     Date, Number, String, JSON, setTimeout() {}, clearTimeout() {}, setInterval() { return 1 }, clearInterval() {},
     window: { location: { set href(val) { redirectedUrl = val } }, open() {} },
     sessionStorage: {

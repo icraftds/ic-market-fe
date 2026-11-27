@@ -1,4 +1,5 @@
 <script setup>
+import { safeUrl } from "~/utils/safeUrl.js"
 /** Tab "Riwayat transaksi" (V2HostingDash): filter jenis + tabel transaksi (paginasi server di mode API, maks 50). */
 const account = useAccountStore()
 const mockPager = usePagination(() => account.historyRows)
@@ -86,7 +87,7 @@ const rowKind = (h) => h.kindLabel || h.kind
           <td class="tw:px-4 tw:py-3 tw:text-right">
             <a
               v-if="account.isMock || h.invoiceUrl"
-              :href="account.isMock ? '#' : h.invoiceUrl"
+              :href="account.isMock ? '#' : safeUrl(h.invoiceUrl) || '#'"
               :target="account.isMock ? undefined : '_blank'"
               :rel="account.isMock ? undefined : 'noopener noreferrer'"
               class="tw:inline-flex tw:items-center tw:gap-1.5 tw:text-[12.5px] tw:font-semibold tw:text-brand tw:no-underline"

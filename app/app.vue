@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useState, useNuxtApp } from '#app'
+import { safeReturnTo } from '~/utils/authRouting'
 
 const now = ref(Date.now())
 const rateLimitUntil = useState('icmarket-rate-limit-until', () => 0)
@@ -42,7 +43,7 @@ const handleAuthLink = event => {
   event.preventDefault()
   event.stopImmediatePropagation()
   if (config.public.ssoEnabled) {
-    redirectAuth('/auth/start?return_to=' + encodeURIComponent(url.searchParams.get('redirect') || '/'))
+    redirectAuth('/auth/start?return_to=' + encodeURIComponent(safeReturnTo(url.searchParams.get('redirect'))))
   } else {
     runAuth(() => navigateTo(url.pathname + url.search + url.hash))
   }

@@ -1,4 +1,4 @@
-import { isPublicV2Path, isPrivateV2Path } from '~/utils/authRouting'
+import { isPublicV2Path, isPrivateV2Path, safeReturnTo } from '~/utils/authRouting'
 
 export default defineNuxtRouteMiddleware(async (to) => {
     const config = useRuntimeConfig()
@@ -15,11 +15,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (isPrivateV2Path(path)) return
     // Katalog komponen UI hanya ada di mode dev; lewati pemeriksaan peran (import.meta.dev dibuang di build produksi).
     if (import.meta.dev && path.startsWith('/dev/')) return
-    // Fase desain: halaman seller/akun/hosting masih memakai data tiruan (belum ada API/sesi nyata).
-    // Pemeriksaan peran dilewati hanya di mode dev atau bila NUXT_PUBLIC_DESIGN_MOCK=true. Produksi biasa tetap terkunci.
-    if ((import.meta.dev || config.public.designMock) && ['/seller', '/akun', '/hosting'].some((p) => path === p || path.startsWith(p + '/'))) return
     if (config.public.ssoEnabled && ['/login', '/register'].includes(path)) {
-        const target = typeof to.query.redirect === 'string' ? to.query.redirect : '/'
+        const target = safeReturnTo(to.query.redirect)
         if (import.meta.client) {
             authPending.redirect('/auth/start?return_to=' + encodeURIComponent(target))
             return false
@@ -37,10 +34,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (config.public.ssoEnabled) {
         if (!session.value && (path.startsWith('/admin/') || path.startsWith('/seller/') || ['/profile', '/cart', '/checkout', '/orders', '/payment', '/success', '/topup', '/vouchers'].includes(path))) {
             if (import.meta.client) {
-                authPending.redirect('/auth/start?return_to=' + encodeURIComponent(to.fullPath))
+                authPending.redirect('/auth/start?return_to=' + encodeURIComponent(safeReturnTo(to.fullPath)))
                 return false
             }
-            return navigateTo('/auth/start?return_to=' + encodeURIComponent(to.fullPath), { external: true, redirectCode: 303 })
+            return navigateTo('/auth/start?return_to=' + encodeURIComponent(safeReturnTo(to.fullPath)), { external: true, redirectCode: 303 })
         }
     }
     const role = session.value?.role || null

@@ -2,10 +2,18 @@
 definePageMeta({ layout: 'blank', middleware: 'require-login' })
 useSeoMeta({ title: 'Checkout | IC Market', robots: 'noindex' })
 
+import { checkout as checkoutOrder, payOrder } from '~/services/orders'
+import { normalizeError } from '~/services/errors'
+
 const cart = useCartStore()
 const wallet = useWalletStore()
+const ui = useUiStore()
 
 const step = ref('pay')
+const paying = ref(false)
+// Voucher + cashback di papan ini hanya tiruan desain; di mode API disembunyikan (belum terhubung ke server).
+const showVoucher = wallet.isMock
+onMounted(() => { if (!wallet.isMock) wallet.syncBalance() })
 const voucher = ref(false)
 const paid = ref([])
 
@@ -13,11 +21,33 @@ const lines = computed(() => cart.lines.filter(l => l.selected))
 const total = computed(() => cart.selectedTotal)
 const cashback = computed(() => Math.round(total.value * 0.2))
 
-function pay() {
-  if (!lines.value.length) return
-  paid.value = lines.value
-  cart.removeSelected()
-  step.value = 'done'
+async function pay() {
+  if (!lines.value.length || paying.value) return
+  if (wallet.isMock) {
+    paid.value = lines.value
+    cart.removeSelected()
+    step.value = 'done'
+    return
+  }
+  // Mode API: pembayaran nyata (iCoin). Tidak pernah menampilkan sukses tanpa konfirmasi server.
+  paying.value = true
+  const picked = lines.value
+  let created = false
+  try {
+    const order = await checkoutOrder({ items: picked.map((l) => ({ productId: l.productId })), paymentMethod: 'icmarket_coins' })
+    created = true
+    if (order?.status !== 'completed') await payOrder(order.transaction_id) // produk gratis langsung completed
+    paid.value = picked
+    cart.dropSelected()
+    step.value = 'done'
+  } catch (e) {
+    ui.push({ tone: 'danger', message: normalizeError(e).message || 'Pembayaran gagal. Silakan coba lagi.' })
+    // Checkout sudah membuat pesanan pending & mengosongkan keranjang server: muat ulang agar tampilan jujur.
+    if (created) await cart.reload()
+  } finally {
+    await wallet.syncBalance()
+    paying.value = false
+  }
 }
 function reset() {
   step.value = 'pay'
@@ -37,8 +67,8 @@ function reset() {
         <div class="tw:overflow-hidden tw:rounded-[20px] tw:border tw:border-solid tw:border-line tw:bg-surface">
           <CheckoutItems :lines="lines" />
           <CheckoutPayMethod :balance="wallet.format()" :remain="wallet.format(wallet.balance - total)" />
-          <CheckoutVoucher :applied="voucher" :cashback="wallet.format(cashback)" @toggle="voucher = !voucher" />
-          <CheckoutSummary :total="wallet.format(total)" :disabled="!lines.length" @pay="pay" />
+          <CheckoutVoucher v-if="showVoucher" :applied="voucher" :cashback="wallet.format(cashback)" @toggle="voucher = !voucher" />
+          <CheckoutSummary :total="wallet.format(total)" :disabled="!lines.length || paying" @pay="pay" />
         </div>
       </template>
       <CheckoutDone v-else :lines="paid" @reset="reset" />

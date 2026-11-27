@@ -3,6 +3,8 @@ const productApi = useProductApi()
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
+definePageMeta({ middleware: 'require-login' })
+
 const router = useRouter()
 const { session } = useDemoAuth()
 const config = useRuntimeConfig()
@@ -53,8 +55,8 @@ const useVoucher = async (v) => {
 }
 
 const voucherLabel = (v) => {
-  if (v.type === 'percent') return `Diskon ${v.amount}%`
-  return `Potongan <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> ${Number(v.amount).toLocaleString('id-ID')}`
+  if (v.type === 'percent') return `Diskon ${Number(v.amount) || 0}%`
+  return `Potongan <img src="/icoinz.svg" alt="iCoinz" class="icoinz-icon" /> ${(Number(v.amount) || 0).toLocaleString('id-ID')}`
 }
 
 const voucherSubLabel = (v) => {

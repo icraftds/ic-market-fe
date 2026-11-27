@@ -5,6 +5,7 @@ import { useCatalogStore } from '~/stores/catalog'
 import { useAuthStore } from '~/stores/auth'
 import { useUiStore } from '~/stores/ui'
 import { mergeLines, itemsToPush, parseStored } from '~/utils/cartMerge.js'
+import { isMockMode } from '~/utils/authRouting'
 import * as cartApi from '~/services/cart.js'
 
 export const CART_STORAGE_KEY = 'icmarket-cart-v2'
@@ -21,7 +22,7 @@ const writeGuest = (items) => {
 
 export const useCartStore = defineStore('cart', () => {
   const config = useRuntimeConfig()
-  const mock = config.public.designMock === true || (import.meta.dev && !config.public.ssoEnabled)
+  const mock = isMockMode({ designMock: config.public.designMock, dev: import.meta.dev })
 
   // Mode mock: isi awal mengikuti papan V2Cart. Mode API: kosong, diisi hydrate()/server.
   const items = ref(mock
@@ -151,6 +152,16 @@ export const useCartStore = defineStore('cart', () => {
       'Gagal menghapus item terpilih.'
     )
   }
+  /** Setelah checkout berhasil di server (keranjang server sudah dikosongkan oleh /orders/checkout): buang baris terpilih secara lokal saja. */
+  function dropSelected() {
+    items.value = items.value.filter((i) => !i.selected)
+    persistGuest()
+  }
+  /** Muat ulang keranjang dari server (mis. setelah checkout gagal di tengah jalan). */
+  async function reload() {
+    if (!useServer()) return
+    try { await reloadServer() } catch (e) { notify(e, 'Gagal memuat keranjang.') }
+  }
   function clear() {
     return run(() => { items.value = [] }, () => cartApi.clearCart(), 'Gagal mengosongkan keranjang.')
   }
@@ -163,5 +174,5 @@ export const useCartStore = defineStore('cart', () => {
     })
   }
 
-  return { items, lines, count, selectedCount, selectedTotal, allSelected, syncing, has, hydrate, syncAfterLogin, add, remove, toggle, toggleAll, removeSelected, clear }
+  return { items, lines, count, selectedCount, selectedTotal, allSelected, syncing, has, hydrate, syncAfterLogin, add, remove, toggle, toggleAll, removeSelected, dropSelected, reload, clear }
 })

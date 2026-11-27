@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useApi } from '~/services'
-import { isMockMode, loginUrl } from '~/utils/authRouting'
+import { isMockMode, loginUrl, safeReturnTo } from '~/utils/authRouting'
 
 // Pengguna tiruan per peran (mode desain).
 const makeUser = (role) => {
@@ -92,7 +92,8 @@ export const useAuthStore = defineStore('auth', () => {
   async function refresh() {
     const { session, syncSession } = useDemoAuth()
     let s = null
-    try { s = await syncSession() } catch { s = session.value }
+    // Wallet jalan paralel di latar belakang; peran/akses tidak menunggunya.
+    try { s = await syncSession(false, { background: true }) } catch { s = session.value }
     s = s || session.value
     if (!s) {
       user.value = null
@@ -136,7 +137,7 @@ export const useAuthStore = defineStore('auth', () => {
   function requireLogin(returnTo = '/') {
     const url = loginUrl(returnTo)
     if (import.meta.client) {
-      if (isMock) return navigateTo('/login?redirect=' + encodeURIComponent(returnTo))
+      if (isMock) return navigateTo('/login?redirect=' + encodeURIComponent(safeReturnTo(returnTo)))
       useAuthPending().redirect(url)
       return false
     }

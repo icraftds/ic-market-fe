@@ -1,5 +1,6 @@
 <script setup>
 import { catalogFaq, catalogTechs } from '~/mocks/content'
+import { isMockMode } from '~/utils/authRouting'
 import { SORT_LABELS, emptyFilters, parseCatalogQuery, buildCatalogQuery, catalogHref, hasActiveFilters, toListParams } from '~/utils/catalogUrl'
 
 definePageMeta({ layout: 'storefront' })
@@ -10,7 +11,7 @@ const router = useRouter()
 const config = useRuntimeConfig()
 const catalog = useCatalogStore()
 const siteUrl = String(config.public.siteUrl).replace(/\/$/, '')
-const mock = config.public.designMock === true || (import.meta.dev && !config.public.ssoEnabled)
+const mock = isMockMode({ designMock: config.public.designMock, dev: import.meta.dev })
 // Mode mock: nama teknologi papan -> nilai `format` produk mock.
 const mockTechMap = { JavaScript: ['JS'], 'HTML/CSS': ['HTML'] }
 

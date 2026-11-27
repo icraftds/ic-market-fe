@@ -598,7 +598,7 @@ export const useHostingStore = defineStore('hosting', () => {
     clearErrors('upload')
     submitting.value.upload = true
     try {
-      const sub = await hostingApi.uploadFiles(sid, file)
+      const sub = await hostingApi.uploadFiles(sid, file, { maxBytes: (maxZipMb.value || 50) * 1024 * 1024 })
       upsertSubscription(sub)
       applySubscriptionState(sub)
       notify('success', 'File project berhasil diunggah.')

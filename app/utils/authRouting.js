@@ -26,16 +26,31 @@ export function isPrivateV2Path(path) {
   return PRIVATE_EXACT.includes(p) || PRIVATE_PREFIX.some((x) => p.startsWith(x))
 }
 
-/** Mode mock: designMock aktif, atau dev tanpa SSO. */
-export function isMockMode({ designMock = false, dev = false, ssoEnabled = false } = {}) {
-  return designMock === true || (dev === true && !ssoEnabled)
+/**
+ * Mode mock HANYA di dev server (import.meta.dev) DAN bila diminta eksplisit (NUXT_PUBLIC_DESIGN_MOCK=true).
+ * Di build produksi (dev=false) flag diabaikan: tidak ada data tiruan, tidak ada bypass sesi/peran.
+ * Default: semua data dari API/DB.
+ */
+export function isMockMode({ designMock = false, dev = false } = {}) {
+  return dev === true && designMock === true
 }
 
-/** returnTo harus path internal; selain itu jatuh ke '/'. */
+/**
+ * returnTo harus path internal; selain itu jatuh ke '/'.
+ * Ditolak: bukan string, tidak diawali '/', '//' (protocol-relative), backslash, karakter kontrol
+ * (browser membuang tab/newline: "/\t/evil.com" menjadi "//evil.com"), dan bentuk ter-encode yang
+ * setelah didekode menjadi salah satu di atas ("/%2F/evil.com", "/%5Cevil.com"). Panjang maks 2048.
+ */
 export function safeReturnTo(returnTo) {
   const t = typeof returnTo === 'string' ? returnTo : ''
-  if (!t.startsWith('/') || t.startsWith('//') || t.includes('\\')) return '/'
-  return t
+  if (!t || t.length > 2048) return '/'
+  let cur = t
+  for (let i = 0; i < 4; i++) {
+    if (!cur.startsWith('/') || cur.startsWith('//') || /[\\\u0000-\u001f\u007f-\u009f]/.test(cur)) return '/'
+    if (!/%[0-9a-f]{2}/i.test(cur)) return t
+    try { cur = decodeURIComponent(cur) } catch { return '/' }
+  }
+  return '/'
 }
 
 export function loginUrl(returnTo) {

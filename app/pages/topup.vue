@@ -3,6 +3,8 @@ const productApi = useProductApi()
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
+definePageMeta({ middleware: 'require-login' })
+
 const router = useRouter()
 const { session, syncSession, fetchWallet, walletBalance, walletStatus, walletHistories, walletMeta, initializeWallet, walletInitializationPending } = useDemoAuth()
 

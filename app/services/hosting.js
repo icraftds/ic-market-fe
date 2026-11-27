@@ -1,6 +1,8 @@
 // Service Jasa Hosting (B5, tanpa state). Backend: routes/api/hosting.php.
 // Respons { success, data }; uang integer rupiah. Error dilempar sebagai ApiError.
 import { useApi } from './http.js'
+import { ApiError } from './errors.js'
+import { validateUpload } from '../utils/uploadGuard.js'
 import {
   mapPublicCatalog, mapConsultation, mapHostingOrder, mapSubscription, mapDeployment,
   mapEnvVar, envVarsToBody, mapDomain, mapDatabase, mapTicket, mapInvoice
@@ -94,7 +96,9 @@ export async function updateProject(id, { stack, domain } = {}) {
 }
 
 /** POST /api/hosting/subscriptions/{id}/files (multipart file .zip) -> HostingSubscription */
-export async function uploadFiles(id, file) {
+export async function uploadFiles(id, file, { maxBytes } = {}) {
+  const problem = validateUpload(file, 'archive', { maxBytes })
+  if (problem) throw new ApiError({ status: 422, code: 'invalid_file', message: problem, fieldErrors: { file: problem } })
   const api = useApi()
   const body = new FormData()
   body.append('file', file)
