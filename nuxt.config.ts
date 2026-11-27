@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  modules: ['@pinia/nuxt', '@nuxt/icon'],
+  icon: { serverBundle: 'local', clientBundle: { scan: true } },
   
   css: [
     '~/assets/css/style.css',
@@ -44,6 +46,7 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
+    '/v2/**': { ssr: false, headers: { 'x-robots-tag': 'noindex' } },
     '/**': { headers: { 'x-content-type-options': 'nosniff', 'permissions-policy': 'camera=(), microphone=(), geolocation=()' } }
   },
 
