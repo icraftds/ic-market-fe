@@ -1,5 +1,6 @@
 <script setup>
-/** LandingCta: banner penutup "Siap buka toko?" dengan tombol ke /seller/onboarding. */
+/** LandingCta: banner penutup "Siap buka toko?". Tujuan tombol mengikuti sesi/status (useSellerCta). */
+const cta = useSellerCta()
 </script>
 
 <template>
@@ -9,7 +10,7 @@
         <p class="tw:m-0 tw:font-display tw:text-[26px] tw:font-extrabold">Siap buka toko?</p>
         <p class="tw:mt-1.5 tw:mb-0 tw:font-sans tw:text-[14.5px] tw:font-normal tw:text-ink-2">Prosesnya sekitar 5 menit. Draf tersimpan otomatis.</p>
       </div>
-      <UiButton to="/seller/onboarding" size="lg" icon="material-symbols:rocket-launch-outline" class="tw:min-h-[52px] tw:rounded-xl tw:px-[26px] tw:text-[15px] tw:font-bold">Mulai sekarang</UiButton>
+      <UiButton :to="cta.href.value" :loading="cta.pending.value" size="lg" icon="material-symbols:rocket-launch-outline" class="tw:min-h-[52px] tw:rounded-xl tw:px-[26px] tw:text-[15px] tw:font-bold" @click="cta.go">{{ cta.label('Mulai sekarang') }}</UiButton>
     </div>
   </section>
 </template>

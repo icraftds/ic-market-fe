@@ -2,13 +2,11 @@
 /** Langkah 4: Verifikasi identitas & ketentuan. */
 const store = useOnboardingStore()
 const err = key => (store.showErrors ? store.errors[key] || '' : '')
-const idName = ref('')
-const selfieName = ref('')
 const agreeErrId = useId()
-function picked(kind, name) {
-  if (kind === 'id') { idName.value = name; store.setField('idCardUploaded', true) }
-  else { selfieName.value = name; store.setField('selfieUploaded', true) }
-}
+const idUp = computed(() => store.uploads.id_card)
+const selfieUp = computed(() => store.uploads.selfie)
+// Berkas identitas bersifat privat: hanya nama berkas sesi ini + status yang tampil, tidak ada URL/pratinjau.
+const upErr = (u, key) => u.error || err(key)
 </script>
 
 <template>
@@ -23,11 +21,11 @@ function picked(kind, name) {
       <div class="tw:grid tw:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] tw:gap-3">
         <OnboardingWizardUploadTile
           title="Foto kartu identitas" hint="Jelas, tidak terpotong" icon="material-symbols:id-card-outline"
-          :uploaded="store.form.idCardUploaded" :file-name="idName" :error="err('idCard')" @picked="picked('id', $event)"
+          :uploaded="store.form.idCardUploaded" :uploading="idUp.status === 'uploading'" private-file :file-name="idUp.name" :error="upErr(idUp, 'idCard')" @picked="store.uploadFile('id_card', $event)"
         />
         <OnboardingWizardUploadTile
           title="Swafoto dengan identitas" hint="Wajah dan kartu terlihat" icon="material-symbols:photo-camera-outline"
-          :uploaded="store.form.selfieUploaded" :file-name="selfieName" :error="err('selfie')" @picked="picked('selfie', $event)"
+          :uploaded="store.form.selfieUploaded" :uploading="selfieUp.status === 'uploading'" private-file :file-name="selfieUp.name" :error="upErr(selfieUp, 'selfie')" @picked="store.uploadFile('selfie', $event)"
         />
       </div>
       <div>

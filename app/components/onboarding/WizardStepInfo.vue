@@ -36,7 +36,7 @@ const kindsId = useId()
           >
         </div>
         <span id="slug-note" class="tw:flex tw:items-center tw:gap-1.5 tw:font-sans tw:text-[12.5px] tw:font-semibold" :class="slugErr ? 'tw:text-bad' : 'tw:text-[#15803d]'" :role="slugErr ? 'alert' : undefined">
-          <Icon :name="slugErr ? 'material-symbols:error-outline' : 'material-symbols:check'" class="tw:size-[13px] tw:shrink-0" aria-hidden="true" />{{ slugErr || 'Tersedia · tidak bisa diubah setelah toko disetujui' }}
+          <Icon :name="slugErr ? 'material-symbols:error-outline' : 'material-symbols:check'" class="tw:size-[13px] tw:shrink-0" aria-hidden="true" />{{ slugErr || (store.mock ? 'Tersedia · tidak bisa diubah setelah toko disetujui' : 'Ketersediaan dicek saat disimpan · tidak bisa diubah setelah toko disetujui') }}
         </span>
       </div>
 

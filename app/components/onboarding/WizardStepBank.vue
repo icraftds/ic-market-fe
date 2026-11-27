@@ -4,6 +4,16 @@ import { bankOptions, commissionPercent } from '~/mocks/onboarding'
 
 const store = useOnboardingStore()
 const err = key => (store.showErrors ? store.errors[key] || '' : '')
+// Mode API: opsi dari GET /banks ({ code, name }); mode mock: daftar papan.
+const options = computed(() => {
+  if (store.mock) return bankOptions.map(b => ({ code: b, name: b }))
+  const list = store.bankOptions
+  const cur = store.form.bank
+  // Bank tersimpan tetap tampil walau daftar bank gagal dimuat / tidak memuat kodenya.
+  return cur && !list.some(b => b.code === cur) ? [...list, { code: cur, name: store.form.bankName || cur }] : list
+})
+// Nomor rekening tidak pernah kembali utuh dari server: tampilkan 4 digit terakhir sebagai petunjuk.
+const accountPlaceholder = computed(() => (store.accountSaved ? `•••• ${store.form.accountLast4} (tersimpan, isi ulang untuk mengganti)` : 'Hanya angka'))
 </script>
 
 <template>
@@ -14,13 +24,13 @@ const err = key => (store.showErrors ? store.errors[key] || '' : '')
         <template #default="{ id, invalid, describedBy }">
           <OnboardingWizardControl :id="id" as="select" :model-value="store.form.bank" :invalid="invalid" :aria-describedby="describedBy" @update:model-value="store.setField('bank', $event)">
             <option value="">Pilih bank</option>
-            <option v-for="b in bankOptions" :key="b" :value="b">{{ b }}</option>
+            <option v-for="b in options" :key="b.code" :value="b.code">{{ b.name }}</option>
           </OnboardingWizardControl>
         </template>
       </OnboardingWizardField>
       <OnboardingWizardField label="Nomor rekening" :error="err('accountNo')">
         <template #default="{ id, invalid, describedBy }">
-          <OnboardingWizardControl :id="id" mono inputmode="numeric" autocomplete="off" placeholder="Hanya angka" :model-value="store.form.accountNo" :invalid="invalid" :aria-describedby="describedBy" @update:model-value="store.setField('accountNo', $event)" />
+          <OnboardingWizardControl :id="id" mono inputmode="numeric" autocomplete="off" :placeholder="accountPlaceholder" :model-value="store.form.accountNo" :invalid="invalid" :aria-describedby="describedBy" @update:model-value="store.setField('accountNo', $event)" />
         </template>
       </OnboardingWizardField>
       <OnboardingWizardField label="Nama pemilik rekening" :error="err('accountName')">

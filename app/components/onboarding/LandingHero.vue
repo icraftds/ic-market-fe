@@ -33,6 +33,7 @@ const mobileFan = [
   'tw:bg-[linear-gradient(160deg,#0f766e,#0b1220)] tw:rotate-5 tw:translate-y-1 tw:z-4',
   'tw:bg-[linear-gradient(160deg,#78350f,#0b1220)] tw:rotate-10 tw:translate-y-3 tw:z-5'
 ]
+const cta = useSellerCta()
 const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:ring-offset-2 tw:focus-visible:outline-none'
 </script>
 
@@ -71,10 +72,11 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
     <p class="tw:mx-auto tw:mt-[38px] tw:mb-0 tw:max-w-[580px] tw:font-sans tw:text-[16.5px] tw:leading-[1.6] tw:font-normal tw:text-panel-ink tw:max-lg:mt-5 tw:max-lg:text-[15px]">Unggah ZIP sekali. IC Market membangun live preview, mengurus pembayaran iCoin, dan mengirim file ke pembeli secara otomatis.</p>
     <div class="tw:mt-[26px] tw:flex tw:flex-wrap tw:justify-center tw:gap-3 tw:max-lg:mt-5 tw:max-lg:gap-2">
       <NuxtLink
-        to="/seller/onboarding"
+        :to="cta.href.value"
         class="tw:inline-flex tw:items-center tw:gap-2.5 tw:rounded-full tw:bg-hero tw:px-7 tw:py-3.5 tw:font-sans tw:text-[14.5px] tw:font-semibold tw:text-white tw:no-underline tw:shadow-[0_4px_14px_rgba(15,23,42,0.15)] tw:max-lg:px-[18px] tw:max-lg:py-3 tw:max-lg:text-[13px]"
         :class="focusRing"
-      >Buka Toko Gratis <Icon name="material-symbols:arrow-forward" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" /></NuxtLink>
+        @click="cta.go"
+      >{{ cta.label('Buka Toko Gratis') }} <Icon name="material-symbols:arrow-forward" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" /></NuxtLink>
       <a
         href="#cara"
         class="tw:inline-flex tw:items-center tw:gap-2 tw:rounded-full tw:border tw:border-solid tw:border-[#e2e8f0] tw:bg-surface tw:px-7 tw:py-3.5 tw:font-sans tw:text-[14.5px] tw:font-semibold tw:text-hero tw:no-underline tw:max-lg:px-[18px] tw:max-lg:py-3 tw:max-lg:text-[13px]"

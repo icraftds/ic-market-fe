@@ -57,6 +57,12 @@ export const useAuthStore = defineStore('auth', () => {
       const data = res?.data ?? null
       store.value = data && typeof data === 'object' ? data : null
       applicationStatus.value = res?.application_status ?? data?.application_status ?? null
+      // Kontrak: GET /seller/store seharusnya memuat application_status; kode BE saat ini hanya mengembalikan toko.
+      // Tanpa toko dan tanpa status -> tanyakan status aplikasi ke GET /seller/application.
+      if (!store.value && !applicationStatus.value) {
+        const app = await api('seller/application', { auth: 'required' })
+        applicationStatus.value = app?.application?.status ?? null
+      }
     } catch {
       // Gagal memuat toko tidak boleh memutus sesi; dianggap belum punya toko.
     }

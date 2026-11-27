@@ -1,4 +1,5 @@
 // Logika murni penentuan akses rute (tanpa dependensi Nuxt; dites dengan node:test).
+import { sellerGuardRedirect, ONBOARDING_PATH } from './onboardingRouting.js'
 
 // Halaman publik v2: SSR tidak boleh bergantung pada sesi.
 const PUBLIC_EXACT = ['/', '/cari', '/hosting', '/seller/register']
@@ -41,20 +42,13 @@ export function loginUrl(returnTo) {
   return '/auth/start?return_to=' + encodeURIComponent(safeReturnTo(returnTo))
 }
 
-const REVIEWING = ['submitted', 'in_review', 'resubmitted']
-
 /**
  * Menentukan tujuan seller untuk pengguna yang sudah masuk.
  * -> { action: 'allow' } | { action: 'redirect', to }
  */
 export function sellerGate({ role, hasStore = false, applicationStatus = null }) {
-  if (role === 'admin' || role === 'seller') {
-    if (role === 'seller' && !hasStore && !REVIEWING.includes(applicationStatus)) return { action: 'redirect', to: '/seller/register' }
-    return { action: 'allow' }
-  }
-  if (REVIEWING.includes(applicationStatus)) return { action: 'redirect', to: '/seller/onboarding' }
-  if (applicationStatus === 'draft' || applicationStatus === 'rejected') return { action: 'redirect', to: '/seller/register' }
-  return { action: 'redirect', to: '/seller/register' }
+  if (role === 'admin' || (role === 'seller' && (hasStore || sellerGuardRedirect({ applicationStatus }) === ONBOARDING_PATH))) return { action: 'allow' }
+  return { action: 'redirect', to: sellerGuardRedirect({ applicationStatus }) }
 }
 
 /**

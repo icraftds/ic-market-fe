@@ -3,6 +3,8 @@
  * MobileNavDrawer: menu geser dari kiri (UiDrawer). Buka/tutup lewat useUiStore().mobileNavOpen.
  * Dibuka dari avatar MobileHeader dan tombol "Lainnya" MobileBottomBar. Menutup otomatis saat pindah halaman.
  */
+import { sellerNavItem } from '~/utils/onboardingRouting'
+
 const ui = useUiStore()
 const auth = useAuthStore()
 const wallet = useWalletStore()
@@ -15,10 +17,11 @@ const open = computed({
 })
 watch(() => route.fullPath, () => { if (ui.mobileNavOpen) ui.toggleMobileNav() })
 
+const sellerItem = computed(() => sellerNavItem({ role: auth.role, hasStore: auth.hasStore, applicationStatus: auth.applicationStatus }))
 const main = computed(() => [
   { label: 'Beranda', to: '/', exact: true },
   { label: 'Game-Z', to: '/game-z' },
-  { label: 'Toko Saya', to: auth.user?.hasStore ? '/seller' : '/seller/register', brand: true },
+  ...(auth.ready ? [{ label: sellerItem.value.label, to: sellerItem.value.to, brand: true }] : []),
   { label: 'Pesanan Saya', to: '/orders' },
   { label: 'Voucher Saya', to: '/vouchers' }
 ])

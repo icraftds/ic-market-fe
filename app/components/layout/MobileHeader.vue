@@ -3,6 +3,8 @@
  * MobileHeader: header ponsel beranda (V2Mobile #1): logo, chip iCoin, keranjang, avatar (membuka drawer),
  * kolom cari, dan navigasi geser horizontal.
  */
+import { sellerNavItem } from '~/utils/onboardingRouting'
+
 const auth = useAuthStore()
 const wallet = useWalletStore()
 const cart = useCartStore()
@@ -16,11 +18,12 @@ const coin = computed(() => {
   const f = (v, d) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: d }).format(v)
   return n >= 1000000 ? `${f(n / 1000000, 2)} jt` : f(n, 0)
 })
-const tokoSaya = computed(() => (auth.user?.hasStore ? '/seller' : '/seller/register'))
+const sellerItem = computed(() => sellerNavItem({ role: auth.role, hasStore: auth.hasStore, applicationStatus: auth.applicationStatus }))
+// Menu toko menunggu sesi terbaca agar label tidak berganti setelah tampil.
 const links = computed(() => [
   { label: 'Beranda', to: '/', exact: true, tone: 'plain' },
   { label: 'Game-Z', to: '/game-z', tone: 'plain' },
-  { label: 'Toko Saya', to: tokoSaya.value, tone: 'brand' },
+  ...(auth.ready ? [{ label: sellerItem.value.label, to: sellerItem.value.to, tone: 'brand' }] : []),
   { label: 'Pesanan', to: '/orders', tone: 'plain' },
   { label: 'Voucher', to: '/vouchers', tone: 'plain' }
 ])
