@@ -1,13 +1,22 @@
+import { isPublicV2Path, isPrivateV2Path, safeReturnTo } from '~/utils/authRouting'
+
 export default defineNuxtRouteMiddleware(async (to) => {
     const config = useRuntimeConfig()
     const authPending = useAuthPending()
     const { session, syncSession } = useDemoAuth()
 
     const path = to.path
+    // Halaman publik v2: SSR tidak boleh bergantung pada sesi. Di klien sesi disegarkan tanpa menunggu.
+    if (isPublicV2Path(path)) {
+        if (import.meta.client) syncSession().catch(() => {})
+        return
+    }
+    // Halaman privat v2 dijaga middleware bernama (require-login / require-seller).
+    if (isPrivateV2Path(path)) return
     // Katalog komponen UI hanya ada di mode dev; lewati pemeriksaan peran (import.meta.dev dibuang di build produksi).
     if (import.meta.dev && path.startsWith('/dev/')) return
     if (config.public.ssoEnabled && ['/login', '/register'].includes(path)) {
-        const target = typeof to.query.redirect === 'string' ? to.query.redirect : '/'
+        const target = safeReturnTo(to.query.redirect)
         if (import.meta.client) {
             authPending.redirect('/auth/start?return_to=' + encodeURIComponent(target))
             return false
@@ -25,10 +34,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (config.public.ssoEnabled) {
         if (!session.value && (path.startsWith('/admin/') || path.startsWith('/seller/') || ['/profile', '/cart', '/checkout', '/orders', '/payment', '/success', '/topup', '/vouchers'].includes(path))) {
             if (import.meta.client) {
-                authPending.redirect('/auth/start?return_to=' + encodeURIComponent(to.fullPath))
+                authPending.redirect('/auth/start?return_to=' + encodeURIComponent(safeReturnTo(to.fullPath)))
                 return false
             }
-            return navigateTo('/auth/start?return_to=' + encodeURIComponent(to.fullPath), { external: true, redirectCode: 303 })
+            return navigateTo('/auth/start?return_to=' + encodeURIComponent(safeReturnTo(to.fullPath)), { external: true, redirectCode: 303 })
         }
     }
     const role = session.value?.role || null
@@ -87,18 +96,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
         return
     }
 
-    // Seller boleh melihat halaman publik toko (beranda, produk, toko, kategori, info) seperti pembeli,
-    // tetapi halaman khusus pembeli (keranjang, checkout, pesanan, dst.) tetap diarahkan ke dashboard seller.
-    if (role === 'seller') {
-        const allowedSellerPaths = ['/seller/dashboard', '/seller/products', '/seller/orders', '/seller/finance', '/logout', '/profile']
-        const publicPaths = ['/', '/blog', '/faq', '/panduan', '/kebijakan', '/tentang']
-        const publicPrefixes = ['/product/', '/store/', '/kategori/']
-        const isPublicPage = publicPaths.includes(path) || publicPrefixes.some((prefix) => path.startsWith(prefix))
-
-        if (!allowedSellerPaths.includes(path) && !path.startsWith('/seller/') && !isPublicPage) {
-            return navigateTo('/seller/dashboard')
-        }
-    }
+    // Seller = akun biasa yang juga punya toko: boleh memakai halaman pembeli (keranjang, checkout, pesanan, voucher, top up).
+    // Aturan lama yang mengalihkan seller ke dasbor dihapus; backend sudah melarang membeli produk milik sendiri.
 
     // Admin payout boleh diakses admin dan finance.
     if (path === '/admin/payouts') {

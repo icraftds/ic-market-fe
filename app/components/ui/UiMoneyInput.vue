@@ -61,7 +61,7 @@ const onInput = async (event) => {
 
 <template>
   <div class="tw:flex tw:flex-col tw:gap-1.5">
-    <label v-if="label" :for="id" class="tw:text-[12.5px] tw:font-bold tw:text-slate-700">{{ label }}</label>
+    <label v-if="label" :for="id" class="tw:text-[12.5px] tw:font-bold tw:text-ink">{{ label }}</label>
     <div class="tw:relative">
       <span class="tw:pointer-events-none tw:absolute tw:inset-y-0 tw:left-3 tw:flex tw:items-center tw:text-sm tw:font-semibold tw:text-muted" aria-hidden="true">{{ prefix }}</span>
       <input
@@ -74,12 +74,12 @@ const onInput = async (event) => {
         :value="display"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="describedBy"
-        class="tw:w-full tw:rounded-field tw:border tw:bg-white tw:py-2.5 tw:pr-3 tw:pl-10 tw:text-right tw:text-sm tw:font-semibold tw:text-ink tw:tabular-nums tw:transition tw:outline-none tw:placeholder:font-medium tw:placeholder:text-slate-400 tw:focus:ring-4 tw:disabled:cursor-not-allowed tw:disabled:bg-slate-100 tw:disabled:text-slate-400"
-        :class="error ? 'tw:border-red-500 tw:focus:border-red-500 tw:focus:ring-red-500/15' : 'tw:border-line tw:hover:border-slate-400 tw:focus:border-brand tw:focus:ring-brand/15'"
+        class="tw:min-h-11 tw:w-full tw:rounded-field tw:border tw:bg-white tw:py-2.5 tw:pr-3 tw:pl-10 tw:text-right tw:text-sm tw:font-semibold tw:text-ink tw:tabular-nums tw:transition tw:outline-none tw:placeholder:font-medium tw:placeholder:text-muted tw:focus:ring-4 tw:disabled:cursor-not-allowed tw:disabled:bg-slate-100 tw:disabled:text-slate-400"
+        :class="error ? 'tw:border-bad tw:focus:border-bad tw:focus:ring-bad/15' : 'tw:border-line tw:hover:border-slate-400 tw:focus:border-brand tw:focus:ring-brand/15'"
         placeholder="0"
         @input="onInput"
       >
     </div>
-    <p v-if="error || hint" :id="`${id}-note`" class="tw:m-0 tw:text-[11.5px] tw:font-medium" :class="error ? 'tw:text-red-600' : 'tw:text-muted'">{{ error || hint }}</p>
+    <p v-if="error || hint" :id="`${id}-note`" class="tw:m-0 tw:text-[11.5px] tw:font-medium" :class="error ? 'tw:text-bad' : 'tw:text-muted'">{{ error || hint }}</p>
   </div>
 </template>

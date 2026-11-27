@@ -1,3 +1,5 @@
+import { safePreviewUrl } from '~/utils/safeUrl.js'
+
 const LOADING_HTML = `<!doctype html>
 <html lang="id"><head><meta charset="utf-8"><title>Menyiapkan preview...</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,7 +41,8 @@ export const useEnginePreview = () => {
       method: 'POST',
       headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
     })
-    const url = response?.data?.url
+    // Hanya http(s) dan bukan origin situs ini: jangan pernah menavigasi/membingkai javascript:, data:, atau halaman sendiri.
+    const url = safePreviewUrl(response?.data?.url, window.location.origin)
     if (!url) throw new Error('no_url')
     return url
   }

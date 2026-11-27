@@ -64,6 +64,7 @@ const toggleAll = () => emit('update:selected', allSelected.value ? props.select
 const toggleRow = (id) => emit('update:selected', props.selected.includes(id) ? props.selected.filter(x => x !== id) : [...props.selected, id])
 const cellValue = (row, column) => (column.format ? column.format(row[column.key], row) : row[column.key])
 const colspan = computed(() => props.columns.length + (props.selectable ? 1 : 0))
+const colAttrs = column => (column.width ? { style: { width: column.width } } : {})
 </script>
 
 <template>
@@ -81,7 +82,7 @@ const colspan = computed(() => props.columns.length + (props.selectable ? 1 : 0)
               :key="column.key"
               scope="col"
               :aria-sort="ariaSort(column)"
-              :style="column.width ? { width: column.width } : undefined"
+              v-bind="colAttrs(column)"
               class="tw:border-b tw:border-slate-200 tw:text-xs tw:font-bold tw:tracking-wide tw:whitespace-nowrap tw:text-slate-500 tw:uppercase"
               :class="[cellPad, alignClass[column.align] || alignClass.left]"
             >
@@ -93,10 +94,7 @@ const colspan = computed(() => props.columns.length + (props.selectable ? 1 : 0)
                 @click="toggleSort(column)"
               >
                 <slot :name="`head-${column.key}`" :column="column">{{ column.label }}</slot>
-                <svg viewBox="0 0 12 14" width="10" height="12" aria-hidden="true" class="tw:shrink-0" :class="sort?.key === column.key ? 'tw:text-brand' : 'tw:text-slate-300'">
-                  <path d="M6 1 9.5 5H2.5L6 1Z" :fill="sort?.key === column.key && sort.dir === 'asc' ? 'currentColor' : '#cbd5e1'" />
-                  <path d="M6 13 2.5 9h7L6 13Z" :fill="sort?.key === column.key && sort.dir === 'desc' ? 'currentColor' : '#cbd5e1'" />
-                </svg>
+                <Icon :name="sort?.key === column.key ? (sort.dir === 'asc' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') : 'material-symbols:unfold-more'" class="tw:size-3.5 tw:shrink-0" :class="sort?.key === column.key ? 'tw:text-brand' : 'tw:text-slate-300'" aria-hidden="true" />
               </button>
               <slot v-else :name="`head-${column.key}`" :column="column">{{ column.label }}</slot>
             </th>

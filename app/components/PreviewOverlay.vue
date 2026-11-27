@@ -1,8 +1,11 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { safePreviewUrl, PREVIEW_SANDBOX, PREVIEW_ALLOW } from '~/utils/safeUrl.js'
 
 const overlay = useState('icmarket-preview-overlay', () => ({ open: false, url: '', title: '', error: '' }))
 const frameLoaded = ref(false)
+// Defense in depth: url sudah divalidasi saat diambil, divalidasi lagi tepat sebelum dipasang ke iframe/tautan.
+const frameUrl = computed(() => (import.meta.client ? safePreviewUrl(overlay.value.url, window.location.origin) : ''))
 
 const DEVICES = [
   { key: 'desktop', label: 'Desktop', icon: 'fa-desktop', width: '100%' },
@@ -59,7 +62,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
         <div class="pv-actions">
-          <a v-if="overlay.url" :href="overlay.url" target="_blank" rel="noopener noreferrer" class="pv-btn" title="Buka di tab baru" aria-label="Buka di tab baru">
+          <a v-if="frameUrl" :href="frameUrl" target="_blank" rel="noopener noreferrer" class="pv-btn" title="Buka di tab baru" aria-label="Buka di tab baru">
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
           </a>
           <button type="button" class="pv-btn close" title="Tutup (Esc)" aria-label="Tutup preview" @click="close">
@@ -76,20 +79,21 @@ onBeforeUnmount(() => {
         </div>
 
         <template v-else>
-          <div v-if="!overlay.url || !frameLoaded" class="pv-state">
+          <div v-if="!frameUrl || !frameLoaded" class="pv-state">
             <div class="pv-spin"></div>
             <p>Menyiapkan preview...</p>
             <small>Mohon tunggu sebentar</small>
           </div>
           <iframe
-            v-if="overlay.url"
-            :src="overlay.url"
+            v-if="frameUrl"
+            :src="frameUrl"
             class="pv-frame"
             :class="{ ready: frameLoaded }"
             :style="{ width: deviceWidth }"
             title="Preview produk"
             referrerpolicy="no-referrer"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+            :sandbox="PREVIEW_SANDBOX"
+            :allow="PREVIEW_ALLOW"
             @load="frameLoaded = true"
           ></iframe>
           <div v-if="frameLoaded" class="pv-ribbon" aria-hidden="true">PREVIEW</div>

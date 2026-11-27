@@ -8,15 +8,56 @@
 @import "tailwindcss/utilities.css" prefix(tw) source(none);
 
 @source "../../components/ui";
-@source "../../pages/dev";
+@source "../../pages";
+@source "../../components";
+@source "../../components/layout";
+@source "../../components/product";
+@source "../../components/seller";
+@source "../../components/shop";
+@source "../../layouts/storefront.vue";
+@source "../../layouts/seller-center.vue";
 
 /* Token desain: dipetakan dari variabel yang sudah ada di style.css supaya warna tetap satu sumber. */
 @theme {
-  --color-ink: #0f172a;
-  --color-brand: #2563eb;
+  /* Token IC Market v2 (dari papan "v2 · Token & komponen") */
+  --font-display: 'Outfit', sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-bg: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-line: #e8e8e3;
+  --color-ink: #111110;
+  --color-ink-2: #55554f;
+  --color-muted: #6f6f68;
+  --color-subtle: #f0f0ec;
+  --color-brand: #0f66ea;
   --color-brand-soft: #eff6ff;
-  --color-line: #d5dbe5;
-  --color-muted: #64748b;
+  --color-coin: #f5c542;
+  --color-hero: #0f172a;
+
+  --color-side: #0b1220;
+  --color-side-active: #13203a;
+  --color-seller: #2563eb;
+  --color-panel: #f4f6fb;
+  --color-panel-line: #e5e9f2;
+  --color-panel-ink: #475569;
+  --color-ok: #16a34a;
+  --color-warn: #f59e0b;
+  --color-bad: #dc2626;
+
+  --radius-chip: 6px;
   --radius-field: 10px;
+  --radius-card: 14px;
+  --radius-panel: 20px;
+
   --shadow-pop: 0 12px 32px rgba(15, 23, 42, .14), 0 2px 6px rgba(15, 23, 42, .06);
+  --container-shop: 1200px;
+  --container-checkout: 720px;
+
+  --animate-marquee: marquee 45s linear infinite;
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
 }

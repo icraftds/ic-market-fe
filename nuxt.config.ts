@@ -1,15 +1,19 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import process from 'node:process'
 import tailwindcss from '@tailwindcss/vite'
+import { securityHeaders } from './server/utils/securityHeaders.js'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  modules: ['@pinia/nuxt', '@nuxt/icon'],
+  icon: { serverBundle: 'local', clientBundle: { scan: true } },
   
   css: [
     '~/assets/css/style.css',
     '~/assets/css/flow.css',
-    '~/assets/css/tailwind.css'
+    '~/assets/css/tailwind.css',
+    '~/assets/css/ui-editor.css'
   ],
 
   vite: {
@@ -43,8 +47,24 @@ export default defineNuxtConfig({
     }
   },
 
+  hooks: {
+    // File *Map.js (pemeta API -> UI) diimpor eksplisit. Jangan auto-import: namanya bentrok antar domain
+    // (rupiah, fmt, mapProduct, mapFieldErrors, ...) dan Nuxt akan diam-diam memilih salah satunya.
+    'imports:extend': (imports) => {
+      for (let i = imports.length - 1; i >= 0; i--) {
+        if (/[\\/]utils[\\/]\w+Map\.js$/.test(imports[i].from)) imports.splice(i, 1)
+      }
+    }
+  },
+
   routeRules: {
-    '/**': { headers: { 'x-content-type-options': 'nosniff', 'permissions-policy': 'camera=(), microphone=(), geolocation=()' } }
+    '/cart': { ssr: false },
+    '/checkout': { ssr: false },
+    '/seller/**': { ssr: false },
+    '/seller/register': { ssr: true },
+    '/akun/**': { ssr: false },
+    '/hosting/pesan': { ssr: false },
+    '/**': { headers: securityHeaders({ apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api', authApiBase: process.env.NUXT_PUBLIC_AUTH_API_BASE || 'http://localhost:8003/api', production: process.env.NODE_ENV === 'production' }) }
   },
 
   runtimeConfig: {
@@ -63,6 +83,7 @@ export default defineNuxtConfig({
     },
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://market.icraftds.id',
+      designMock: process.env.NUXT_PUBLIC_DESIGN_MOCK === 'true',
       ssoEnabled: process.env.SSO_ENABLED === 'true',
       ssoGlobalLogoutEnabled: process.env.SSO_GLOBAL_LOGOUT_ENABLED === 'true',
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',

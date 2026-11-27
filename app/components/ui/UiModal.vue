@@ -58,7 +58,7 @@ onBeforeUnmount(() => { if (dialog.value?.open) document.body.style.overflow = p
         <p v-if="description" class="tw:mt-1 tw:mb-0 tw:text-sm tw:text-muted">{{ description }}</p>
       </div>
       <button type="button" aria-label="Tutup" class="tw:-mt-1 tw:-mr-2 tw:grid tw:size-9 tw:shrink-0 tw:cursor-pointer tw:place-items-center tw:rounded-lg tw:border-0 tw:bg-transparent tw:text-muted tw:transition tw:hover:bg-slate-100 tw:hover:text-ink" @click="dialog?.close()">
-        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+        <Icon name="material-symbols:close" class="tw:size-[18px]" aria-hidden="true" />
       </button>
     </div>
     <div class="tw:px-6 tw:py-4 tw:text-sm"><slot /></div>

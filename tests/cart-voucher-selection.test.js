@@ -2,87 +2,84 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import vm from 'node:vm'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
-test('Cart selection allows toggling individual items, toggling entire store, and calculates selected totals', async () => {
+// Muat store/halaman .vue/.js di vm dengan auto-import Nuxt yang di-stub (tanpa Nuxt runtime).
+const source = (file) => fs.readFileSync(new URL(file, import.meta.url), 'utf8')
+const scriptOf = (file) => source(file).split('<script setup>')[1].split('</script>')[0]
+// Objek dari vm lintas-realm: bandingkan lewat JSON agar deepStrictEqual tidak gagal karena prototype.
+const plain = (x) => JSON.parse(JSON.stringify(x))
+const stripImports = (code) => code.replace(/^import .*$/gm, '').replace(/^export const /gm, 'const ').replace(/import\.meta\.client/g, 'true')
+
+const productsById = {
+  1: { id: 1, name: 'Satu', price: 10000, categoryName: 'Template', format: 'ZIP', seller: 'toko-a', sellerName: 'Toko A' },
+  2: { id: 2, name: 'Dua', price: 20000, categoryName: 'Template', format: 'ZIP', seller: 'toko-a', sellerName: 'Toko A' },
+  3: { id: 3, name: 'Tiga', price: 50000, categoryName: 'Plugin', format: 'ZIP', seller: 'toko-b', sellerName: 'Toko B' }
+}
+
+function loadCartStore({ dev = false, designMock = false, loggedIn = false } = {}) {
   const stored = new Map()
-  let navigatedTo = null
-
+  const toasts = []
+  let instance
   const context = vm.createContext({
-    ref, computed: fn => ({ get value() { return fn() } }),
-    useRouter: () => ({ push: path => { navigatedTo = path } }),
-    useDemoAuth: () => ({ session: ref({ id: 1 }), syncSession: async () => {} }),
-    useCart: () => ({
-      fetchCart: async () => [
-        { cart_id: 101, id: 1, name: 'Item 1 Toko A', price: 10000, quantity: 1, storeSlug: 'toko-a', store: 'Toko A' },
-        { cart_id: 102, id: 2, name: 'Item 2 Toko A', price: 20000, quantity: 1, storeSlug: 'toko-a', store: 'Toko A' },
-        { cart_id: 103, id: 3, name: 'Item 3 Toko B', price: 50000, quantity: 1, storeSlug: 'toko-b', store: 'Toko B' }
-      ],
-      removeFromCart: async () => {}
-    }),
-    definePageMeta() {},
-    onMounted() {},
-    localStorage: {
-      getItem: k => stored.get(k) || null,
-      setItem: (k, v) => stored.set(k, String(v)),
-      removeItem: k => stored.delete(k)
-    }
+    ref, computed, watch, mergeLines: undefined,
+    defineStore: (_id, setup) => () => (instance ||= setup()),
+    useRuntimeConfig: () => ({ public: { designMock } }),
+    useCatalogStore: () => ({ byId: (id) => productsById[id] || null, sellerBySlug: () => null }),
+    useAuthStore: () => ({ isLoggedIn: loggedIn }),
+    useUiStore: () => ({ push: (t) => toasts.push(t) }),
+    cartTintById: {}, isMockMode: (o) => o.dev === true && o.designMock === true,
+    cartApi: {}, parseStored: (raw) => { try { const v = JSON.parse(raw); return Array.isArray(v) ? v : [] } catch { return [] } },
+    mergeLines: (a) => a, itemsToPush: () => [],
+    localStorage: { getItem: (k) => stored.get(k) ?? null, setItem: (k, v) => stored.set(k, String(v)), removeItem: (k) => stored.delete(k) },
+    __dev: dev
   })
+  const code = stripImports(source('../app/stores/cart.js')).replace(/import\.meta\.dev/g, '__dev')
+  vm.runInContext(code + '\nglobalThis.useStore = useCartStore', context)
+  return { store: context.useStore(), stored, toasts }
+}
 
-  const cartScript = fs.readFileSync(new URL('../app/pages/cart.vue', import.meta.url), 'utf8')
-    .split('<script setup>')[1].split('</script>')[0]
-    .replace(/^import .*$/gm, '')
+test('Cart selection toggles individual items and all items, and calculates selected totals (guest, API mode)', async () => {
+  const { store, stored } = loadCartStore()
+  assert.equal(store.count.value, 0) // mode API: tidak ada isi tiruan
+  await store.add(1); await store.add(2); await store.add(3)
+  await store.add(3) // produk digital: satu per keranjang
+  assert.equal(store.count.value, 3)
+  assert.equal(store.selectedCount.value, 3)
+  assert.equal(store.selectedTotal.value, 80000)
+  assert.equal(store.allSelected.value, true)
 
-  vm.runInContext(
-    cartScript + '\nglobalThis.page = { cart, loadCart, groupedCart, selectedKeys, isItemSelected, toggleItemSelect, isStoreAllSelected, toggleStoreSelect, selectedCount, selectedSubtotal, goCheckout }',
-    context
-  )
+  store.toggle(1) // matikan Item 1
+  assert.equal(store.selectedCount.value, 2)
+  assert.equal(store.selectedTotal.value, 70000)
+  assert.equal(store.allSelected.value, false)
 
-  const page = context.page
-  await page.loadCart()
+  store.toggleAll(false)
+  assert.equal(store.selectedCount.value, 0)
+  assert.equal(store.selectedTotal.value, 0)
+  store.toggleAll(true)
+  assert.equal(store.selectedTotal.value, 80000)
 
-  // Initially all 3 items are selected
-  assert.equal(page.selectedCount.value, 3)
-  assert.equal(page.selectedSubtotal.value, 80000)
+  store.toggle(3)
+  // Tamu: id + status pilih + salinan ringan data produk PUBLIK (supaya baris keranjang tampil tanpa API); tanpa data pribadi/token
+  const saved = JSON.parse(stored.get('icmarket-cart-v2'))
+  assert.deepEqual(saved.map((i) => [i.productId, i.selected]), [[1, true], [2, true], [3, false]])
+  for (const i of saved) {
+    assert.deepEqual(Object.keys(i).sort(), ['productId', 'selected', 'snap'])
+    assert.equal(i.snap.id, i.productId)
+    assert.equal(typeof i.snap.name, 'string')
+    assert.equal(typeof i.snap.price, 'number')
+    assert.equal('description' in i.snap, false) // tanpa teks panjang
+  }
 
-  const groupA = page.groupedCart.value.find(g => g.slug === 'toko-a')
-  const groupB = page.groupedCart.value.find(g => g.slug === 'toko-b')
-  assert.ok(groupA && groupB)
+  store.dropSelected() // setelah checkout: hanya baris terpilih yang dibuang
+  assert.deepEqual(plain(store.items.value.map((i) => i.productId)), [3])
+})
 
-  // Store A should be all selected initially
-  assert.equal(page.isStoreAllSelected(groupA), true)
-
-  // Toggle Store A off -> items 101 and 102 unselected, only 103 remains
-  page.toggleStoreSelect(groupA)
-  assert.equal(page.selectedCount.value, 1)
-  assert.equal(page.selectedSubtotal.value, 50000)
-  assert.equal(page.isStoreAllSelected(groupA), false)
-
-  // Toggle single item 101 back on
-  const item1 = page.cart.value.find(it => it.cart_id === 101)
-  page.toggleItemSelect(item1)
-  assert.equal(page.selectedCount.value, 2)
-  assert.equal(page.selectedSubtotal.value, 60000)
-  assert.equal(page.isStoreAllSelected(groupA), false) // Partially selected
-
-  // Toggle Store A again -> should select all items in Store A
-  page.toggleStoreSelect(groupA)
-  assert.equal(page.selectedCount.value, 3)
-  assert.equal(page.selectedSubtotal.value, 80000)
-  assert.equal(page.isStoreAllSelected(groupA), true)
-
-  // Uncheck item 103 (Toko B)
-  const item3 = page.cart.value.find(it => it.cart_id === 103)
-  page.toggleItemSelect(item3)
-  assert.equal(page.selectedCount.value, 2)
-  assert.equal(page.selectedSubtotal.value, 30000)
-
-  // Proceed to checkout: only selected items should be persisted
-  page.goCheckout()
-  assert.equal(navigatedTo, '/checkout')
-  const savedItemIds = JSON.parse(stored.get('icmarket_selected_item_ids'))
-  assert.deepEqual(savedItemIds, [101, 102])
-  assert.equal(stored.get('icmarket_subtotal'), '30000')
+test('Cart store memakai data tiruan hanya di dev + designMock, tidak di produksi', () => {
+  assert.equal(loadCartStore({ dev: true, designMock: true }).store.count.value, 3)
+  assert.equal(loadCartStore({ dev: false, designMock: true }).store.count.value, 0)
+  assert.equal(loadCartStore({ dev: true, designMock: false }).store.count.value, 0)
 })
 
 test('Vouchers page Gunakan button saves pending voucher and routes to /cart when cart has items or / when empty', async () => {
@@ -92,7 +89,7 @@ test('Vouchers page Gunakan button saves pending voucher and routes to /cart whe
   let mockCart = [{ cart_id: 1, price: 50000 }]
 
   const context = vm.createContext({
-    ref, onMounted() {},
+    ref, onMounted() {}, definePageMeta() {},
     useRouter: () => ({ push: p => { routes.push(p) } }),
     useDemoAuth: () => ({ session: ref({ id: 1 }) }),
     useRuntimeConfig: () => ({ public: { apiBase: 'https://market/api' } }),
@@ -124,66 +121,97 @@ test('Vouchers page Gunakan button saves pending voucher and routes to /cart whe
   assert.equal(routes.pop(), '/')
 })
 
-test('Checkout page filters cart items by selected IDs and automatically applies pending voucher', async () => {
-  const stored = new Map()
-  stored.set('icmarket_selected_item_ids', JSON.stringify([201]))
-  stored.set('icmarket_pending_voucher', 'VOUCHER201')
-
-  let validateCalls = []
+function loadCheckout({ mock = false, lines, checkoutImpl, payImpl, voucherImpl, balance = 100000, reloadFails = false } = {}) {
+  const calls = { checkout: [], pay: [], voucher: [], dropped: 0, removed: 0, reloaded: 0, toasts: [], sync: 0 }
+  const cart = {
+    lines: lines || [
+      { productId: 1, selected: true, product: { price: 10000 } },
+      { productId: 2, selected: false, product: { price: 20000 } },
+      { productId: 3, selected: true, product: { price: 50000 } }
+    ],
+    get selectedTotal() { return this.lines.reduce((a, l) => a + (l.selected ? l.product.price : 0), 0) },
+    dropSelected() { calls.dropped++ }, removeSelected() { calls.removed++ }, async reload() { calls.reloaded++ }
+  }
+  const wallet = { isMock: mock, balance, format: (n) => String(n), async syncBalance() { calls.sync++ } }
   const context = vm.createContext({
-    ref, reactive: x => x, computed: fn => ({ get value() { return fn() } }), definePageMeta() {},
-    useRouter: () => ({ push: () => {} }),
-    useDemoAuth: () => ({ session: ref({ id: 1 }), syncSession: async () => {} }),
-    useRuntimeConfig: () => ({ public: { apiBase: 'https://market/api' } }),
-    useState: (k, fn) => ref(fn()),
-    useCart: () => ({
-      fetchCart: async () => [
-        { cart_id: 201, id: 201, product_id: 201, price: 15000, quantity: 1, name: 'Item Terpilih' },
-        { cart_id: 202, id: 202, product_id: 202, price: 85000, quantity: 1, name: 'Item Tidak Terpilih' }
-      ]
-    }),
-    useAuthCredential: () => ref('token'),
-    onMounted() {},
-    localStorage: {
-      getItem: k => stored.get(k) || null,
-      setItem: (k, v) => stored.set(k, String(v)),
-      removeItem: k => stored.delete(k)
-    },
-    useProductApi: () => async (url, options) => {
-      if (url.includes('/vouchers/validate')) {
-        validateCalls.push(options.body)
-        return { success: true, data: { code: options.body.code, type: 'flat', amount: 5000 } }
-      }
-      return { success: true, data: [] }
-    }
+    ref, computed, watch() {}, onMounted() {}, definePageMeta() {}, useSeoMeta() {}, navigateTo() {},
+    useAuthStore: () => ({ ensureSession: async () => {} }),
+    validateVoucher: async (a) => { calls.voucher.push(a); if (voucherImpl) return voucherImpl(a); return { code: a.code, discount: 10000 } },
+    useCartStore: () => cart, useWalletStore: () => wallet, useUiStore: () => ({ push: (t) => calls.toasts.push(t) }),
+    checkoutOrder: async (a) => { calls.checkout.push(a); return checkoutImpl ? checkoutImpl(a) : { transaction_id: 'ORD-1', status: 'pending' } },
+    payOrder: async (id) => { calls.pay.push(id); if (payImpl) return payImpl(id) },
+    normalizeError: (e) => ({ message: e?.message || 'Terjadi kesalahan.' })
   })
+  vm.runInContext(stripImports(scriptOf('../app/pages/checkout.vue')) + '\nglobalThis.page = { step, paying, lines, total, pay, paid, voucherCode, voucherDiscount, voucherError, applyVoucher, removeVoucher, payable, insufficient }', context)
+  return { page: context.page, calls }
+}
 
-  const checkoutScript = fs.readFileSync(new URL('../app/pages/checkout.vue', import.meta.url), 'utf8')
-    .split('<script setup>')[1].split('</script>')[0]
-    .replace(/^import .*$/gm, '')
+test('Checkout page (API mode) sends only selected items with iCoin method, pays the created order, then shows done', async () => {
+  const { page, calls } = loadCheckout()
+  assert.equal(page.voucherCode.value, '') // tanpa voucher: tidak mengirim voucherCode
+  assert.equal(page.total.value, 60000)
+  await page.pay()
+  assert.deepEqual(plain(calls.checkout), [{ items: [{ productId: 1 }, { productId: 3 }], paymentMethod: 'icmarket_coins' }])
+  assert.deepEqual(plain(calls.pay), ['ORD-1'])
+  assert.equal(page.step.value, 'done')
+  assert.deepEqual(plain(page.paid.value.map((l) => l.productId)), [1, 3])
+  assert.equal(calls.dropped, 1); assert.equal(calls.removed, 0); assert.equal(calls.toasts.length, 0)
+  assert.equal(calls.sync, 1) // saldo disegarkan
+})
 
-  vm.runInContext(
-    checkoutScript + '\nglobalThis.page = { checkoutCart, loadCheckoutData, promoCode, applyPromo, removePromo, appliedVoucher }',
-    context
-  )
+test('Checkout page (API mode) never shows success when the server rejects: error toast, stays on pay step, cart untouched', async () => {
+  const a = loadCheckout({ checkoutImpl: () => { throw new Error('Produk tidak tersedia.') } })
+  await a.page.pay()
+  assert.equal(a.page.step.value, 'pay'); assert.equal(a.calls.pay.length, 0)
+  assert.equal(a.calls.dropped, 0); assert.equal(a.calls.reloaded, 0)
+  assert.deepEqual(plain(a.calls.toasts), [{ tone: 'danger', message: 'Produk tidak tersedia.' }])
 
-  const page = context.page
-  await page.loadCheckoutData()
+  const b = loadCheckout({ payImpl: () => { throw new Error('Saldo iCoin tidak cukup.') } })
+  await b.page.pay()
+  assert.equal(b.page.step.value, 'pay'); assert.equal(b.calls.dropped, 0)
+  assert.equal(b.calls.reloaded, 1) // pesanan sudah dibuat server: keranjang dimuat ulang
+  assert.equal(b.calls.toasts[0].message, 'Saldo iCoin tidak cukup.')
+  assert.equal(b.page.paying.value, false)
+})
 
-  // Only item 201 should be present in checkoutCart
-  assert.equal(page.checkoutCart.value.length, 1)
-  assert.equal(page.checkoutCart.value[0].cart_id, 201)
+test('Checkout page skips pay for free orders already completed, and ignores double submit', async () => {
+  const { page, calls } = loadCheckout({ checkoutImpl: () => ({ transaction_id: 'ORD-9', status: 'completed' }) })
+  await Promise.all([page.pay(), page.pay()])
+  assert.equal(calls.checkout.length, 1); assert.equal(calls.pay.length, 0)
+  assert.equal(page.step.value, 'done')
+})
 
-  // Pending voucher was applied
-  page.promoCode.value = stored.get('icmarket_pending_voucher')
-  await page.applyPromo()
-  assert.equal(validateCalls.length, 1)
-  assert.equal(validateCalls[0].code, 'VOUCHER201')
-  assert.equal(validateCalls[0].subtotal, 15000)
-  assert.equal(page.appliedVoucher.value.code, 'VOUCHER201')
+test('Checkout page (mock mode) makes no API calls', async () => {
+  const { page, calls } = loadCheckout({ mock: true })
+  assert.equal(calls.voucher.length, 0) // voucher mode mock = toggle tiruan di UI, tanpa panggilan server
+  await page.pay()
+  assert.equal(calls.checkout.length, 0); assert.equal(calls.pay.length, 0)
+  assert.equal(calls.removed, 1); assert.equal(page.step.value, 'done')
+})
 
-  // Releasing promo removes it and clears pending voucher
-  page.removePromo()
-  assert.equal(page.appliedVoucher.value, null)
-  assert.equal(stored.has('icmarket_pending_voucher'), false)
+test('Checkout page (API mode) applies a server-validated voucher and sends its code with the order', async () => {
+  const { page, calls } = loadCheckout()
+  await page.applyVoucher('HEMAT10')
+  assert.deepEqual(plain(calls.voucher), [{ code: 'HEMAT10', subtotal: 60000, items: [{ productId: 1 }, { productId: 3 }] }])
+  assert.equal(page.voucherCode.value, 'HEMAT10')
+  assert.equal(page.payable.value, 50000) // diskon dari SERVER (10.000), bukan hitungan klien
+  await page.pay()
+  assert.deepEqual(plain(calls.checkout), [{ items: [{ productId: 1 }, { productId: 3 }], paymentMethod: 'icmarket_coins', voucherCode: 'HEMAT10' }])
+  assert.equal(page.voucherCode.value, '') // voucher dilepas setelah dipakai
+})
+
+test('Checkout page (API mode) shows the server reason for a rejected voucher and keeps the full total', async () => {
+  const { page } = loadCheckout({ voucherImpl: async () => { throw new Error('Voucher sudah kedaluwarsa.') } })
+  await page.applyVoucher('LAMA')
+  assert.equal(page.voucherError.value, 'Voucher sudah kedaluwarsa.')
+  assert.equal(page.voucherCode.value, '')
+  assert.equal(page.payable.value, 60000)
+})
+
+test('Checkout page (API mode) blocks paying when the iCoin balance is not enough, without creating an order', async () => {
+  const { page, calls } = loadCheckout({ balance: 20000 })
+  assert.equal(page.insufficient.value, true)
+  await page.pay()
+  assert.equal(calls.checkout.length, 0)
+  assert.equal(page.step.value, 'pay')
 })
