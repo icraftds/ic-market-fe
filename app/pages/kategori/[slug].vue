@@ -1,100 +1,92 @@
 <script setup>
 import { catalogFaq, catalogTechs } from '~/mocks/content'
+import { SORT_LABELS, emptyFilters, parseCatalogQuery, buildCatalogQuery, catalogHref, hasActiveFilters, toListParams } from '~/utils/catalogUrl'
 
 definePageMeta({ layout: 'storefront' })
 
 const PER_PAGE = 12
 const route = useRoute()
 const router = useRouter()
+const config = useRuntimeConfig()
 const catalog = useCatalogStore()
-const siteUrl = String(useRuntimeConfig().public.siteUrl).replace(/\/$/, '')
+const siteUrl = String(config.public.siteUrl).replace(/\/$/, '')
+const mock = config.public.designMock === true || (import.meta.dev && !config.public.ssoEnabled)
+// Mode mock: nama teknologi papan -> nilai `format` produk mock.
+const mockTechMap = { JavaScript: ['JS'], 'HTML/CSS': ['HTML'] }
 
 const slug = computed(() => String(route.params.slug || '').trim().toLowerCase())
+const parsed = computed(() => parseCatalogQuery(route.query))
+const applied = computed(() => parsed.value.filters)
+const sort = computed(() => parsed.value.sort)
+const page = computed(() => parsed.value.page)
+const sortOptions = SORT_LABELS
+const listParams = (f, urut, pg, limit = PER_PAGE) => toListParams(f, urut, pg, { category: slug.value, limit, techMap: mock ? mockTechMap : undefined })
+const dots = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+// ---- Data (SSR): kategori + daftar + facets lewat store ----
+const { data: loaded, status, error, refresh } = await useAsyncData(
+  () => `kategori:${slug.value}`,
+  async () => {
+    const [cats, first] = await Promise.all([
+      catalog.fetchCategories(),
+      catalog.loadView('category', listParams(applied.value, sort.value, page.value), { facets: true })
+    ])
+    if (slug.value !== 'semua' && !cats.some((c) => c.slug === slug.value)) return { notFound: true }
+    let v = first
+    // Halaman di luar jangkauan: ambil halaman terakhir.
+    if (!v.products.length && v.meta.total > 0 && page.value > v.meta.lastPage) {
+      v = await catalog.loadView('category', listParams(applied.value, sort.value, v.meta.lastPage), { facets: true })
+    }
+    return { notFound: false }
+  },
+  { watch: [() => route.fullPath] }
+)
+if (loaded.value?.notFound) throw createError({ statusCode: 404, statusMessage: 'Kategori tidak ditemukan', fatal: true })
+
 const category = computed(() => slug.value === 'semua'
-  ? { slug: 'semua', name: 'Semua', title: 'Semua produk digital' }
-  : catalog.categoryBySlug(slug.value))
-if (!category.value) throw createError({ statusCode: 404, statusMessage: 'Kategori tidak ditemukan', fatal: true })
+  ? { slug: 'semua', name: 'Semua', title: 'Semua produk digital', introParagraphs: [], faq: [] }
+  : catalog.categoryBySlug(slug.value) || { slug: slug.value, name: slug.value, title: slug.value, introParagraphs: [], faq: [] })
+const view = computed(() => catalog.view('category'))
+const items = computed(() => view.value.products)
+const meta = computed(() => view.value.meta)
+const pending = computed(() => status.value === 'pending')
+const totalPages = computed(() => Math.max(1, meta.value.lastPage))
+const currentPage = computed(() => Math.min(page.value, totalPages.value))
+const totalAll = computed(() => catalog.categoryTabs.find((t) => t.slug === slug.value)?.count ?? meta.value.total)
+const faq = computed(() => (category.value.faq?.length ? category.value.faq : catalogFaq))
+
+const technologies = computed(() => {
+  const names = mock ? catalogTechs.map((t) => t.name) : (view.value.facets?.technologies || []).map((t) => t.name)
+  return [...new Set([...names, ...applied.value.tek])]
+})
+const sellerOptions = computed(() => (view.value.facets?.sellers || []).filter((s) => s.count))
+const sellerNames = computed(() => ({
+  ...Object.fromEntries(catalog.sellers.map((x) => [x.slug, x.name])),
+  ...Object.fromEntries(items.value.map((p) => [p.seller, p.sellerName]).filter(([k, v]) => k && v)),
+  ...Object.fromEntries(sellerOptions.value.map((s) => [s.slug, s.name]))
+}))
 
 // ---- Filter <-> URL (?harga=gratis&live=1&tek=JavaScript&urut=termurah&page=2) ----
-const technologies = catalogTechs.map((t) => t.name)
-const techFormats = { JavaScript: ['JS'], 'HTML/CSS': ['HTML'], 'Node.js': ['Node.js'], 'Next.js': ['Next.js'], PHP: ['PHP'] }
-const sortOptions = { terbaru: 'Terbaru', termurah: 'Harga terendah', termahal: 'Harga tertinggi' }
-const first = (v) => (Array.isArray(v) ? v[0] : v)
-const csv = (v) => String(first(v) || '').split(',').filter(Boolean)
-const digits = (v) => String(first(v) || '').replace(/\D/g, '')
-const dots = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-const emptyFilters = () => ({ harga: 'semua', min: '', maks: '', live: false, komersial: false, dok: false, tek: [], seller: [] })
-
-const applied = computed(() => {
-  const q = route.query
-  return {
-    harga: ['gratis', 'berbayar'].includes(first(q.harga)) ? first(q.harga) : 'semua',
-    min: digits(q.min),
-    maks: digits(q.maks),
-    live: first(q.live) === '1',
-    komersial: first(q.komersial) === '1',
-    dok: first(q.dok) === '1',
-    tek: csv(q.tek).filter((t) => technologies.includes(t)),
-    seller: csv(q.seller)
-  }
-})
-const sort = computed(() => (first(route.query.urut) in sortOptions ? first(route.query.urut) : 'terbaru'))
-const page = computed(() => Math.max(1, Number(first(route.query.page)) || 1))
-
 const draft = ref({ ...emptyFilters(), ...applied.value })
 watch(applied, (v) => { draft.value = { ...emptyFilters(), ...v } })
 
-function matches(p, f) {
-  const price = Number(p.price)
-  if (f.harga === 'gratis' && price !== 0) return false
-  if (f.harga === 'berbayar' && price === 0) return false
-  if (f.min && price < Number(f.min)) return false
-  if (f.maks && price > Number(f.maks)) return false
-  if (f.live && !p.live) return false
-  if (f.komersial && !(p.details || []).some((d) => d.k === 'Lisensi' && /commercial|komersial/i.test(d.v))) return false
-  if (f.dok && !(p.perks || []).some((x) => /panduan|dokumentasi/i.test(x))) return false
-  if (f.tek.length && !f.tek.some((t) => (techFormats[t] || []).includes(p.format))) return false
-  if (f.seller.length && !f.seller.includes(p.seller)) return false
-  return true
-}
+// Jumlah hasil untuk draf (tombol sheet ponsel): hanya klien, ditunda.
+const draftTotal = ref(null)
+let draftTimer
+watch(draft, (f) => {
+  if (!import.meta.client) return
+  clearTimeout(draftTimer)
+  const same = JSON.stringify(f) === JSON.stringify({ ...emptyFilters(), ...applied.value })
+  if (same) { draftTotal.value = null; return }
+  draftTimer = setTimeout(async () => {
+    try { draftTotal.value = (await catalog.fetchList(listParams(f, sort.value, 1, 1))).meta.total } catch { draftTotal.value = null }
+  }, 300)
+}, { deep: true })
+onBeforeUnmount(() => clearTimeout(draftTimer))
+const draftCount = computed(() => draftTotal.value ?? meta.value.total)
 
-const all = computed(() => catalog.byCategory(slug.value))
-const filtered = computed(() => {
-  const list = all.value.filter((p) => matches(p, applied.value))
-  if (sort.value === 'termurah') return [...list].sort((a, b) => a.price - b.price)
-  if (sort.value === 'termahal') return [...list].sort((a, b) => b.price - a.price)
-  return list
-})
-const draftCount = computed(() => all.value.filter((p) => matches(p, draft.value)).length)
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PER_PAGE)))
-const currentPage = computed(() => Math.min(page.value, totalPages.value))
-const pageItems = computed(() => filtered.value.slice((currentPage.value - 1) * PER_PAGE, currentPage.value * PER_PAGE))
-
-const sellerNames = computed(() => Object.fromEntries(catalog.sellers.map((s) => [s.slug, s.name])))
-const sellerOptions = computed(() => catalog.sellers
-  .map((s) => ({ slug: s.slug, name: s.name, count: all.value.filter((p) => p.seller === s.slug).length }))
-  .filter((s) => s.count))
-
-function buildQuery(f, urut, pg) {
-  const q = {}
-  if (f.harga !== 'semua') q.harga = f.harga
-  if (f.min) q.min = f.min
-  if (f.maks) q.maks = f.maks
-  if (f.live) q.live = '1'
-  if (f.komersial) q.komersial = '1'
-  if (f.dok) q.dok = '1'
-  if (f.tek.length) q.tek = f.tek.join(',')
-  if (f.seller.length) q.seller = f.seller.join(',')
-  if (urut !== 'terbaru') q.urut = urut
-  if (pg > 1) q.page = String(pg)
-  return q
-}
-const toHref = (q) => {
-  const s = Object.entries(q).map(([k, v]) => `${k}=${encodeURIComponent(v).replace(/%2C/g, ',')}`).join('&')
-  return `/kategori/${slug.value}${s ? `?${s}` : ''}`
-}
-const go = (f, urut, pg = 1) => router.push({ path: route.path, query: buildQuery(f, urut, pg) })
-const makeHref = (n) => toHref(buildQuery(applied.value, sort.value, n))
+const go = (f, urut, pg = 1) => router.push({ path: route.path, query: buildCatalogQuery(f, urut, pg) })
+const makeHref = (n) => catalogHref(slug.value, buildCatalogQuery(applied.value, sort.value, n))
 
 const apply = () => go({ ...emptyFilters(), ...draft.value }, sort.value)
 const reset = () => go(emptyFilters(), sort.value)
@@ -130,10 +122,11 @@ function removeChip(key) {
 const filterCount = computed(() => chips.value.length)
 
 // ---- SEO (papan V2Catalog + V2ProductSEO) ----
-const totalAll = computed(() => all.value.length)
-const canonical = computed(() => `${siteUrl}/kategori/${slug.value}${currentPage.value > 1 ? `?page=${currentPage.value}` : ''}`)
+const filtered = computed(() => hasActiveFilters(applied.value))
+// Canonical: URL kategori; halaman >1 mengacu ke dirinya sendiri; kombinasi filter/sort mengacu ke URL kategori.
+const canonical = computed(() => `${siteUrl}/kategori/${slug.value}${!filtered.value && sort.value === 'terbaru' && currentPage.value > 1 ? `?page=${currentPage.value}` : ''}`)
 const metaTitle = computed(() => `${category.value.title}${currentPage.value > 1 ? ` – Halaman ${currentPage.value}` : ''} | IC Market`)
-const metaDescription = computed(() => `${category.value.title}. ${totalAll.value} produk digital dengan source code lengkap, akses instan, dan dukungan after-sales 30 hari di IC Market.`)
+const metaDescription = computed(() => category.value.introParagraphs?.[0]?.slice(0, 160) || `${category.value.title}. ${totalAll.value} produk digital dengan source code lengkap, akses instan, dan dukungan after-sales 30 hari di IC Market.`)
 const ogImage = `${siteUrl}/og-default.png`
 useSeoMeta({
   title: metaTitle,
@@ -146,7 +139,8 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
   twitterTitle: metaTitle,
   twitterDescription: metaDescription,
-  twitterImage: ogImage
+  twitterImage: ogImage,
+  robots: computed(() => (filtered.value || sort.value !== 'terbaru' ? 'noindex, follow' : 'index, follow'))
 })
 const ld = (o) => JSON.stringify(o).replace(/</g, '\\u003c')
 useHead(() => ({
@@ -175,7 +169,7 @@ useHead(() => ({
         '@type': 'ItemList',
         name: category.value.title,
         numberOfItems: totalAll.value,
-        itemListElement: pageItems.value.map((p, i) => ({
+        itemListElement: items.value.map((p, i) => ({
           '@type': 'ListItem',
           position: (currentPage.value - 1) * PER_PAGE + i + 1,
           item: {
@@ -184,7 +178,7 @@ useHead(() => ({
             url: `${siteUrl}/product/${p.slug}`,
             description: p.desc,
             category: p.categoryName,
-            brand: { '@type': 'Brand', name: sellerNames.value[p.seller] || 'IC Market' },
+            brand: { '@type': 'Brand', name: sellerNames.value[p.seller] || p.sellerName || 'IC Market' },
             // Asumsi: 1 iCoin = Rp1 (mata uang asli untuk mesin pencari).
             offers: { '@type': 'Offer', price: Number(p.price), priceCurrency: 'IDR', availability: 'https://schema.org/InStock', url: `${siteUrl}/product/${p.slug}` }
           }
@@ -196,7 +190,7 @@ useHead(() => ({
       innerHTML: ld({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
-        mainEntity: catalogFaq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } }))
+        mainEntity: faq.value.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } }))
       })
     }
   ]
@@ -235,7 +229,7 @@ useHead(() => ({
         <section aria-label="Hasil produk" class="tw:min-w-0 tw:flex-[999_1_560px] tw:max-lg:basis-full">
           <CatalogToolbar
             class="tw:max-lg:hidden"
-            :shown="filtered.length"
+            :shown="meta.total"
             :total="totalAll"
             :chips="chips"
             :sort="sort"
@@ -243,18 +237,21 @@ useHead(() => ({
             @update:sort="setSort"
           />
           <CatalogResults
-            :items="pageItems"
+            :items="items"
             :seller-names="sellerNames"
+            :loading="pending"
+            :error="error ? (error.statusMessage || error.message || 'Terjadi kesalahan') : ''"
             :page="currentPage"
             :total-pages="totalPages"
             :make-href="makeHref"
             @page="(n) => go(applied, sort, n)"
             @reset="reset"
+            @retry="refresh()"
           />
         </section>
       </div>
 
-      <CatalogAbout :name="slug === 'semua' ? '' : category.name.toLowerCase()" :faq="catalogFaq" />
+      <CatalogAbout :name="slug === 'semua' ? '' : category.name.toLowerCase()" :faq="faq" :intro="category.introParagraphs" />
     </div>
 
     <LayoutMobileFilterSheet

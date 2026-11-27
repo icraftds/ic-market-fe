@@ -60,7 +60,10 @@ const h2 = 'tw:m-0 tw:font-display tw:text-[22px] tw:font-bold tw:text-ink'
 
       <section id="ulasan" aria-labelledby="h-ulasan">
         <h2 id="h-ulasan" class="tw:mb-3" :class="h2">Ulasan</h2>
-        <div class="tw:flex tw:flex-col tw:items-center tw:gap-2 tw:rounded-[14px] tw:border tw:border-dashed tw:border-[#d6d6cf] tw:bg-surface tw:p-7 tw:text-center">
+        <ul v-if="product.reviews?.length" class="tw:m-0 tw:flex tw:list-none tw:flex-col tw:gap-3 tw:p-0">
+          <ProductReviewItem v-for="r in product.reviews" :key="r.id" :review="r" />
+        </ul>
+        <div v-else class="tw:flex tw:flex-col tw:items-center tw:gap-2 tw:rounded-[14px] tw:border tw:border-dashed tw:border-[#d6d6cf] tw:bg-surface tw:p-7 tw:text-center">
           <Icon name="material-symbols:star" class="tw:size-[26px] tw:text-[#b45309]" aria-hidden="true" />
           <span class="tw:font-sans tw:text-[15px] tw:font-bold">Belum ada ulasan</span>
           <span class="tw:font-sans tw:text-[13.5px] tw:font-normal tw:text-ink-2">Pembeli produk ini bisa memberi ulasan dari halaman Pesanan Saya.</span>

@@ -85,7 +85,7 @@ export const useCartStore = defineStore('cart', () => {
       if (push.length) {
         const res = await cartApi.mergeCart(push.map((i) => i.productId))
         if (res.skipped?.length) useUiStore().push({ tone: 'warn', message: `${res.skipped.length} produk tidak bisa dimasukkan ke keranjang.` })
-        rows = await cartApi.listCart()
+        rows = res.cart.length ? res.cart : await cartApi.listCart() // /cart/merge sudah mengembalikan keranjang terbaru
       }
       applyServer(rows, guest)
       items.value = items.value.filter((i) => i.cartId)

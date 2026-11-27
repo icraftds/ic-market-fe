@@ -1,23 +1,32 @@
 // Service keranjang server (wajib login). Backend: CartController. Baris GET /cart = products.* + cart_id, quantity, storeName, storeSlug.
 import { useApi } from './http.js'
 import { ApiError } from './errors.js'
-import { mapProduct } from './catalogMap.js'
+import { mapProduct } from '../utils/catalogMap.js'
 
 /** listCart() -> [{ cartId, productId, quantity, product }] */
 export async function listCart() {
   const api = useApi()
-  const rows = await api('cart', { auth: 'required' })
-  return (Array.isArray(rows) ? rows : []).map((r) => ({
-    cartId: Number(r.cart_id),
-    productId: Number(r.id),
-    quantity: Number(r.quantity || 1),
-    product: mapProduct({ ...r, store: r.store || { slug: r.storeSlug, name: r.storeName } })
-  }))
+  return mapCartRows(await api('cart', { auth: 'required' }))
 }
 
+const mapCartRows = (rows) => (Array.isArray(rows) ? rows : []).map((r) => ({
+  cartId: Number(r.cart_id),
+  productId: Number(r.id),
+  quantity: Number(r.quantity || 1),
+  product: mapProduct({ ...r, store: r.store || { slug: r.storeSlug, name: r.storeName } })
+}))
+
+/** Produk non-published / tidak ada / milik sendiri -> 422; non-published dilempar sebagai code 'not_purchasable'. */
 export async function addToCart(productId, quantity = 1) {
   const api = useApi()
-  return api('cart', { method: 'POST', body: { product_id: Number(productId), quantity }, auth: 'required' })
+  try {
+    return await api('cart', { method: 'POST', body: { product_id: Number(productId), quantity }, auth: 'required' })
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 422 && e.fieldErrors?.product_id) {
+      throw new ApiError({ status: 422, code: 'not_purchasable', message: 'Produk ini tidak tersedia untuk dibeli.', fieldErrors: e.fieldErrors })
+    }
+    throw e
+  }
 }
 
 export async function updateCart(cartId, quantity) {
@@ -35,30 +44,33 @@ export async function clearCart() {
   return api('cart/clear', { method: 'DELETE', auth: 'required' })
 }
 
+// Alasan item dilewati POST /cart/merge (kontrak B2).
+export const MERGE_SKIP_LABELS = {
+  duplicate: 'Duplikat',
+  not_found: 'Produk tidak ditemukan',
+  not_published: 'Produk tidak lagi dijual',
+  own_product: 'Produk milik Anda sendiri',
+  already_purchased: 'Sudah pernah dibeli',
+  already_in_cart: 'Sudah ada di keranjang'
+}
+
 /**
- * Kirim item tamu ke akun. Pakai POST /cart/merge (kontrak G); bila belum ada (404/405),
- * fallback POST /cart berurutan. -> { merged, skipped:[{product_id, reason}] }
+ * Kirim keranjang tamu ke akun (POST /cart/merge, idempoten, maks 50). Item: id produk atau { productId, quantity }.
+ * -> { merged, skipped:[{ product_id, reason, label }], cart:[{ cartId, productId, quantity, product }] }
  */
-export async function mergeCart(productIds) {
-  const ids = [...new Set((productIds || []).map(Number).filter((n) => n > 0))].slice(0, 50)
-  if (!ids.length) return { merged: 0, skipped: [] }
+export async function mergeCart(items) {
+  const seen = new Set()
+  const rows = []
+  for (const it of Array.isArray(items) ? items : []) {
+    const id = Number(typeof it === 'object' && it ? it.productId ?? it.product_id : it)
+    if (!(id > 0) || seen.has(id)) continue
+    seen.add(id)
+    rows.push({ product_id: id, quantity: Math.min(99, Math.max(1, Number(it?.quantity) || 1)) })
+  }
+  const body = rows.slice(0, 50)
+  if (!body.length) return { merged: 0, skipped: [], cart: [] }
   const api = useApi()
-  try {
-    const res = await api('cart/merge', { method: 'POST', body: { items: ids.map((id) => ({ product_id: id, quantity: 1 })) }, auth: 'required' })
-    return { merged: Number(res?.merged ?? ids.length), skipped: res?.skipped || [] }
-  } catch (e) {
-    if (!(e instanceof ApiError) || ![404, 405].includes(e.status)) throw e
-  }
-  let merged = 0
-  const skipped = []
-  for (const id of ids) {
-    try {
-      await addToCart(id, 1)
-      merged++
-    } catch (e) {
-      if (e?.status === 401) throw e
-      skipped.push({ product_id: id, reason: e?.message || 'gagal' })
-    }
-  }
-  return { merged, skipped }
+  const res = await api('cart/merge', { method: 'POST', body: { items: body }, auth: 'required' })
+  const skipped = (res?.skipped || []).map((s) => ({ ...s, label: MERGE_SKIP_LABELS[s.reason] || 'Tidak bisa dimasukkan' }))
+  return { merged: Number(res?.merged ?? 0), skipped, cart: mapCartRows(res?.cart) }
 }

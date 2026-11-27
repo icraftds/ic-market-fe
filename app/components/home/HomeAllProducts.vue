@@ -10,12 +10,15 @@ const sort = ref('terbaru')
 
 const tabs = computed(() => catalog.categoryTabs)
 const total = computed(() => tabs.value[0]?.count ?? 0)
-const shown = computed(() => {
-  let list = catalog.products.filter((p) => !p.extra && (tab.value === 'semua' || p.category === tab.value))
-  if (sort.value === 'termurah') list = [...list].sort((a, b) => a.price - b.price)
-  else if (sort.value === 'termahal') list = [...list].sort((a, b) => b.price - a.price)
-  return list.slice(0, 8)
-})
+const sortApi = { terbaru: 'newest', termurah: 'price-asc', termahal: 'price-desc' }
+
+// 8 produk per tab/urutan (SSR untuk tab 'semua' + terbaru; ganti tab/urutan memuat ulang di klien).
+const { data: shown, status, error, refresh } = await useAsyncData(
+  'home-all',
+  async () => (await catalog.fetchList({ category: tab.value, limit: 8, sort: sortApi[sort.value] })).products,
+  { default: () => [], watch: [tab, sort] }
+)
+const loading = computed(() => status.value === 'pending')
 
 const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:ring-offset-2 tw:focus-visible:outline-none'
 </script>
@@ -52,12 +55,29 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
       >{{ t.name }} <span class="tw:font-mono tw:text-[11px]" :class="tab === t.slug ? 'tw:font-semibold tw:text-[#d4d4cf]' : 'tw:font-medium tw:text-muted'">{{ t.count }}</span></button>
     </div>
 
-    <div id="all-panel" role="tabpanel" :aria-labelledby="`all-tab-${tab}`" class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] tw:gap-4 tw:max-lg:hidden">
-      <ProductTile v-for="(p, i) in shown" :key="p.id" :product="p" seller-name="Creative Studio" :eager="i < 4" />
-    </div>
-    <div class="tw:grid tw:grid-cols-2 tw:gap-2.5 tw:lg:hidden">
-      <LayoutMobileProductCard v-for="(p, i) in shown.slice(0, 4)" :key="p.id" :product="p" :tint="i" />
-    </div>
+    <UiAlert v-if="error" tone="danger" title="Produk gagal dimuat">
+      {{ error.statusMessage || error.message || 'Terjadi kesalahan' }}
+      <template #action>
+        <UiButton variant="outline" icon="material-symbols:refresh" @click="refresh()">Coba lagi</UiButton>
+      </template>
+    </UiAlert>
+    <template v-else-if="loading">
+      <div class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] tw:gap-4 tw:max-lg:hidden" aria-busy="true">
+        <UiSkeleton v-for="n in 8" :key="n" height-class="tw:h-[300px]" />
+      </div>
+      <div class="tw:grid tw:grid-cols-2 tw:gap-2.5 tw:lg:hidden" aria-busy="true">
+        <UiSkeleton v-for="n in 4" :key="n" height-class="tw:h-[220px]" />
+      </div>
+    </template>
+    <UiEmptyState v-else-if="!shown.length" title="Belum ada produk" text="Produk di kategori ini akan muncul di sini." />
+    <template v-else>
+      <div id="all-panel" role="tabpanel" :aria-labelledby="`all-tab-${tab}`" class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] tw:gap-4 tw:max-lg:hidden">
+        <ProductTile v-for="(p, i) in shown" :key="p.id" :product="p" :seller-name="p.sellerName || 'Creative Studio'" :eager="i < 4" />
+      </div>
+      <div class="tw:grid tw:grid-cols-2 tw:gap-2.5 tw:lg:hidden">
+        <LayoutMobileProductCard v-for="(p, i) in shown.slice(0, 4)" :key="p.id" :product="p" :tint="i" />
+      </div>
+    </template>
 
     <div class="tw:mt-[26px] tw:flex tw:justify-center tw:max-lg:hidden">
       <NuxtLink to="/kategori/semua" class="tw:inline-flex tw:items-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:border-ink tw:px-[22px] tw:py-[13px] tw:font-sans tw:text-sm tw:font-semibold tw:text-ink tw:no-underline tw:hover:bg-subtle" :class="focusRing">Lihat semua {{ total }} produk di katalog <Icon name="material-symbols:arrow-forward" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" /></NuxtLink>

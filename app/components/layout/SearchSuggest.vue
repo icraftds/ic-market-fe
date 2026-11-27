@@ -5,7 +5,7 @@
  * Emit: select (saat salah satu saran dipilih). Expose: items [{ key, to }] untuk navigasi keyboard.
  * Catatan: papan V2Search tidak memuat gambar dropdown; gaya mengikuti token papan (kartu putih, label mono, mark kuning).
  */
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
   query: { type: String, default: '' },
@@ -20,7 +20,23 @@ const result = computed(() => {
   const r = term.value ? catalog.search(term.value) : null
   return { products: r?.products || [], categories: r?.categories || [], sellers: r?.sellers || [] }
 })
-const categoryName = (slug) => catalog.categories.find((c) => c.slug === slug)?.name || ''
+const categoryName = (p) => catalog.categories.find((c) => c.slug === p.category)?.name || p.categoryName || ''
+
+// Mode API: ambil saran dari /search/suggest dengan debounce; jawaban lama (basi) diabaikan.
+// Hasil dibaca lewat catalog.search() yang reaktif terhadap cache saran.
+const pending = ref(false)
+let timer = null
+let seq = 0
+watch(term, (t) => {
+  clearTimeout(timer)
+  const mine = ++seq
+  if (t.length < 2) { pending.value = false; return }
+  pending.value = true
+  timer = setTimeout(async () => {
+    try { await catalog.suggest(t) } finally { if (mine === seq) pending.value = false }
+  }, 220)
+}, { immediate: true })
+onBeforeUnmount(() => { clearTimeout(timer); seq++ })
 
 const items = computed(() => [
   ...result.value.products.map((p) => ({ key: `p-${p.id}`, to: `/product/${p.slug}` })),
@@ -59,7 +75,10 @@ defineExpose({ items })
     aria-label="Saran pencarian"
     class="tw:absolute tw:inset-x-0 tw:top-[calc(100%+6px)] tw:z-50 tw:max-h-[420px] tw:overflow-y-auto tw:rounded-card tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-1.5 tw:font-sans tw:shadow-pop"
   >
-    <p v-if="empty" class="tw:m-0 tw:px-2.5 tw:py-3 tw:text-[13.5px] tw:text-ink-2" role="presentation">
+    <p v-if="empty && pending" class="tw:m-0 tw:px-2.5 tw:py-3 tw:text-[13.5px] tw:text-ink-2" role="status" aria-busy="true">
+      Memuat saran…
+    </p>
+    <p v-else-if="empty" class="tw:m-0 tw:px-2.5 tw:py-3 tw:text-[13.5px] tw:text-ink-2" role="presentation">
       Tidak ada saran untuk “{{ term }}”
     </p>
 
@@ -75,9 +94,10 @@ defineExpose({ items })
         :class="[rowCls, activeIndex === idx(`p-${p.id}`) ? 'tw:bg-subtle' : '']"
         @click="emit('select')"
       >
-        <span aria-hidden="true" class="tw:block tw:size-10 tw:shrink-0 tw:rounded-lg tw:border tw:border-solid tw:border-[#efefea] tw:bg-linear-to-br tw:to-bg" :class="tints[i % 6]" />
+        <img v-if="p.thumbnail" :src="p.thumbnail" alt="" loading="lazy" class="tw:block tw:size-10 tw:shrink-0 tw:rounded-lg tw:border tw:border-solid tw:border-[#efefea] tw:object-cover">
+        <span v-else aria-hidden="true" class="tw:block tw:size-10 tw:shrink-0 tw:rounded-lg tw:border tw:border-solid tw:border-[#efefea] tw:bg-linear-to-br tw:to-bg" :class="tints[i % 6]" />
         <span class="tw:flex tw:min-w-0 tw:flex-1 tw:flex-col tw:gap-0.5">
-          <span class="tw:font-mono tw:text-[10.5px] tw:font-medium tw:tracking-[.08em] tw:text-ink-2 tw:uppercase">{{ categoryName(p.category) }}</span>
+          <span class="tw:font-mono tw:text-[10.5px] tw:font-medium tw:tracking-[.08em] tw:text-ink-2 tw:uppercase">{{ categoryName(p) }}</span>
           <span class="tw:truncate tw:text-[13.5px] tw:font-semibold">{{ hl(p.name).pre }}<mark v-if="hl(p.name).hit" class="tw:rounded-[3px] tw:bg-[#fff1b8] tw:px-px tw:text-inherit">{{ hl(p.name).hit }}</mark>{{ hl(p.name).post }}</span>
         </span>
         <UiPrice :value="p.price" size="sm" />

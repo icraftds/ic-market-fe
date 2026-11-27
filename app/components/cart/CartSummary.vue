@@ -3,7 +3,17 @@
 import { number } from '~/utils/format'
 
 const cart = useCartStore()
+const auth = useAuthStore()
 const active = computed(() => cart.selectedCount > 0)
+
+// Checkout menuntut login: tamu diarahkan masuk lalu kembali ke /checkout (keranjang tamu digabung via /cart/merge).
+function checkout(e) {
+  if (!active.value) { e.preventDefault(); return }
+  if (!auth.isLoggedIn) {
+    e.preventDefault()
+    auth.requireLogin('/checkout')
+  }
+}
 </script>
 
 <template>
@@ -20,6 +30,7 @@ const active = computed(() => cart.selectedCount > 0)
       to="/checkout"
       :aria-disabled="active ? undefined : 'true'"
       :tabindex="active ? undefined : -1"
+      @click="checkout"
       class="tw:flex tw:min-h-[52px] tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:font-sans tw:text-[15px] tw:font-bold tw:no-underline tw:focus-visible:ring-[3px] tw:focus-visible:ring-brand/40 tw:focus-visible:outline-none"
       :class="active ? 'tw:bg-ink tw:text-white tw:hover:bg-ink-2' : 'tw:pointer-events-none tw:bg-line tw:text-ink-2'"
     ><Icon name="material-symbols:shopping-bag-outline" class="tw:size-5 tw:shrink-0" aria-hidden="true" />Checkout ({{ cart.selectedCount }})</NuxtLink>

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { fallbackSeller, productJsonLd, productPerks } from '~/utils/productPage'
 
 definePageMeta({ layout: 'storefront' })
 
@@ -9,13 +10,30 @@ const catalog = useCatalogStore()
 const siteUrl = String(useRuntimeConfig().public.siteUrl).replace(/\/$/, '')
 
 const slug = computed(() => String(route.params.slug || '').trim().toLowerCase())
-const product = computed(() => catalog.bySlug(slug.value))
-if (!product.value) {
+
+// SSR: detail + toko + produk terkait dimuat di server (publik, tanpa sesi). Toko/terkait gagal tidak menjatuhkan halaman.
+const { data, error, pending, refresh } = await useAsyncData(`product:${slug.value}`, async () => {
+  const p = await catalog.fetchProduct(slug.value)
+  if (!p) return null
+  const [seller, related] = await Promise.all([
+    catalog.fetchStore(p.seller).catch(() => null),
+    catalog.fetchRelated(p).catch(() => [])
+  ])
+  return { product: p, seller, related }
+}, { watch: [slug] })
+
+if (!data.value && !error.value) {
   throw createError({ statusCode: 404, statusMessage: 'Produk tidak ditemukan', fatal: true })
 }
-const seller = computed(() => catalog.sellerBySlug(product.value.seller))
-const related = computed(() => catalog.related(product.value.id))
-const url = computed(() => `${siteUrl}/product/${product.value.slug}`)
+// Slug kanonik berbeda (mis. diakses lewat id) -> 301.
+if (data.value && data.value.product.slug !== slug.value) {
+  await navigateTo(`/product/${data.value.product.slug}`, { redirectCode: 301, replace: true })
+}
+
+const product = computed(() => (data.value ? { ...data.value.product, perks: productPerks(data.value.product) } : null))
+const seller = computed(() => (data.value ? data.value.seller || fallbackSeller(data.value.product) : null))
+const related = computed(() => data.value?.related || [])
+const url = computed(() => `${siteUrl}/product/${product.value?.slug || slug.value}`)
 
 const gallery = ref(null)
 const tryLive = () => gallery.value?.tryLive()
@@ -29,16 +47,18 @@ async function shareMobile() {
   }
 }
 
-// ---- SEO (papan V2ProductSEO) ----
-const p = product.value
-const price = Number(p.price)
-const title = `${p.name} | IC Market`
-const description = [
-  p.desc,
-  p.live ? 'Coba live preview sebelum beli,' : '',
-  price === 0 ? 'gratis, akses instan.' : `${new Intl.NumberFormat('id-ID').format(price)} iCoin, akses instan.`
-].filter(Boolean).join(' ')
-const image = p.image || `${siteUrl}/og/${p.slug}.png`
+// ---- SEO (papan V2ProductSEO), dari data nyata ----
+const title = computed(() => (product.value ? `${product.value.name} | IC Market` : 'Produk | IC Market'))
+const description = computed(() => {
+  const p = product.value
+  if (!p) return 'Produk digital di IC Market.'
+  return [
+    p.desc,
+    p.live ? 'Coba live preview sebelum beli,' : '',
+    Number(p.price) === 0 ? 'gratis, akses instan.' : `${new Intl.NumberFormat('id-ID').format(Number(p.price))} iCoin, akses instan.`
+  ].filter(Boolean).join(' ')
+})
+const image = computed(() => product.value?.image || `${siteUrl}/og/${product.value?.slug || slug.value}.png`)
 
 useSeoMeta({
   title,
@@ -46,59 +66,49 @@ useSeoMeta({
   ogTitle: title,
   ogDescription: description,
   ogType: 'product',
-  ogUrl: url.value,
+  ogUrl: url,
   ogImage: image,
   ogSiteName: 'IC Market',
   twitterCard: 'summary_large_image',
   twitterTitle: title,
   twitterDescription: description,
-  twitterImage: image
+  twitterImage: image,
+  robots: computed(() => (product.value ? undefined : 'noindex'))
 })
 
-useHead({
+useHead(() => ({
   link: [{ rel: 'canonical', href: url.value }],
-  script: [
-    {
+  script: product.value
+    ? productJsonLd(product.value, seller.value, { siteUrl, url: url.value, image: image.value }).map((ld, i) => ({
       type: 'application/ld+json',
-      key: 'ld-product',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: p.name,
-        description: p.desc,
-        image: [image],
-        sku: String(p.id),
-        category: p.categoryName,
-        brand: { '@type': 'Brand', name: seller.value?.name || 'IC Market' },
-        offers: {
-          '@type': 'Offer',
-          url: url.value,
-          price,
-          priceCurrency: 'IDR',
-          availability: 'https://schema.org/InStock',
-          seller: { '@type': 'Organization', name: seller.value?.name || 'IC Market' }
-        }
-      })
-    },
-    {
-      type: 'application/ld+json',
-      key: 'ld-breadcrumb',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Beranda', item: `${siteUrl}/` },
-          { '@type': 'ListItem', position: 2, name: p.categoryName, item: `${siteUrl}/kategori/${p.category}` },
-          { '@type': 'ListItem', position: 3, name: p.name, item: url.value }
-        ]
-      })
-    }
-  ]
-})
+      key: i ? 'ld-breadcrumb' : 'ld-product',
+      innerHTML: JSON.stringify(ld)
+    }))
+    : []
+}))
 </script>
 
 <template>
-  <div>
+  <div v-if="error && !product" class="tw:mx-auto tw:max-w-shop tw:px-6 tw:py-16 tw:max-lg:px-4">
+    <UiEmptyState icon="material-symbols:error-outline" title="Produk gagal dimuat" :text="error.message || 'Terjadi kendala saat memuat produk. Coba lagi.'">
+      <template #actions>
+        <UiButton @click="refresh">Coba lagi</UiButton>
+      </template>
+    </UiEmptyState>
+  </div>
+
+  <div v-else-if="!product || pending && !data" class="tw:mx-auto tw:max-w-shop tw:px-6 tw:pt-[22px] tw:max-lg:px-4" aria-busy="true">
+    <div class="tw:flex tw:flex-wrap tw:items-start tw:gap-7 tw:max-lg:flex-col">
+      <UiSkeleton class="tw:min-w-0 tw:flex-[999_1_620px]" width-class="tw:w-full" height-class="tw:h-[420px]" />
+      <div class="tw:flex tw:min-w-0 tw:flex-[1_1_340px] tw:flex-col tw:gap-3.5">
+        <UiSkeleton variant="text" :lines="3" />
+        <UiSkeleton height-class="tw:h-12" />
+        <UiSkeleton height-class="tw:h-12" />
+      </div>
+    </div>
+  </div>
+
+  <div v-else>
     <!-- Ponsel: bar atas produk (V2Mobile #3) -->
     <div class="tw:flex tw:items-center tw:gap-2.5 tw:border-0 tw:border-b tw:border-solid tw:border-line tw:bg-surface tw:px-4 tw:py-3 tw:lg:hidden">
       <NuxtLink :to="`/kategori/${product.category}`" aria-label="Kembali ke kategori" class="tw:inline-flex tw:text-ink tw:no-underline"><Icon name="material-symbols:chevron-left" class="tw:size-6" aria-hidden="true" /></NuxtLink>

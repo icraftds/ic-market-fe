@@ -3,7 +3,8 @@
 defineProps({
   storeName: { type: String, required: true },
   count: { type: [Number, String], required: true },
-  modelValue: { type: String, default: '' }
+  modelValue: { type: String, default: '' },
+  reviewCount: { type: Number, default: 0 }
 })
 const emit = defineEmits(['update:modelValue'])
 const tab = 'tw:-mb-px tw:p-3.5 tw:no-underline tw:text-ink-2 tw:hover:text-brand tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none'
@@ -14,7 +15,7 @@ const tab = 'tw:-mb-px tw:p-3.5 tw:no-underline tw:text-ink-2 tw:hover:text-bran
     <nav aria-label="Bagian toko" class="tw:flex tw:gap-1 tw:font-sans tw:text-sm tw:font-semibold">
       <a href="#produk" aria-current="page" class="tw:-mb-px tw:border-0 tw:border-b-2 tw:border-solid tw:border-ink tw:p-3.5 tw:text-ink tw:no-underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">Produk <span class="tw:font-mono tw:text-[11px] tw:font-medium tw:text-muted">{{ count }}</span></a>
       <a href="#tentang" :class="tab">Tentang</a>
-      <a href="#ulasan" :class="tab">Ulasan</a>
+      <a href="#ulasan" :class="tab">Ulasan<template v-if="reviewCount"> <span class="tw:font-mono tw:text-[11px] tw:font-medium tw:text-muted">{{ reviewCount }}</span></template></a>
     </nav>
     <form role="search" class="tw:mb-2 tw:flex tw:items-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:max-sm:w-full" @submit.prevent>
       <label for="qs" class="tw:sr-only">Cari di toko ini</label>

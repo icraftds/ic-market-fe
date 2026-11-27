@@ -5,19 +5,34 @@
  */
 const props = defineProps({
   items: { type: Array, default: () => [] },
+  loading: { type: Boolean, default: false },
+  error: { type: String, default: '' },
   sellerNames: { type: Object, default: () => ({}) },
   page: { type: Number, default: 1 },
   totalPages: { type: Number, default: 1 },
   makeHref: { type: Function, required: true }
 })
-const emit = defineEmits(['page', 'reset'])
+const emit = defineEmits(['page', 'reset', 'retry'])
 const catalogTints = [0, 1, 2, 3]
 const tintOf = (i) => catalogTints[i % catalogTints.length]
 </script>
 
 <template>
   <div>
-    <UiEmptyState v-if="!items.length" class="tw:mt-4" title="Tidak ada produk yang cocok" text="Coba ubah atau hapus sebagian filter.">
+    <div v-if="loading" class="tw:mt-4" aria-busy="true">
+      <ul class="tw:m-0 tw:grid tw:list-none tw:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] tw:gap-4 tw:p-0 tw:max-lg:grid-cols-2 tw:max-lg:gap-2.5">
+        <li v-for="n in 8" :key="n"><UiSkeleton height-class="tw:h-[300px] tw:max-lg:h-[220px]" /></li>
+      </ul>
+    </div>
+
+    <UiAlert v-else-if="error" tone="danger" class="tw:mt-4" title="Produk gagal dimuat">
+      {{ error }}
+      <template #action>
+        <UiButton variant="outline" icon="material-symbols:refresh" @click="emit('retry')">Coba lagi</UiButton>
+      </template>
+    </UiAlert>
+
+    <UiEmptyState v-else-if="!items.length" class="tw:mt-4" title="Tidak ada produk yang cocok" text="Coba ubah atau hapus sebagian filter.">
       <template #actions>
         <UiButton variant="outline" icon="material-symbols:refresh" @click="emit('reset')">Reset filter</UiButton>
       </template>
@@ -44,7 +59,7 @@ const tintOf = (i) => catalogTints[i % catalogTints.length]
       </ul>
     </template>
 
-    <div v-if="totalPages > 1" class="tw:mt-7 tw:flex tw:justify-center">
+    <div v-if="totalPages > 1 && !error" class="tw:mt-7 tw:flex tw:justify-center">
       <UiPagination :page="page" :total-pages="totalPages" :make-href="makeHref" intercept label="Halaman" @change="emit('page', $event)" />
     </div>
   </div>

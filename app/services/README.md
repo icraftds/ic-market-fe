@@ -6,7 +6,7 @@ Lapisan klien API v2. Aturan:
 - Semua panggilan lewat `useApi()` (`http.js`), yang membungkus `useProductApi` (BFF, CSRF, cooldown 429, 401). Jangan memanggil `$fetch` langsung.
 - `auth`: `'none'` publik, `'optional'` (default, kirim sesi bila ada), `'required'` (tanpa sesi lempar `ApiError` 401 `login_required`). Halaman publik SSR memakai `none`/`optional` dan tidak bergantung pada sesi.
 - Respons di-unwrap (`{success,data}` -> `data`), error dinormalisasi: `{ status, message, code, fieldErrors:{field:'pesan'}, retryAfter }`.
-- Pemetaan bentuk backend -> bentuk store ditaruh di file murni (`catalogMap.js`) agar bisa dites dengan `node:test`.
+- Pemetaan bentuk backend -> bentuk store ditaruh di file murni (`app/utils/catalogMap.js`) agar bisa dites dengan `node:test`.
 - Mode mock: store yang memutuskan (`useRuntimeConfig().public.designMock === true`, atau `import.meta.dev` tanpa `ssoEnabled`). Service tidak tahu soal mock.
 
 Contoh (di store):

@@ -1,5 +1,5 @@
 <script setup>
-/** Beranda (papan V2Home). Halaman tipis: seksi ada di components/home/*. Data dari store + mocks. */
+/** Beranda (papan V2Home). Halaman tipis: seksi ada di components/home/*. Data SSR dari store katalog (API / mock). */
 definePageMeta({ layout: 'storefront' })
 
 const catalog = useCatalogStore()
@@ -19,7 +19,12 @@ useSeoMeta({
   twitterCard: 'summary_large_image'
 })
 
-const listed = catalog.products.filter((p) => !p.extra).slice(0, 8)
+// Data beranda (SSR, tanpa sesi): kategori + produk terbaru. HomeAllProducts memakai kunci cache yang sama.
+const { data: home } = await useAsyncData('home', async () => {
+  const [, latest] = await Promise.all([catalog.fetchCategories(), catalog.fetchList({ limit: 8, sort: 'newest' })])
+  return { latest: latest.products.map((p) => p.id) }
+})
+const listed = (home.value?.latest || []).map((id) => catalog.byId(id)).filter(Boolean)
 useHead({
   link: [{ rel: 'canonical', href: siteUrl + '/' }],
   script: [{

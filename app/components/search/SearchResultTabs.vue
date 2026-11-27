@@ -3,8 +3,10 @@
 const tab = defineModel({ type: String, default: 'prod' })
 defineProps({
   count: { type: Number, default: 0 },
-  storeCount: { type: Number, default: 1 }
+  storeCount: { type: Number, default: 1 },
+  sort: { type: String, default: 'relevance' }
 })
+defineEmits(['update:sort'])
 
 const base = 'tw:m-0 tw:min-h-11 tw:cursor-pointer tw:border-0 tw:border-b-2 tw:border-solid tw:bg-transparent tw:px-3.5 tw:font-sans tw:text-sm tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none'
 const on = 'tw:-mb-px tw:border-b-ink tw:font-bold tw:text-ink'
@@ -22,11 +24,11 @@ const off = 'tw:border-b-transparent tw:font-medium tw:text-ink-2'
       </button>
     </div>
     <label class="tw:mb-2 tw:flex tw:items-center tw:gap-2 tw:font-sans tw:text-[13px] tw:font-medium tw:text-ink-2">Urutkan
-      <select class="tw:m-0 tw:min-h-10 tw:rounded-lg tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:py-[9px] tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink">
-        <option>Paling relevan</option>
-        <option>Terbaru</option>
-        <option>Harga terendah</option>
-        <option>Harga tertinggi</option>
+      <select :value="sort" class="tw:m-0 tw:min-h-10 tw:rounded-lg tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:py-[9px] tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink" @change="$emit('update:sort', $event.target.value)">
+        <option value="relevance">Paling relevan</option>
+        <option value="newest">Terbaru</option>
+        <option value="price-asc">Harga terendah</option>
+        <option value="price-desc">Harga tertinggi</option>
       </select>
     </label>
   </div>

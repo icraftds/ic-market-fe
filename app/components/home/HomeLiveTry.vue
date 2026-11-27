@@ -1,7 +1,7 @@
 <script setup>
 /** HomeLiveTry: seksi "Coba langsung sebelum beli" (papan V2Home). Hanya desktop (papan ponsel tidak memuatnya). */
 const catalog = useCatalogStore()
-const items = computed(() => catalog.products.filter((p) => p.live && !p.extra).slice(0, 4))
+const { data: items } = await useAsyncData('home-live', async () => (await catalog.fetchList({ limit: 4, sort: 'newest', live: true })).products, { default: () => [] })
 </script>
 
 <template>
@@ -13,7 +13,7 @@ const items = computed(() => catalog.products.filter((p) => p.live && !p.extra).
       </div>
       <NuxtLink to="/kategori/semua" class="tw:inline-flex tw:items-center tw:gap-2 tw:font-sans tw:text-[13.5px] tw:font-semibold tw:text-brand tw:no-underline">Semua yang bisa dicoba <Icon name="material-symbols:arrow-forward" class="tw:size-[16px] tw:shrink-0" aria-hidden="true" /></NuxtLink>
     </div>
-    <div class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] tw:gap-4">
+    <div v-if="items.length" class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] tw:gap-4">
       <HomeLiveCard v-for="p in items" :key="p.id" :product="p" />
     </div>
   </section>

@@ -4,6 +4,11 @@ useSeoMeta({ title: 'Keranjang | IC Market', robots: 'noindex' })
 
 const cart = useCartStore()
 
+// Keranjang tamu dibaca dari localStorage di klien (plugin auth.client memanggil hydrate), jadi tunggu mount agar tidak berkedip kosong.
+const ready = ref(false)
+onMounted(() => { ready.value = true })
+const busy = computed(() => !ready.value || cart.syncing)
+
 // Kelompokkan baris per toko, urutan kemunculan dipertahankan.
 const groups = computed(() => {
   const map = new Map()
@@ -20,7 +25,15 @@ const groups = computed(() => {
   <div class="tw:mx-auto tw:max-w-shop tw:px-4 tw:pt-7 tw:pb-16 tw:lg:px-6">
     <h1 class="tw:m-0 tw:mb-[18px] tw:font-display tw:text-[32px] tw:font-extrabold tw:tracking-[-0.02em]">Keranjang <span class="tw:font-mono tw:text-sm tw:font-medium tw:tracking-normal tw:text-muted">{{ cart.count }} produk</span></h1>
 
-    <UiEmptyState v-if="!cart.count" icon="material-symbols:shopping-cart-outline" title="Keranjang masih kosong" text="Produk yang Anda tambahkan akan muncul di sini.">
+    <div v-if="busy" class="tw:flex tw:flex-wrap tw:items-start tw:gap-7" role="status" aria-busy="true" aria-label="Memuat keranjang">
+      <div class="tw:flex tw:min-w-0 tw:flex-[999_1_600px] tw:flex-col tw:gap-3.5">
+        <UiSkeleton height-class="tw:h-14" />
+        <UiSkeleton height-class="tw:h-60" />
+      </div>
+      <UiSkeleton class="tw:flex-[1_1_300px]" height-class="tw:h-64" />
+    </div>
+
+    <UiEmptyState v-else-if="!cart.count" icon="material-symbols:shopping-cart-outline" title="Keranjang masih kosong" text="Produk yang Anda tambahkan akan muncul di sini.">
       <template #actions><UiButton to="/" variant="primary" icon="material-symbols:shopping-bag-outline">Mulai belanja</UiButton></template>
     </UiEmptyState>
 
