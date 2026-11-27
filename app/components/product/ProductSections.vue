@@ -43,7 +43,7 @@ const h2 = 'tw:m-0 tw:font-display tw:text-[22px] tw:font-bold tw:text-ink'
         <h2 id="h-fitur" class="tw:mb-3.5" :class="h2">Fitur utama</h2>
         <ul class="tw:m-0 tw:grid tw:list-none tw:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] tw:gap-3 tw:p-0">
           <li v-for="f in product.features" :key="f" class="tw:flex tw:gap-3 tw:rounded-[14px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-[18px] tw:py-4 tw:font-sans tw:text-sm tw:leading-[1.55] tw:font-normal tw:text-ink">
-            <span aria-hidden="true" class="tw:grid tw:size-7 tw:flex-none tw:place-items-center tw:rounded-lg tw:bg-[#e8f8ee]"><svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>{{ f }}
+            <span aria-hidden="true" class="tw:grid tw:size-7 tw:flex-none tw:place-items-center tw:rounded-lg tw:bg-[#e8f8ee]"><Icon name="material-symbols:check" class="tw:size-4 tw:text-[#16a34a]" aria-hidden="true" /></span>{{ f }}
           </li>
         </ul>
       </section>
@@ -61,7 +61,7 @@ const h2 = 'tw:m-0 tw:font-display tw:text-[22px] tw:font-bold tw:text-ink'
       <section id="ulasan" aria-labelledby="h-ulasan">
         <h2 id="h-ulasan" class="tw:mb-3" :class="h2">Ulasan</h2>
         <div class="tw:flex tw:flex-col tw:items-center tw:gap-2 tw:rounded-[14px] tw:border tw:border-dashed tw:border-[#d6d6cf] tw:bg-surface tw:p-7 tw:text-center">
-          <svg viewBox="0 0 20 20" width="26" height="26" aria-hidden="true"><path d="m10 2.5 2.3 4.7 5.2.8-3.8 3.6.9 5.1L10 14.2 5.4 16.7l.9-5.1L2.5 8l5.2-.8L10 2.5Z" fill="none" stroke="#b45309" stroke-width="1.5" stroke-linejoin="round" /></svg>
+          <Icon name="material-symbols:star" class="tw:size-[26px] tw:text-[#b45309]" aria-hidden="true" />
           <span class="tw:font-sans tw:text-[15px] tw:font-bold">Belum ada ulasan</span>
           <span class="tw:font-sans tw:text-[13.5px] tw:font-normal tw:text-ink-2">Pembeli produk ini bisa memberi ulasan dari halaman Pesanan Saya.</span>
         </div>

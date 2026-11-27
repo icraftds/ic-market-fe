@@ -78,8 +78,8 @@ const numInput = 'tw:box-border tw:w-full tw:rounded-lg tw:border tw:border-soli
       </fieldset>
 
       <div class="tw:flex tw:gap-2">
-        <button type="submit" class="tw:m-0 tw:min-h-11 tw:flex-1 tw:cursor-pointer tw:rounded-[10px] tw:border-0 tw:bg-ink tw:font-sans tw:text-sm tw:font-semibold tw:text-white tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:ring-offset-2 tw:focus-visible:outline-none">Terapkan</button>
-        <button type="button" class="tw:m-0 tw:min-h-11 tw:flex-1 tw:cursor-pointer tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:font-sans tw:text-sm tw:font-semibold tw:text-ink tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="emit('reset')">Reset</button>
+        <button type="submit" class="tw:m-0 tw:inline-flex tw:min-h-11 tw:items-center tw:justify-center tw:gap-2 tw:flex-1 tw:cursor-pointer tw:rounded-[10px] tw:border-0 tw:bg-ink tw:font-sans tw:text-sm tw:font-semibold tw:text-white tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:ring-offset-2 tw:focus-visible:outline-none"><Icon name="material-symbols:check" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Terapkan</button>
+        <button type="button" class="tw:m-0 tw:inline-flex tw:min-h-11 tw:items-center tw:justify-center tw:gap-2 tw:flex-1 tw:cursor-pointer tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:font-sans tw:text-sm tw:font-semibold tw:text-ink tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="emit('reset')"><Icon name="material-symbols:refresh" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Reset</button>
       </div>
     </form>
   </aside>

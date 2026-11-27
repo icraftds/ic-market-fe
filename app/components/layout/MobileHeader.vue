@@ -55,7 +55,7 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-
           class="tw:flex tw:text-ink"
           :class="hit"
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 4h2.5l2 11h10l2-8H7" fill="none" stroke="#111110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><circle cx="9" cy="19" r="1.4" fill="#111110" /><circle cx="17" cy="19" r="1.4" fill="#111110" /></svg>
+          <Icon name="material-symbols:shopping-cart-outline" class="tw:size-[22px]" aria-hidden="true" />
         </NuxtLink>
         <button
           type="button"
@@ -67,7 +67,7 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-
           @click="ui.toggleMobileNav()"
         >
           <span v-if="auth.isLoggedIn" aria-hidden="true">{{ auth.user.initial }}</span>
-          <Icon v-else name="lucide:user" size="14" aria-hidden="true" />
+          <Icon v-else name="material-symbols:person-outline" class="tw:size-3.5" aria-hidden="true" />
         </button>
       </span>
     </div>
@@ -81,7 +81,7 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-
         placeholder="Cari template, UI kit…"
         class="tw:min-w-0 tw:flex-1 tw:border-0 tw:bg-transparent tw:px-3 tw:py-[11px] tw:font-sans tw:text-[13.5px] tw:font-medium tw:text-ink tw:outline-none tw:placeholder:text-muted"
       >
-      <button type="submit" class="tw:m-0 tw:flex tw:cursor-pointer tw:items-center tw:border-0 tw:bg-brand tw:px-3.5 tw:font-sans tw:text-[12.5px] tw:font-bold tw:text-white tw:focus-visible:ring-2 tw:focus-visible:ring-inset tw:focus-visible:ring-white tw:focus-visible:outline-none">Cari</button>
+      <button type="submit" class="tw:m-0 tw:flex tw:cursor-pointer tw:items-center tw:border-0 tw:bg-brand tw:px-3.5 tw:font-sans tw:text-[12.5px] tw:font-bold tw:text-white tw:gap-1.5 tw:focus-visible:ring-2 tw:focus-visible:ring-inset tw:focus-visible:ring-white tw:focus-visible:outline-none"><Icon name="material-symbols:search" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Cari</button>
     </form>
 
     <nav aria-label="Navigasi utama" class="tw:flex tw:gap-1.5 tw:overflow-x-auto tw:font-sans tw:text-[12.5px] tw:font-semibold tw:whitespace-nowrap tw:[scrollbar-width:none] tw:[&::-webkit-scrollbar]:hidden">

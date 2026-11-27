@@ -41,9 +41,7 @@ const rootClass = computed(() => (props.flush ? '' : 'tw:rounded-xl tw:border tw
           <span v-if="subtitle" class="tw:mt-0.5 tw:block tw:text-xs tw:font-medium tw:text-muted">{{ subtitle }}</span>
         </span>
         <span v-if="$slots.meta" class="tw:shrink-0"><slot name="meta" /></span>
-        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" class="tw:shrink-0 tw:text-muted tw:transition-transform tw:duration-200" :class="open ? 'tw:rotate-180' : ''">
-          <path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <Icon name="material-symbols:expand-more" class="tw:size-[18px] tw:shrink-0 tw:text-muted tw:transition-transform tw:duration-200" :class="open ? 'tw:rotate-180' : ''" aria-hidden="true" />
       </button>
     </h3>
     <div

@@ -4,6 +4,14 @@
  * Dengan `to` jadi NuxtLink, dengan `href` jadi <a>, selain itu <button>.
  * variant: primary (ink) | brand (biru) | outline | pill (hero) | ghost | danger | danger-soft | dark (alias primary)
  * size: sm | md | lg (lg min-h 48).  iconOnly: tombol persegi, wajib beri `label` (aria-label).
+ *
+ * POLA IKON (Material Symbols, "material-symbols:<nama>", varian -outline bila ada):
+ *   <UiButton icon="material-symbols:delete-outline" variant="danger-soft">Hapus</UiButton>   ikon di kiri label
+ *   <UiButton icon-right="material-symbols:arrow-forward">Lihat semua</UiButton>              panah/chevron navigasi di kanan
+ *   <UiButton icon-only icon="material-symbols:menu" label="Menu" />                          tombol ikon, `label` wajib (aria-label)
+ * Ukuran ikon otomatis per size (sm 16, md 18, lg 20), warna currentColor, jarak gap-2, tinggi tombol tidak berubah.
+ * Ikon bersifat dekoratif (aria-hidden). Saat `loading`, ikon kiri (atau ikon tunggal) diganti spinner.
+ * Slot default tetap dipakai untuk ikon kustom (kompatibel mundur).
  */
 import { computed, resolveComponent } from 'vue'
 
@@ -17,7 +25,9 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
   block: { type: Boolean, default: false },
   iconOnly: { type: Boolean, default: false },
-  label: { type: String, default: null }
+  label: { type: String, default: null },
+  icon: { type: String, default: null },
+  iconRight: { type: String, default: null }
 })
 
 const NuxtLink = resolveComponent('NuxtLink')
@@ -44,6 +54,8 @@ const iconSizes = {
   md: 'tw:min-h-11 tw:min-w-11 tw:text-sm',
   lg: 'tw:min-h-12 tw:min-w-12 tw:text-[14.5px]'
 }
+const glyph = { sm: 'tw:size-4', md: 'tw:size-[18px]', lg: 'tw:size-5' }
+const glyphClass = computed(() => `${glyph[props.size] || glyph.md} tw:shrink-0`)
 const classes = computed(() => [
   variants[variantAlias[props.variant] || props.variant] || variants.primary,
   (props.iconOnly ? iconSizes : sizes)[props.size] || sizes.md,
@@ -64,10 +76,16 @@ const classes = computed(() => [
     class="tw:inline-flex tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-field tw:border tw:border-solid tw:leading-none tw:font-bold tw:whitespace-nowrap tw:no-underline tw:transition tw:duration-150 tw:select-none tw:active:scale-[.98] tw:focus-visible:ring-[3px] tw:focus-visible:outline-none tw:disabled:cursor-not-allowed tw:disabled:opacity-50 tw:aria-disabled:pointer-events-none tw:aria-disabled:opacity-50"
     :class="classes"
   >
-    <svg v-if="loading" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="tw:animate-spin">
+    <svg v-if="loading && (icon || !iconRight)" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="tw:animate-spin">
       <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".25" />
       <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
     </svg>
+    <Icon v-else-if="icon" :name="icon" :class="glyphClass" aria-hidden="true" />
     <slot />
+    <svg v-if="loading && iconRight && !icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="tw:animate-spin">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".25" />
+      <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+    </svg>
+    <Icon v-else-if="iconRight" :name="iconRight" :class="glyphClass" aria-hidden="true" />
   </component>
 </template>

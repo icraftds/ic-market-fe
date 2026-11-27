@@ -69,24 +69,18 @@ const statuses = [
           <UiButton variant="dark">Dark</UiButton>
           <UiButton variant="outline">Outline</UiButton>
           <UiButton variant="ghost">Ghost</UiButton>
-          <UiButton variant="danger-soft">Hapus</UiButton>
-          <UiButton variant="danger">Hapus permanen</UiButton>
+          <UiButton icon="material-symbols:delete-outline" variant="danger-soft">Hapus</UiButton>
+          <UiButton icon="material-symbols:delete-outline" variant="danger">Hapus permanen</UiButton>
           <UiButton disabled>Disabled</UiButton>
-          <UiButton :loading="saving" @click="save">{{ saving ? 'Menyimpan…' : 'Simpan' }}</UiButton>
+          <UiButton icon="material-symbols:save-outline" :loading="saving" @click="save">{{ saving ? 'Menyimpan…' : 'Simpan' }}</UiButton>
         </div>
         <div class="tw:mt-4 tw:flex tw:flex-wrap tw:items-center tw:gap-3">
           <UiButton size="sm">Kecil</UiButton>
           <UiButton size="md">Sedang</UiButton>
           <UiButton size="lg">Besar</UiButton>
           <UiButton to="/" variant="outline">Sebagai link</UiButton>
-          <UiButton>
-            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-            Tambah Produk
-          </UiButton>
-          <UiButton variant="outline" size="sm">
-            <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            Lanjut
-          </UiButton>
+          <UiButton icon="material-symbols:add">Tambah Produk</UiButton>
+          <UiButton variant="outline" size="sm" icon-right="material-symbols:arrow-forward">Lanjut</UiButton>
         </div>
       </section>
 
@@ -116,7 +110,7 @@ const statuses = [
       <section class="tw:rounded-2xl tw:border tw:border-slate-200 tw:bg-white tw:p-6">
         <h2 class="tw:mt-0 tw:mb-4 tw:text-base tw:font-bold">UiTable</h2>
         <div class="tw:mb-3 tw:flex tw:items-center tw:gap-3">
-          <UiButton size="sm" variant="outline" @click="reload">Muat ulang (skeleton)</UiButton>
+          <UiButton icon="material-symbols:refresh" size="sm" variant="outline" @click="reload">Muat ulang (skeleton)</UiButton>
           <span class="tw:text-xs tw:text-muted">Dipilih: {{ picked.length }} baris</span>
         </div>
         <UiTable v-model:sort="sort" v-model:selected="picked" :columns="columns" :rows="tableRows" :loading="tableLoading" client-sort selectable caption="Daftar produk contoh">
@@ -152,8 +146,8 @@ const statuses = [
       <section class="tw:rounded-2xl tw:border tw:border-slate-200 tw:bg-white tw:p-6">
         <h2 class="tw:mt-0 tw:mb-4 tw:text-base tw:font-bold">UiModal</h2>
         <div class="tw:flex tw:gap-3">
-          <UiButton variant="outline" @click="showModal = true">Buka modal</UiButton>
-          <UiButton variant="danger-soft" @click="showConfirm = true">Konfirmasi hapus</UiButton>
+          <UiButton icon="material-symbols:open-in-new" variant="outline" @click="showModal = true">Buka modal</UiButton>
+          <UiButton icon="material-symbols:delete-outline" variant="danger-soft" @click="showConfirm = true">Konfirmasi hapus</UiButton>
         </div>
       </section>
     </div>
@@ -162,15 +156,15 @@ const statuses = [
       <p class="tw:m-0">Klik di luar kotak, tekan Esc, atau tombol Tutup untuk menutup. Fokus tetap di dalam modal.</p>
       <UiInput v-model="name" label="Nama Produk" class="tw:mt-4" />
       <template #footer>
-        <UiButton variant="outline" @click="showModal = false">Batal</UiButton>
-        <UiButton @click="showModal = false">Simpan</UiButton>
+        <UiButton icon="material-symbols:close" variant="outline" @click="showModal = false">Batal</UiButton>
+        <UiButton icon="material-symbols:save-outline" @click="showModal = false">Simpan</UiButton>
       </template>
     </UiModal>
 
     <UiModal v-model:open="showConfirm" size="sm" title="Hapus produk?" description="Tindakan ini tidak bisa dibatalkan.">
       <template #footer>
-        <UiButton variant="outline" @click="showConfirm = false">Batal</UiButton>
-        <UiButton variant="danger" @click="showConfirm = false">Ya, hapus</UiButton>
+        <UiButton icon="material-symbols:close" variant="outline" @click="showConfirm = false">Batal</UiButton>
+        <UiButton icon="material-symbols:delete-outline" variant="danger" @click="showConfirm = false">Ya, hapus</UiButton>
       </template>
     </UiModal>
   </main>

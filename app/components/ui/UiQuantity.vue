@@ -23,7 +23,7 @@ const atMax = computed(() => props.modelValue >= props.max)
 <template>
   <div role="group" :aria-label="label" class="tw:inline-flex tw:items-center tw:overflow-hidden tw:rounded-field tw:border tw:border-line tw:bg-surface">
     <button type="button" :class="btn" :disabled="disabled || atMin" :aria-label="`Kurangi ${label}`" @click="set(modelValue - step)">
-      <Icon name="lucide:minus" class="tw:size-4" aria-hidden="true" />
+      <Icon name="material-symbols:remove" class="tw:size-4" aria-hidden="true" />
     </button>
     <input
       type="text"
@@ -35,7 +35,7 @@ const atMax = computed(() => props.modelValue >= props.max)
       @change="onInput"
     >
     <button type="button" :class="btn" :disabled="disabled || atMax" :aria-label="`Tambah ${label}`" @click="set(modelValue + step)">
-      <Icon name="lucide:plus" class="tw:size-4" aria-hidden="true" />
+      <Icon name="material-symbols:add" class="tw:size-4" aria-hidden="true" />
     </button>
   </div>
 </template>

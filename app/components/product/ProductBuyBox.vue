@@ -63,25 +63,25 @@ const focus = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visi
         class="tw:flex tw:min-h-[50px] tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:bg-ink tw:font-sans tw:text-[15px] tw:font-bold tw:text-white tw:no-underline tw:hover:bg-ink-2 tw:max-lg:hidden"
         :class="focus"
         @click="buyNow"
-      ><svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M11 2 4 11h5l-1 7 7-9h-5l1-7Z" fill="#fff" /></svg>Beli Sekarang</NuxtLink>
+      ><Icon name="material-symbols:shopping-bag-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Beli Sekarang</NuxtLink>
       <button
         type="button"
         class="tw:m-0 tw:flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-0 tw:font-sans tw:text-[15px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:max-lg:hidden"
         :class="focus"
         @click="addToCart"
-      ><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 4h2.5l2 11h10l2-8H7" fill="none" stroke="#111110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><circle cx="9" cy="19" r="1.4" fill="#111110" /><circle cx="17" cy="19" r="1.4" fill="#111110" /></svg>Tambah ke Keranjang</button>
+      ><Icon name="material-symbols:shopping-cart-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Tambah ke Keranjang</button>
       <button
         v-if="product.live"
         type="button"
         class="tw:m-0 tw:flex tw:min-h-11 tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-sm tw:font-semibold tw:text-brand tw:hover:underline tw:max-lg:min-h-[46px] tw:max-lg:rounded-xl tw:max-lg:border tw:max-lg:border-solid tw:max-lg:border-line tw:max-lg:bg-surface"
         :class="focus"
         @click="emit('try')"
-      ><svg viewBox="0 0 20 20" width="12" height="12" aria-hidden="true"><path d="M6 4l10 6-10 6V4Z" fill="#0f66ea" /></svg>Coba dulu dengan Live Preview</button>
+      ><Icon name="material-symbols:play-arrow" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Coba dulu dengan Live Preview</button>
     </div>
 
     <ul class="tw:m-0 tw:mt-5 tw:flex tw:list-none tw:flex-col tw:gap-[11px] tw:p-0 tw:font-sans tw:text-[13.5px] tw:font-medium tw:max-lg:mt-3 tw:max-lg:gap-2 tw:max-lg:rounded-xl tw:max-lg:border tw:max-lg:border-solid tw:max-lg:border-line tw:max-lg:bg-surface tw:max-lg:px-3.5 tw:max-lg:py-3 tw:max-lg:text-[13px]">
       <li v-for="k in product.perks" :key="k" class="tw:flex tw:items-center tw:gap-2.5" :class="k.startsWith('Lisensi') ? 'tw:max-lg:hidden' : ''">
-        <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true" class="tw:flex-none"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>{{ k }}
+        <Icon name="material-symbols:check" class="tw:size-4 tw:flex-none tw:text-[#16a34a]" aria-hidden="true" />{{ k }}
       </li>
     </ul>
   </div>

@@ -81,13 +81,13 @@ const tools = computed(() => [
   { key: 'h2', label: 'Judul 2', text: 'H2', cls: 'tw:text-[11px] tw:font-extrabold', on: () => active('heading', { level: 2 }), do: () => run(c => c.toggleHeading({ level: 2 })) },
   { key: 'h3', label: 'Judul 3', text: 'H3', cls: 'tw:text-[11px] tw:font-extrabold', on: () => active('heading', { level: 3 }), do: () => run(c => c.toggleHeading({ level: 3 })) },
   { sep: true, key: 's2' },
-  { key: 'ul', label: 'Daftar poin', icon: 'M7 5h10M7 10h10M7 15h10M3.5 5h.01M3.5 10h.01M3.5 15h.01', on: () => active('bulletList'), do: () => run(c => c.toggleBulletList()) },
-  { key: 'ol', label: 'Daftar angka', icon: 'M8 5h9M8 10h9M8 15h9M3 4l1-.5V7M3 12h2l-2 3h2', on: () => active('orderedList'), do: () => run(c => c.toggleOrderedList()) },
-  { key: 'quote', label: 'Kutipan', icon: 'M4 6h5v5H6.5c0 1.5.5 2.5 2.5 3M12 6h5v5h-2.5c0 1.5.5 2.5 2.5 3', on: () => active('blockquote'), do: () => run(c => c.toggleBlockquote()) },
-  { key: 'link', label: 'Tautan', icon: 'M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0L4.7 11.1a3 3 0 0 0 4.2 4.2l.9-.9', on: () => active('link'), do: openLink },
+  { key: 'ul', label: 'Daftar poin', icon: 'material-symbols:format-list-bulleted', on: () => active('bulletList'), do: () => run(c => c.toggleBulletList()) },
+  { key: 'ol', label: 'Daftar angka', icon: 'material-symbols:format-list-numbered', on: () => active('orderedList'), do: () => run(c => c.toggleOrderedList()) },
+  { key: 'quote', label: 'Kutipan', icon: 'material-symbols:format-quote', on: () => active('blockquote'), do: () => run(c => c.toggleBlockquote()) },
+  { key: 'link', label: 'Tautan', icon: 'material-symbols:link', on: () => active('link'), do: openLink },
   { sep: true, key: 's3' },
-  { key: 'undo', label: 'Urungkan', icon: 'M7 6 3.5 9.5 7 13M4 9.5h8a4 4 0 0 1 0 8h-1', can: () => editor.value?.can().undo(), do: () => run(c => c.undo()) },
-  { key: 'redo', label: 'Ulangi', icon: 'M13 6l3.5 3.5L13 13M16 9.5H8a4 4 0 0 0 0 8h1', can: () => editor.value?.can().redo(), do: () => run(c => c.redo()) }
+  { key: 'undo', label: 'Urungkan', icon: 'material-symbols:undo', can: () => editor.value?.can().undo(), do: () => run(c => c.undo()) },
+  { key: 'redo', label: 'Ulangi', icon: 'material-symbols:redo', can: () => editor.value?.can().redo(), do: () => run(c => c.redo()) }
 ])
 const editorAttrs = computed(() => ({ style: { '--ui-editor-min': props.minHeight } }))
 const fallbackAttrs = computed(() => ({ style: { minHeight: props.minHeight } }))
@@ -120,7 +120,7 @@ const fallbackAttrs = computed(() => ({ style: { minHeight: props.minHeight } })
             @click="tool.do()"
           >
             <span v-if="tool.text" :class="tool.cls">{{ tool.text }}</span>
-            <svg v-else viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path :d="tool.icon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <Icon v-else :name="tool.icon" class="tw:size-[18px]" aria-hidden="true" />
           </button>
         </template>
       </div>

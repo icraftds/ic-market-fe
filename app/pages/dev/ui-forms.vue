@@ -81,7 +81,7 @@ const suggestions = ['Template Landing Page', 'Template Resume', 'Template Notio
           <UiSearchInput v-model="q" placeholder="Cari produk (ketik 'tem')">
             <template #suggestions>
               <button v-for="s in suggestions" :key="s" type="button" class="tw:flex tw:min-h-11 tw:w-full tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-field tw:px-3 tw:text-left tw:text-sm tw:hover:bg-subtle tw:focus-visible:bg-subtle tw:focus-visible:outline-none" @click="q = s">
-                <Icon name="lucide:search" class="tw:size-4 tw:text-ink-2" aria-hidden="true" />{{ s }}
+                <Icon name="material-symbols:search" class="tw:size-4 tw:text-ink-2" aria-hidden="true" />{{ s }}
               </button>
             </template>
           </UiSearchInput>

@@ -1,7 +1,7 @@
 <script setup>
 /** UiStatCard: icon, tone brand|ok|warn|bad (tint ikon), label, value, note (slot note opsional). */
 const props = defineProps({
-  icon: { type: String, default: 'lucide:activity' },
+  icon: { type: String, default: 'material-symbols:monitoring' },
   tone: { type: String, default: 'brand' },
   label: { type: String, required: true },
   value: { type: [String, Number], required: true },

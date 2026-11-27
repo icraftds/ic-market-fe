@@ -101,9 +101,9 @@ useHead({
   <div>
     <!-- Ponsel: bar atas produk (V2Mobile #3) -->
     <div class="tw:flex tw:items-center tw:gap-2.5 tw:border-0 tw:border-b tw:border-solid tw:border-line tw:bg-surface tw:px-4 tw:py-3 tw:lg:hidden">
-      <NuxtLink :to="`/kategori/${product.category}`" aria-label="Kembali ke kategori" class="tw:font-sans tw:text-lg tw:font-bold tw:text-ink tw:no-underline">‹</NuxtLink>
+      <NuxtLink :to="`/kategori/${product.category}`" aria-label="Kembali ke kategori" class="tw:inline-flex tw:text-ink tw:no-underline"><Icon name="material-symbols:chevron-left" class="tw:size-6" aria-hidden="true" /></NuxtLink>
       <span class="tw:flex-1 tw:font-sans tw:text-sm tw:font-semibold tw:text-ink-2">{{ product.categoryName }}</span>
-      <button type="button" class="tw:m-0 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink" @click="shareMobile">Bagikan</button>
+      <button type="button" class="tw:m-0 tw:inline-flex tw:cursor-pointer tw:items-center tw:gap-2 tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink" @click="shareMobile"><Icon name="material-symbols:share" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Bagikan</button>
     </div>
 
     <div class="tw:mx-auto tw:max-w-shop tw:px-6 tw:pt-[22px] tw:max-lg:px-4 tw:max-lg:pt-3 tw:max-lg:pb-[120px]">

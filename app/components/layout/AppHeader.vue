@@ -80,7 +80,7 @@ const select = () => { close(); input.value?.blur() }
           @submit.prevent="submit"
         >
           <label :for="inputId" class="tw:sr-only">Cari produk</label>
-          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" class="tw:ml-4 tw:flex-none tw:self-center"><circle cx="9" cy="9" r="5.5" fill="none" stroke="#6f6f68" stroke-width="1.7" /><path d="m13.5 13.5 3.5 3.5" stroke="#6f6f68" stroke-width="1.7" stroke-linecap="round" /></svg>
+          <Icon name="material-symbols:search" class="tw:ml-4 tw:size-4 tw:flex-none tw:self-center tw:text-ink-2" aria-hidden="true" />
           <input
             :id="inputId"
             ref="input"
@@ -96,9 +96,9 @@ const select = () => { close(); input.value?.blur() }
             class="tw:min-w-0 tw:flex-1 tw:border-0 tw:bg-transparent tw:px-3.5 tw:py-[13px] tw:font-sans tw:text-[14.5px] tw:font-medium tw:outline-none"
             @keydown="onKey"
           >
-          <button v-if="q" type="button" aria-label="Hapus kata kunci" class="tw:min-h-11 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:px-3 tw:font-sans tw:text-base tw:font-semibold tw:text-ink-2" @click="clear">×</button>
+          <button v-if="q" type="button" aria-label="Hapus kata kunci" class="tw:min-h-11 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:px-3 tw:font-sans tw:text-base tw:font-semibold tw:text-ink-2" @click="clear"><Icon name="material-symbols:close" class="tw:size-[18px]" aria-hidden="true" /></button>
           <button type="submit" class="tw:flex tw:min-h-12 tw:cursor-pointer tw:items-center tw:gap-[7px] tw:border-0 tw:bg-brand tw:px-[22px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white">
-            <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="#fff" stroke-width="2" /><path d="m13.5 13.5 3.5 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" /></svg>Cari
+            <Icon name="material-symbols:search" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Cari
           </button>
         </form>
         <SearchSuggest v-if="open" ref="suggest" :query="q" :listbox-id="listboxId" :active-index="active" @select="select" />
@@ -107,7 +107,7 @@ const select = () => { close(); input.value?.blur() }
       <div class="tw:flex tw:items-center tw:gap-3.5">
         <NuxtLink to="/cart" class="tw:flex tw:min-h-11 tw:flex-col tw:items-center tw:justify-center tw:gap-0.5 tw:text-[11px] tw:font-semibold tw:text-[#44443f] tw:no-underline tw:hover:text-brand">
           <span class="tw:relative tw:flex">
-            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 4h2.5l2 11h10l2-8H7" fill="none" stroke="#111110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><circle cx="9" cy="19" r="1.4" fill="#111110" /><circle cx="17" cy="19" r="1.4" fill="#111110" /></svg>
+            <Icon name="material-symbols:shopping-cart-outline" class="tw:size-[22px]" aria-hidden="true" />
             <span v-if="cart.count > 0" aria-hidden="true" class="tw:absolute tw:-top-1.5 tw:-right-2.5 tw:grid tw:h-4 tw:min-w-4 tw:place-items-center tw:rounded-full tw:bg-brand tw:px-1 tw:font-sans tw:text-[10px] tw:leading-none tw:font-bold tw:text-white">{{ cart.count }}</span>
           </span>
           Keranjang<span v-if="cart.count > 0" class="tw:sr-only"> ({{ cart.count }} produk)</span>
@@ -129,7 +129,7 @@ const select = () => { close(); input.value?.blur() }
             </span>
           </NuxtLink>
         </template>
-        <NuxtLink v-else to="/login" class="tw:flex tw:min-h-11 tw:items-center tw:rounded-[12px] tw:bg-ink tw:px-[22px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:hover:text-white tw:hover:bg-ink-2">Masuk</NuxtLink>
+        <NuxtLink v-else to="/login" class="tw:flex tw:min-h-11 tw:items-center tw:rounded-[12px] tw:bg-ink tw:px-[22px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:hover:text-white tw:hover:bg-ink-2"><Icon name="material-symbols:login" class="tw:mr-2 tw:size-[18px] tw:shrink-0" aria-hidden="true" />Masuk</NuxtLink>
       </div>
     </div>
     <AppNav />

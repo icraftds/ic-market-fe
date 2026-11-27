@@ -50,7 +50,7 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
 <template>
   <section class="tw:overflow-hidden tw:bg-[radial-gradient(60%_70%_at_50%_0%,#e9f1ff_0%,#f7f7f5_70%)] tw:px-6 tw:pt-16 tw:pb-14 tw:text-center tw:max-lg:bg-[radial-gradient(80%_60%_at_50%_0%,#e9f1ff_0%,#f7f7f5_70%)] tw:max-lg:px-4 tw:max-lg:pt-6 tw:max-lg:pb-5">
     <span class="tw:hidden tw:items-center tw:gap-2 tw:rounded-full tw:border tw:border-solid tw:border-[#cfe1ff] tw:bg-[#eaf2ff] tw:px-3.5 tw:py-[7px] tw:font-sans tw:text-xs tw:font-semibold tw:text-[#1d4ed8] tw:lg:inline-flex">
-      <svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="M11 2 4 11h5l-1 7 7-9h-5l1-7Z" fill="#1d4ed8" /></svg>IC Market · Open Store
+      <Icon name="material-symbols:bolt" class="tw:size-[16px] tw:shrink-0" aria-hidden="true" />IC Market · Open Store
     </span>
     <h1 class="tw:mx-auto tw:mt-[22px] tw:mb-0 tw:max-w-[900px] tw:font-display tw:text-[length:clamp(40px,6vw,72px)] tw:leading-[1.04] tw:font-extrabold tw:tracking-[-0.03em] tw:text-hero tw:max-lg:mt-0 tw:max-lg:max-w-none tw:max-lg:text-[34px] tw:max-lg:leading-[1.05]">Aset Digital <em class="tw:bg-linear-90 tw:from-brand tw:to-[#7c5cff] tw:bg-clip-text tw:text-transparent tw:italic tw:max-lg:bg-none tw:max-lg:bg-clip-border tw:max-lg:text-brand">Premium</em>,<br class="tw:max-lg:hidden"> Harga Terjangkau.</h1>
 
@@ -87,12 +87,12 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
         href="#all-h"
         class="tw:inline-flex tw:items-center tw:gap-2.5 tw:rounded-full tw:bg-hero tw:px-7 tw:py-3.5 tw:font-sans tw:text-[14.5px] tw:font-semibold tw:text-white tw:no-underline tw:shadow-[0_4px_14px_rgba(15,23,42,0.15)] tw:max-lg:px-[18px] tw:max-lg:py-3 tw:max-lg:text-[13px] tw:max-lg:shadow-none"
         :class="focusRing"
-      >Eksplor Katalog<span class="tw:max-lg:hidden"> Hot</span> <svg class="tw:max-lg:hidden" viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
+      >Eksplor Katalog<span class="tw:max-lg:hidden"> Hot</span> <Icon name="material-symbols:arrow-forward" class="tw:size-[18px] tw:shrink-0 tw:max-lg:hidden" aria-hidden="true" /></a>
       <NuxtLink
         to="/seller/register"
-        class="tw:inline-flex tw:items-center tw:rounded-full tw:border tw:border-solid tw:border-[#e2e8f0] tw:bg-surface tw:px-7 tw:py-3.5 tw:font-sans tw:text-[14.5px] tw:font-semibold tw:text-hero tw:no-underline tw:max-lg:px-[18px] tw:max-lg:py-3 tw:max-lg:text-[13px]"
+        class="tw:inline-flex tw:items-center tw:gap-2 tw:rounded-full tw:border tw:border-solid tw:border-[#e2e8f0] tw:bg-surface tw:px-7 tw:py-3.5 tw:font-sans tw:text-[14.5px] tw:font-semibold tw:text-hero tw:no-underline tw:max-lg:px-[18px] tw:max-lg:py-3 tw:max-lg:text-[13px]"
         :class="focusRing"
-      >Buka Toko</NuxtLink>
+      ><Icon name="material-symbols:storefront-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Buka Toko</NuxtLink>
     </div>
   </section>
 </template>

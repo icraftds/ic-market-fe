@@ -10,7 +10,7 @@ defineProps({
   <nav :aria-label="label">
     <ol class="tw:m-0 tw:flex tw:list-none tw:flex-wrap tw:items-center tw:gap-1.5 tw:p-0 tw:text-sm">
       <li v-for="(it, i) in items" :key="i" class="tw:flex tw:items-center tw:gap-1.5">
-        <Icon v-if="i > 0" name="lucide:chevron-right" size="14" class="tw:text-muted" aria-hidden="true" />
+        <Icon v-if="i > 0" name="material-symbols:chevron-right" size="14" class="tw:text-muted" aria-hidden="true" />
         <span v-if="i === items.length - 1 || !it.href" aria-current="page" class="tw:font-medium tw:text-ink">{{ it.label }}</span>
         <a
           v-else

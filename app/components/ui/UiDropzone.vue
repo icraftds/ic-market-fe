@@ -65,18 +65,18 @@ const remove = (index) => { picked.value = picked.value.filter((_, i) => i !== i
       @dragleave.prevent="over = false"
       @drop.prevent="onDrop"
     >
-      <Icon name="lucide:upload-cloud" class="tw:size-8 tw:text-brand" aria-hidden="true" />
+      <Icon name="material-symbols:upload" class="tw:size-8 tw:text-brand" aria-hidden="true" />
       <span class="tw:text-sm tw:font-semibold tw:text-ink">{{ label }}</span>
       <span v-if="note" class="tw:text-[12.5px] tw:text-ink-2">{{ note }}</span>
       <input :id="id" ref="input" type="file" class="tw:sr-only" :accept="accept || undefined" :multiple="multiple" :disabled="disabled" @change="onChange">
     </label>
     <ul v-if="picked.length" class="tw:m-0 tw:flex tw:list-none tw:flex-col tw:gap-1.5 tw:p-0" aria-label="Berkas terpilih">
       <li v-for="(file, i) in picked" :key="file.name + i" class="tw:flex tw:min-h-11 tw:items-center tw:gap-2.5 tw:rounded-field tw:border tw:border-line tw:bg-surface tw:px-3 tw:text-sm">
-        <Icon name="lucide:file" class="tw:size-4 tw:shrink-0 tw:text-ink-2" aria-hidden="true" />
+        <Icon name="material-symbols:description-outline" class="tw:size-4 tw:shrink-0 tw:text-ink-2" aria-hidden="true" />
         <span class="tw:min-w-0 tw:flex-1 tw:truncate tw:font-medium tw:text-ink">{{ file.name }}</span>
         <span class="tw:font-mono tw:text-[11.5px] tw:text-muted">{{ fmt(file.size) }}</span>
         <button type="button" :aria-label="`Hapus ${file.name}`" class="tw:inline-flex tw:size-11 tw:cursor-pointer tw:items-center tw:justify-center tw:rounded-field tw:text-ink-2 tw:hover:text-bad tw:focus-visible:ring-4 tw:focus-visible:ring-brand/30 tw:focus-visible:outline-none" @click="remove(i)">
-          <Icon name="lucide:x" class="tw:size-4" aria-hidden="true" />
+          <Icon name="material-symbols:close" class="tw:size-4" aria-hidden="true" />
         </button>
       </li>
     </ul>

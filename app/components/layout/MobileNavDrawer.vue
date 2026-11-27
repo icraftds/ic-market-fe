@@ -95,9 +95,9 @@ const headCls = 'tw:mx-0 tw:mt-0 tw:mb-1 tw:px-3 tw:font-mono tw:text-[10.5px] t
         class="tw:m-0 tw:flex tw:min-h-11 tw:w-full tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:border tw:border-solid tw:border-line tw:bg-surface tw:font-sans tw:text-sm tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
         @click="auth.logout()"
       >
-        <Icon name="lucide:log-out" size="16" aria-hidden="true" />Keluar
+        <Icon name="material-symbols:logout" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Keluar
       </button>
-      <NuxtLink v-else to="/login" class="tw:flex tw:min-h-11 tw:items-center tw:justify-center tw:rounded-xl tw:bg-ink tw:font-sans tw:text-sm tw:font-bold tw:text-white tw:no-underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">Masuk</NuxtLink>
+      <NuxtLink v-else to="/login" class="tw:flex tw:min-h-11 tw:items-center tw:justify-center tw:rounded-xl tw:bg-ink tw:font-sans tw:text-sm tw:font-bold tw:text-white tw:no-underline tw:gap-2 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"><Icon name="material-symbols:login" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Masuk</NuxtLink>
     </template>
   </UiDrawer>
 </template>

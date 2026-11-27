@@ -23,8 +23,8 @@ function removeSelected() {
     </label>
     <button
       type="button"
-      class="tw:m-0 tw:min-h-10 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:px-2.5 tw:font-sans tw:text-[13.5px] tw:font-semibold tw:text-[#b91c1c] tw:hover:underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
+      class="tw:m-0 tw:inline-flex tw:min-h-10 tw:cursor-pointer tw:items-center tw:gap-2 tw:border-0 tw:bg-transparent tw:px-2.5 tw:font-sans tw:text-[13.5px] tw:font-semibold tw:text-[#b91c1c] tw:hover:underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
       @click="removeSelected"
-    >Hapus yang dipilih</button>
+    ><Icon name="material-symbols:delete-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Hapus yang dipilih</button>
   </div>
 </template>

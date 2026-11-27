@@ -36,12 +36,12 @@ function add() {
       class="tw:m-0 tw:grid tw:size-12 tw:cursor-pointer tw:place-items-center tw:rounded-xl tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-0 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
       @click="add"
     >
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 4h2.5l2 11h10l2-8H7" fill="none" stroke="#111110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><circle cx="9" cy="19" r="1.4" fill="#111110" /><circle cx="17" cy="19" r="1.4" fill="#111110" /></svg>
+      <Icon name="material-symbols:shopping-cart-outline" class="tw:size-5" aria-hidden="true" />
     </button>
     <NuxtLink
       :to="buyTo"
-      class="tw:flex tw:min-h-12 tw:items-center tw:rounded-xl tw:bg-ink tw:px-5 tw:font-sans tw:text-[14.5px] tw:font-bold tw:text-white tw:no-underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:ring-offset-2 tw:focus-visible:outline-none"
+      class="tw:flex tw:min-h-12 tw:items-center tw:gap-2 tw:rounded-xl tw:bg-ink tw:px-5 tw:font-sans tw:text-[14.5px] tw:font-bold tw:text-white tw:no-underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:ring-offset-2 tw:focus-visible:outline-none"
       @click="emit('buy')"
-    >Beli Sekarang</NuxtLink>
+    ><Icon name="material-symbols:shopping-bag-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Beli Sekarang</NuxtLink>
   </div>
 </template>

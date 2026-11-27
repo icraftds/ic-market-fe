@@ -16,7 +16,7 @@ function contact() {
 function share() {
   ui.push({ tone: 'info', title: 'Bagikan toko', message: 'Tautan toko siap dibagikan.' })
 }
-const actionBtn = 'tw:m-0 tw:min-h-11 tw:cursor-pointer tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-[18px] tw:font-sans tw:text-sm tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none'
+const actionBtn = 'tw:m-0 tw:inline-flex tw:min-h-11 tw:items-center tw:justify-center tw:gap-2 tw:cursor-pointer tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-[18px] tw:font-sans tw:text-sm tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none'
 </script>
 
 <template>
@@ -32,15 +32,15 @@ const actionBtn = 'tw:m-0 tw:min-h-11 tw:cursor-pointer tw:rounded-[10px] tw:bor
         <div class="tw:pt-3.5">
           <h1 class="tw:m-0 tw:flex tw:flex-wrap tw:items-center tw:gap-2.5 tw:font-display tw:text-[30px] tw:leading-[1.1] tw:font-extrabold tw:tracking-[-0.02em] tw:text-ink">{{ seller.name }}
             <span v-if="seller.verified" class="tw:inline-flex tw:items-center tw:gap-[5px] tw:rounded-full tw:border tw:border-solid tw:border-[#c4eed6] tw:bg-[#e8f8ee] tw:px-[9px] tw:py-1 tw:font-sans tw:text-xs tw:font-semibold tw:tracking-normal tw:text-[#15803d]">
-              <svg viewBox="0 0 20 20" width="12" height="12" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="#16a34a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>Terverifikasi
+              <Icon name="material-symbols:check" class="tw:size-4 tw:text-[#16a34a]" aria-hidden="true" />Terverifikasi
             </span>
           </h1>
           <p class="tw:mt-1.5 tw:mb-0 tw:font-sans tw:text-[14.5px] tw:font-normal tw:text-ink-2">{{ seller.tagline }} · {{ seller.domain }}</p>
         </div>
       </div>
       <div class="tw:flex tw:flex-wrap tw:gap-2.5">
-        <button type="button" :class="actionBtn" @click="contact">Hubungi seller</button>
-        <button type="button" :class="actionBtn" @click="share">Bagikan toko</button>
+        <button type="button" :class="actionBtn" @click="contact"><Icon name="material-symbols:chat-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Hubungi seller</button>
+        <button type="button" :class="actionBtn" @click="share"><Icon name="material-symbols:share" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Bagikan toko</button>
       </div>
     </div>
     <div class="tw:m-0 tw:grid tw:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] tw:border-0 tw:border-t tw:border-solid tw:border-[#efefea]">

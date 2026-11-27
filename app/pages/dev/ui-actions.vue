@@ -33,17 +33,23 @@ const makeHref = (n) => `#halaman-${n}`
         <UiButton v-for="v in variants" :key="v" :variant="v" :size="size">{{ v }}</UiButton>
       </div>
       <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-3">
-        <UiButton loading>Loading</UiButton>
+        <UiButton icon="material-symbols:save-outline" loading>Loading</UiButton>
         <UiButton variant="brand" loading>Memproses</UiButton>
+        <UiButton icon="material-symbols:delete-outline" variant="danger-soft">Hapus yang dipilih</UiButton>
+        <UiButton icon="material-symbols:save-outline" variant="brand">Simpan</UiButton>
+        <UiButton icon="material-symbols:add" variant="outline">Tambah</UiButton>
+        <UiButton icon="material-symbols:upload" variant="outline" size="sm">Unggah</UiButton>
+        <UiButton icon="material-symbols:shopping-cart-outline" size="lg">Tambah ke Keranjang</UiButton>
+        <UiButton variant="ghost" icon-right="material-symbols:arrow-forward">Lihat semua</UiButton>
         <UiButton disabled>Disabled</UiButton>
         <UiButton variant="outline" disabled>Disabled</UiButton>
-        <UiButton icon-only label="Tambah ke wishlist" variant="outline"><Icon name="lucide:heart" size="18" /></UiButton>
-        <UiButton icon-only label="Hapus" variant="danger-soft" size="lg"><Icon name="lucide:trash-2" size="18" /></UiButton>
-        <UiButton icon-only label="Menu" variant="ghost" size="sm"><Icon name="lucide:menu" size="16" /></UiButton>
+        <UiButton icon-only icon="material-symbols:favorite-outline" label="Tambah ke wishlist" variant="outline" />
+        <UiButton icon-only icon="material-symbols:delete-outline" label="Hapus" variant="danger-soft" size="lg" />
+        <UiButton icon-only icon="material-symbols:menu" label="Menu" variant="ghost" size="sm" />
         <UiButton href="#link" variant="outline">Sebagai &lt;a&gt;</UiButton>
         <UiButton to="/dev/ui" variant="brand">Sebagai NuxtLink</UiButton>
       </div>
-      <UiButton block size="lg">Beli Sekarang (block)</UiButton>
+      <UiButton block size="lg" icon="material-symbols:shopping-bag-outline">Beli Sekarang (block)</UiButton>
     </section>
 
     <section class="tw:flex tw:flex-col tw:gap-4 tw:rounded-card tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-5">

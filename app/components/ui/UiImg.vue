@@ -31,7 +31,7 @@ const ratios = { '4/3': 'tw:aspect-4/3', '1/1': 'tw:aspect-square', '16/9': 'tw:
       @error="failed = true"
     >
     <div v-else class="tw:flex tw:size-full tw:items-center tw:justify-center tw:bg-linear-to-br tw:from-brand-soft tw:to-subtle tw:text-muted" role="img" :aria-label="alt">
-      <Icon name="lucide:image" class="tw:size-8" aria-hidden="true" />
+      <Icon name="material-symbols:image-outline" class="tw:size-8" aria-hidden="true" />
     </div>
   </div>
 </template>

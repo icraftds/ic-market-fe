@@ -22,7 +22,7 @@ const tint = (p) => tintClass[String(p.tint || '').toLowerCase()] || tintClass['
   <section v-if="products.length" aria-labelledby="h-rel" class="tw:mt-14">
     <div class="tw:mb-4 tw:flex tw:items-baseline tw:justify-between tw:gap-4">
       <h2 id="h-rel" class="tw:m-0 tw:font-display tw:text-[22px] tw:font-bold tw:text-ink">Produk lain dari {{ sellerName }}</h2>
-      <NuxtLink :to="`/store/${sellerSlug}`" class="tw:font-sans tw:text-[13.5px] tw:font-semibold tw:whitespace-nowrap tw:text-brand tw:no-underline tw:hover:underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">Lihat semua →</NuxtLink>
+      <NuxtLink :to="`/store/${sellerSlug}`" class="tw:inline-flex tw:items-center tw:gap-2 tw:font-sans tw:text-[13.5px] tw:font-semibold tw:whitespace-nowrap tw:text-brand tw:no-underline tw:hover:underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">Lihat semua<Icon name="material-symbols:arrow-forward" class="tw:size-4 tw:shrink-0" aria-hidden="true" /></NuxtLink>
     </div>
     <div class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] tw:gap-4">
       <NuxtLink

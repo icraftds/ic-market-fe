@@ -26,7 +26,7 @@ const onFocusout = (e) => { if (!root.value?.contains(e.relatedTarget)) focused.
 <template>
   <div ref="root" class="tw:relative tw:w-full" @focusin="focused = true" @focusout="onFocusout" @keydown.esc="focused = false">
     <form role="search" class="tw:relative" @submit.prevent="emit('submit', modelValue)">
-      <Icon name="lucide:search" class="tw:pointer-events-none tw:absolute tw:top-1/2 tw:left-3.5 tw:size-4.5 tw:-translate-y-1/2 tw:text-ink-2" aria-hidden="true" />
+      <Icon name="material-symbols:search" class="tw:pointer-events-none tw:absolute tw:top-1/2 tw:left-3.5 tw:size-4.5 tw:-translate-y-1/2 tw:text-ink-2" aria-hidden="true" />
       <input
         :id="id"
         ref="input"
@@ -46,7 +46,7 @@ const onFocusout = (e) => { if (!root.value?.contains(e.relatedTarget)) focused.
         class="tw:absolute tw:top-1/2 tw:right-0 tw:inline-flex tw:size-11 tw:-translate-y-1/2 tw:cursor-pointer tw:items-center tw:justify-center tw:rounded-field tw:text-ink-2 tw:hover:text-ink tw:focus-visible:ring-4 tw:focus-visible:ring-brand/30 tw:focus-visible:outline-none"
         @click="clear"
       >
-        <Icon name="lucide:x" class="tw:size-4" aria-hidden="true" />
+        <Icon name="material-symbols:close" class="tw:size-4" aria-hidden="true" />
       </button>
     </form>
     <div v-if="$slots.suggestions && showList" class="tw:absolute tw:inset-x-0 tw:top-[calc(100%+6px)] tw:z-50 tw:max-h-72 tw:overflow-y-auto tw:rounded-card tw:border tw:border-line tw:bg-surface tw:p-1.5 tw:shadow-pop">

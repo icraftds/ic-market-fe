@@ -11,7 +11,7 @@ const items = computed(() => catalog.products.filter((p) => p.live && !p.extra).
         <h2 id="live-h" class="tw:m-0 tw:font-display tw:text-2xl tw:font-bold tw:tracking-[-0.01em]">Coba langsung sebelum beli</h2>
         <p class="tw:mx-0 tw:mt-1.5 tw:mb-0 tw:font-sans tw:text-sm tw:font-normal tw:text-muted">Produk ini punya live preview yang berjalan di browser.</p>
       </div>
-      <NuxtLink to="/kategori/semua" class="tw:font-sans tw:text-[13.5px] tw:font-semibold tw:text-brand tw:no-underline">Semua yang bisa dicoba →</NuxtLink>
+      <NuxtLink to="/kategori/semua" class="tw:inline-flex tw:items-center tw:gap-2 tw:font-sans tw:text-[13.5px] tw:font-semibold tw:text-brand tw:no-underline">Semua yang bisa dicoba <Icon name="material-symbols:arrow-forward" class="tw:size-[16px] tw:shrink-0" aria-hidden="true" /></NuxtLink>
     </div>
     <div class="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] tw:gap-4">
       <HomeLiveCard v-for="p in items" :key="p.id" :product="p" />

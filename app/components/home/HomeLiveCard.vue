@@ -30,7 +30,7 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
       <span class="tw:font-sans tw:text-[12.5px] tw:font-normal tw:text-muted">Creative Studio</span>
       <div class="tw:mt-auto tw:flex tw:gap-2 tw:pt-2">
         <NuxtLink :to="`${href}#live-preview`" class="tw:flex tw:flex-1 tw:items-center tw:justify-center tw:gap-[7px] tw:rounded-lg tw:border tw:border-solid tw:border-line tw:p-2.5 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink tw:no-underline tw:hover:bg-subtle" :class="focusRing">
-          <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10Z" fill="none" stroke="#111110" stroke-width="1.6" /><circle cx="10" cy="10" r="2.3" fill="none" stroke="#111110" stroke-width="1.6" /></svg>Coba
+          <Icon name="material-symbols:visibility-outline" class="tw:size-[16px] tw:shrink-0" aria-hidden="true" />Coba
         </NuxtLink>
         <span class="tw:flex tw:flex-1 tw:items-center tw:justify-center tw:gap-1.5 tw:rounded-lg tw:bg-ink tw:p-2.5 tw:font-sans tw:text-[13px] tw:font-bold tw:text-white">Z {{ number(product.price) }}</span>
       </div>

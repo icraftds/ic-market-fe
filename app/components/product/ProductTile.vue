@@ -96,7 +96,7 @@ const squareBtn = 'tw:relative tw:z-10 tw:m-0 tw:grid tw:size-11 tw:place-items-
             class="tw:text-ink tw:no-underline"
             :class="[squareBtn, focusRing]"
           >
-            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10Z" fill="none" stroke="#111110" stroke-width="1.6" /><circle cx="10" cy="10" r="2.3" fill="none" stroke="#111110" stroke-width="1.6" /></svg>
+            <Icon name="material-symbols:visibility-outline" class="tw:size-[18px]" aria-hidden="true" />
           </NuxtLink>
           <button
             type="button"
@@ -105,7 +105,7 @@ const squareBtn = 'tw:relative tw:z-10 tw:m-0 tw:grid tw:size-11 tw:place-items-
             :class="[squareBtn, focusRing]"
             @click="addToCart"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 4h2.5l2 11h10l2-8H7" fill="none" stroke="#111110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><circle cx="9" cy="19" r="1.4" fill="#111110" /><circle cx="17" cy="19" r="1.4" fill="#111110" /></svg>
+            <Icon name="material-symbols:shopping-cart-outline" class="tw:size-[18px]" aria-hidden="true" />
           </button>
         </span>
       </div>

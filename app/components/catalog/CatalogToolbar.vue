@@ -27,7 +27,7 @@ const options = [
         :aria-label="`Hapus filter ${c.label}`"
         class="tw:m-0 tw:grid tw:size-6 tw:cursor-pointer tw:place-items-center tw:rounded-full tw:border-0 tw:bg-[#e2e2dc] tw:p-0 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
         @click="emit('remove', c.key)"
-      ><svg viewBox="0 0 20 20" width="10" height="10" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="#111110" stroke-width="2" stroke-linecap="round" /></svg></button></span>
+      ><Icon name="material-symbols:close" class="tw:size-[14px] tw:shrink-0" aria-hidden="true" /></button></span>
     </div>
     <label class="tw:flex tw:items-center tw:gap-2 tw:font-sans tw:text-[13px] tw:font-medium tw:text-muted">Urutkan
       <select

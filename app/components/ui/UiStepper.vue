@@ -32,7 +32,7 @@ const status = i => (i < props.current ? 'done' : i === props.current ? 'current
               'tw:border tw:border-line tw:bg-surface tw:text-ink-2': status(i) === 'todo'
             }"
           >
-            <Icon v-if="status(i) === 'done'" name="lucide:check" class="tw:size-4" aria-hidden="true" />
+            <Icon v-if="status(i) === 'done'" name="material-symbols:check" class="tw:size-4" aria-hidden="true" />
             <template v-else>{{ i + 1 }}</template>
           </span>
           <span class="tw:hidden tw:min-w-0 tw:flex-col tw:sm:flex">

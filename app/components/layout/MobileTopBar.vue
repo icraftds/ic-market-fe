@@ -29,19 +29,19 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-3 tw:after:content-['
       class="tw:m-0 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-lg tw:leading-none tw:font-bold tw:text-ink tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
       :class="hit"
       @click="back"
-    ><span aria-hidden="true">‹</span></button>
+    ><Icon name="material-symbols:arrow-back" class="tw:size-5" aria-hidden="true" /></button>
     <span class="tw:flex-1 tw:font-sans" :class="variant === 'crumb' ? 'tw:text-sm tw:font-semibold tw:text-ink-2' : 'tw:text-base tw:font-bold tw:text-ink'">{{ title }}</span>
     <slot name="action">
       <NuxtLink v-if="action === 'search'" to="/cari" aria-label="Cari" class="tw:flex tw:text-ink" :class="hit">
-        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="#111110" stroke-width="1.7" /><path d="m13.5 13.5 3.5 3.5" stroke="#111110" stroke-width="1.7" stroke-linecap="round" /></svg>
+        <Icon name="material-symbols:search" class="tw:size-[18px]" aria-hidden="true" />
       </NuxtLink>
       <button
         v-else-if="action === 'share'"
         type="button"
-        class="tw:m-0 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
+        class="tw:m-0 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:flex tw:items-center tw:gap-1.5 tw:p-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
         :class="hit"
         @click="emit('share')"
-      >Bagikan</button>
+      ><Icon name="material-symbols:share" class="tw:size-4" aria-hidden="true" />Bagikan</button>
     </slot>
   </div>
 </template>

@@ -60,7 +60,7 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
     </div>
 
     <div class="tw:mt-[26px] tw:flex tw:justify-center tw:max-lg:hidden">
-      <NuxtLink to="/kategori/semua" class="tw:inline-flex tw:items-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:border-ink tw:px-[22px] tw:py-[13px] tw:font-sans tw:text-sm tw:font-semibold tw:text-ink tw:no-underline tw:hover:bg-subtle" :class="focusRing">Lihat semua {{ total }} produk di katalog →</NuxtLink>
+      <NuxtLink to="/kategori/semua" class="tw:inline-flex tw:items-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:border-ink tw:px-[22px] tw:py-[13px] tw:font-sans tw:text-sm tw:font-semibold tw:text-ink tw:no-underline tw:hover:bg-subtle" :class="focusRing">Lihat semua {{ total }} produk di katalog <Icon name="material-symbols:arrow-forward" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" /></NuxtLink>
     </div>
   </section>
 </template>

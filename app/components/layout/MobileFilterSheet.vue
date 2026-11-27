@@ -86,7 +86,7 @@ const focus = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visi
           <span aria-hidden="true" class="tw:h-1 tw:w-10 tw:self-center tw:rounded-full tw:bg-[#d6d6cf]" />
           <div class="tw:flex tw:items-center tw:justify-between">
             <h2 :id="titleId" class="tw:m-0 tw:font-display tw:text-lg tw:font-extrabold tw:text-ink">Filter</h2>
-            <button type="button" class="tw:m-0 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-brand" :class="[hit, focus]" @click="reset">Reset</button>
+            <button type="button" class="tw:m-0 tw:flex tw:cursor-pointer tw:items-center tw:gap-1.5 tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-brand" :class="[hit, focus]" @click="reset"><Icon name="material-symbols:refresh" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Reset</button>
           </div>
 
           <div role="group" aria-labelledby="mfs-harga">
@@ -140,10 +140,10 @@ const focus = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visi
 
           <button
             type="button"
-            class="tw:m-0 tw:flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:rounded-xl tw:border-0 tw:bg-ink tw:font-sans tw:text-[14.5px] tw:font-bold tw:text-white"
+            class="tw:m-0 tw:flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:border-0 tw:bg-ink tw:font-sans tw:text-[14.5px] tw:font-bold tw:text-white"
             :class="focus"
             @click="apply"
-          >Tampilkan {{ resultCount }} produk</button>
+          ><Icon name="material-symbols:check" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Tampilkan {{ resultCount }} produk</button>
         </div>
       </div>
     </Transition>

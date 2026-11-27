@@ -97,7 +97,7 @@ defineExpose({ items })
         @click="emit('select')"
       >
         <span aria-hidden="true" class="tw:grid tw:size-10 tw:shrink-0 tw:place-items-center tw:rounded-lg tw:bg-subtle">
-          <Icon :name="c.icon || 'lucide:layout-grid'" class="tw:size-4.5 tw:text-ink-2" />
+          <Icon :name="c.icon || 'material-symbols:grid-view'" class="tw:size-4.5 tw:text-ink-2" />
         </span>
         <span class="tw:flex-1 tw:text-[13.5px] tw:font-semibold">{{ hl(c.name).pre }}<mark v-if="hl(c.name).hit" class="tw:rounded-[3px] tw:bg-[#fff1b8] tw:px-px tw:text-inherit">{{ hl(c.name).hit }}</mark>{{ hl(c.name).post }}</span>
         <span v-if="c.count !== undefined" class="tw:font-mono tw:text-[11px] tw:font-medium tw:text-ink-2">{{ c.count }}</span>
@@ -133,7 +133,7 @@ defineExpose({ items })
       :class="[rowCls, activeIndex === idx('all') ? 'tw:bg-subtle' : '']"
       @click="emit('select')"
     >
-      Lihat semua hasil untuk “{{ term }}” →
+      Lihat semua hasil untuk “{{ term }}”<Icon name="material-symbols:arrow-forward" class="tw:ml-auto tw:size-4 tw:shrink-0" aria-hidden="true" />
     </NuxtLink>
   </div>
 </template>

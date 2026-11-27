@@ -25,9 +25,9 @@ const btn = 'tw:min-h-10 tw:rounded-[10px] tw:border tw:border-solid tw:border-l
   <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-2.5 tw:rounded-[14px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-4 tw:py-3.5">
     <span class="tw:font-sans tw:text-[13.5px] tw:font-semibold">Bagikan</span>
     <span class="tw:flex tw:gap-2">
-      <button type="button" class="tw:m-0 tw:cursor-pointer" :class="btn" @click="copy">Salin link</button>
-      <a :href="wa" target="_blank" rel="noopener noreferrer" class="tw:flex tw:items-center tw:no-underline" :class="btn">WhatsApp</a>
-      <a :href="threads" target="_blank" rel="noopener noreferrer" class="tw:flex tw:items-center tw:no-underline" :class="btn">Threads</a>
+      <button type="button" class="tw:m-0 tw:flex tw:cursor-pointer tw:items-center tw:gap-2" :class="btn" @click="copy"><Icon name="material-symbols:content-copy" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Salin link</button>
+      <a :href="wa" target="_blank" rel="noopener noreferrer" class="tw:flex tw:items-center tw:gap-2 tw:no-underline" :class="btn"><Icon name="material-symbols:chat-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />WhatsApp</a>
+      <a :href="threads" target="_blank" rel="noopener noreferrer" class="tw:flex tw:items-center tw:gap-2 tw:no-underline" :class="btn"><Icon name="material-symbols:open-in-new" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Threads</a>
     </span>
   </div>
 </template>

@@ -20,7 +20,7 @@ const letter = computed(() => props.initial || name.value.charAt(0).toUpperCase(
     </span>
     <NuxtLink
       :to="addTo"
-      class="tw:relative tw:rounded-[9px] tw:bg-seller tw:px-3 tw:py-2 tw:font-sans tw:text-[12.5px] tw:font-bold tw:text-white tw:no-underline tw:after:absolute tw:after:-inset-y-1.5 tw:after:inset-x-0 tw:after:content-[''] tw:focus-visible:ring-2 tw:focus-visible:ring-white tw:focus-visible:outline-none"
-    >+ Produk</NuxtLink>
+      class="tw:relative tw:flex tw:items-center tw:gap-1.5 tw:rounded-[9px] tw:bg-seller tw:px-3 tw:py-2 tw:font-sans tw:text-[12.5px] tw:font-bold tw:text-white tw:no-underline tw:after:absolute tw:after:-inset-y-1.5 tw:after:inset-x-0 tw:after:content-[''] tw:focus-visible:ring-2 tw:focus-visible:ring-white tw:focus-visible:outline-none"
+    ><Icon name="material-symbols:add" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Produk</NuxtLink>
   </div>
 </template>

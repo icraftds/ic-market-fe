@@ -1,7 +1,7 @@
 <script setup>
 /** UiEmptyState: icon, title, text; slot default = teks tambahan, slot actions = tombol. */
 defineProps({
-  icon: { type: String, default: 'lucide:inbox' },
+  icon: { type: String, default: 'material-symbols:inbox' },
   title: { type: String, required: true },
   text: { type: String, default: '' }
 })

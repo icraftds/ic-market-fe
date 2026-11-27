@@ -13,8 +13,8 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-white tw:focus-
         <h2 id="seller-h" class="tw:mx-0 tw:mt-3 tw:mb-0 tw:font-display tw:text-[34px] tw:leading-[1.12] tw:font-extrabold tw:tracking-[-0.02em] tw:max-lg:text-[26px]">Punya template atau source code? Jual di IC Market.</h2>
         <p class="tw:mx-0 tw:mt-3.5 tw:mb-0 tw:max-w-[460px] tw:font-sans tw:text-[15px] tw:leading-[1.6] tw:font-normal tw:text-[#cbd5e1]">Buka toko dalam beberapa langkah. Unggah ZIP, kami build live preview-nya, dan pembayaran masuk ke saldo toko Anda.</p>
         <div class="tw:mt-6 tw:flex tw:flex-wrap tw:gap-3">
-          <NuxtLink to="/seller/register" class="tw:rounded-[10px] tw:bg-seller tw:px-[22px] tw:py-3.5 tw:font-sans tw:text-sm tw:font-bold tw:text-white tw:no-underline" :class="focusRing">Buka Toko Gratis</NuxtLink>
-          <NuxtLink to="/panduan" class="tw:rounded-[10px] tw:border tw:border-solid tw:border-[#334155] tw:px-[22px] tw:py-3.5 tw:font-sans tw:text-sm tw:font-semibold tw:text-white tw:no-underline" :class="focusRing">Pelajari cara kerjanya</NuxtLink>
+          <NuxtLink to="/seller/register" class="tw:inline-flex tw:items-center tw:gap-2 tw:rounded-[10px] tw:bg-seller tw:px-[22px] tw:py-3.5 tw:font-sans tw:text-sm tw:font-bold tw:text-white tw:no-underline" :class="focusRing"><Icon name="material-symbols:storefront-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Buka Toko Gratis</NuxtLink>
+          <NuxtLink to="/panduan" class="tw:inline-flex tw:items-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:border-[#334155] tw:px-[22px] tw:py-3.5 tw:font-sans tw:text-sm tw:font-semibold tw:text-white tw:no-underline" :class="focusRing">Pelajari cara kerjanya <Icon name="material-symbols:arrow-forward" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" /></NuxtLink>
         </div>
       </div>
       <ol class="tw:m-0 tw:flex tw:min-w-0 tw:flex-[1_1_380px] tw:list-none tw:flex-col tw:gap-3 tw:p-0">

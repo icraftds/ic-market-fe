@@ -11,7 +11,7 @@ defineEmits(['pay'])
         <span class="tw:grid tw:size-6 tw:place-items-center tw:rounded-[7px] tw:bg-ink tw:font-display tw:text-xs tw:font-extrabold tw:text-coin">Z</span>{{ total }}
       </span>
     </div>
-    <button type="button" :disabled="disabled" class="tw:m-0 tw:min-h-[52px] tw:cursor-pointer tw:rounded-xl tw:border-0 tw:bg-ink tw:font-sans tw:text-[15px] tw:font-bold tw:text-white tw:disabled:cursor-not-allowed tw:disabled:opacity-50" @click="$emit('pay')">Bayar {{ total }} iCoin</button>
+    <button type="button" :disabled="disabled" class="tw:m-0 tw:inline-flex tw:min-h-[52px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-2 tw:rounded-xl tw:border-0 tw:bg-ink tw:font-sans tw:text-[15px] tw:font-bold tw:text-white tw:disabled:cursor-not-allowed tw:disabled:opacity-50" @click="$emit('pay')"><Icon name="material-symbols:payments-outline" class="tw:size-5 tw:shrink-0" aria-hidden="true" />Bayar {{ total }} iCoin</button>
     <p class="tw:m-0 tw:text-center tw:text-xs tw:leading-normal tw:text-ink-2">Dengan membayar, Anda setuju dengan lisensi produk dan Kebijakan Layanan IC Market.</p>
   </div>
 </template>

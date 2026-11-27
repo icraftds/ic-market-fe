@@ -48,9 +48,9 @@ function go(e, n) {
     <ul class="tw:m-0 tw:flex tw:list-none tw:flex-wrap tw:items-center tw:gap-1.5 tw:p-0">
       <li>
         <a v-if="page > 1" :href="makeHref(page - 1)" rel="prev" aria-label="Halaman sebelumnya" :class="[base, idle]" @click="go($event, page - 1)">
-          <Icon name="lucide:chevron-left" size="16" aria-hidden="true" />
+          <Icon name="material-symbols:chevron-left" size="16" aria-hidden="true" />
         </a>
-        <span v-else aria-hidden="true" :class="[base, off]"><Icon name="lucide:chevron-left" size="16" /></span>
+        <span v-else aria-hidden="true" :class="[base, off]"><Icon name="material-symbols:chevron-left" size="16" /></span>
       </li>
       <li v-for="it in items" :key="it.type === 'gap' ? it.key : it.n">
         <span v-if="it.type === 'gap'" aria-hidden="true" class="tw:inline-flex tw:min-h-11 tw:min-w-8 tw:items-center tw:justify-center tw:text-muted">…</span>
@@ -65,9 +65,9 @@ function go(e, n) {
       </li>
       <li>
         <a v-if="page < totalPages" :href="makeHref(page + 1)" rel="next" aria-label="Halaman berikutnya" :class="[base, idle]" @click="go($event, page + 1)">
-          <Icon name="lucide:chevron-right" size="16" aria-hidden="true" />
+          <Icon name="material-symbols:chevron-right" size="16" aria-hidden="true" />
         </a>
-        <span v-else aria-hidden="true" :class="[base, off]"><Icon name="lucide:chevron-right" size="16" /></span>
+        <span v-else aria-hidden="true" :class="[base, off]"><Icon name="material-symbols:chevron-right" size="16" /></span>
       </li>
     </ul>
   </nav>

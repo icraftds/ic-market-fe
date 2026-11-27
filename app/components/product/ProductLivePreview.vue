@@ -36,7 +36,7 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
     <div v-if="phase === 'static'" :class="panel" class="tw:bg-linear-160 tw:from-[#e6ebf5] tw:to-bg tw:text-ink">
       <p class="tw:m-0 tw:font-display tw:text-xl tw:leading-[1.3] tw:font-bold">Buka preview</p>
       <p class="tw:m-0 tw:max-w-[360px] tw:font-sans tw:text-sm tw:leading-[1.6] tw:text-ink-2">Template HTML atau SPA. Langsung tampil dari S3, tidak perlu menunggu.</p>
-      <button type="button" :class="darkBtn" class="tw:mt-2" @click="emit('start')">Buka Live Preview</button>
+      <button type="button" :class="darkBtn" class="tw:mt-2" @click="emit('start')"><Icon name="material-symbols:play-arrow" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Buka Live Preview</button>
     </div>
 
     <!-- belum dimulai (tidak ada server yang menyala) -->
@@ -45,7 +45,7 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
         <p class="tw:m-0 tw:font-display tw:text-xl tw:leading-[1.3] tw:font-bold tw:text-ink">Coba aplikasi ini langsung di browser</p>
         <p class="tw:mx-0 tw:mt-2 tw:mb-0 tw:font-sans tw:text-sm tw:leading-[1.6] tw:font-normal tw:text-ink-2">Server preview dinyalakan khusus untuk Anda. Datanya contoh dan direset setelah sesi selesai.</p>
         <button type="button" :class="darkBtn" class="tw:mt-[18px]" @click="emit('start')">
-          <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M6 4l10 6-10 6V4Z" fill="#fff" /></svg>Mulai Live Preview
+          <Icon name="material-symbols:play-arrow" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Mulai Live Preview
         </button>
         <div class="tw:mt-3.5 tw:flex tw:flex-wrap tw:justify-center tw:gap-3.5 tw:font-sans tw:text-xs tw:font-medium tw:text-ink-2">
           <span>Siap dalam ±10 detik</span><span aria-hidden="true">·</span><span>Sesi 15 menit</span><span aria-hidden="true">·</span><span>Node.js</span>
@@ -58,7 +58,7 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
       <span aria-hidden="true" class="tw:size-11 tw:rounded-full tw:border-[3px] tw:border-solid tw:border-[#334155] tw:border-t-[#60a5fa] tw:motion-safe:animate-spin" />
       <span class="tw:font-display tw:text-xl tw:font-bold">Menyiapkan preview…</span>
       <ol class="tw:m-0 tw:flex tw:list-none tw:flex-col tw:gap-2 tw:p-0 tw:text-left tw:font-sans tw:text-[13.5px] tw:font-medium">
-        <li class="tw:flex tw:items-center tw:gap-2.5 tw:text-[#86efac]"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="#86efac" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>Sesi dibuat</li>
+        <li class="tw:flex tw:items-center tw:gap-2.5 tw:text-[#86efac]"><Icon name="material-symbols:check" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Sesi dibuat</li>
         <li class="tw:flex tw:items-center tw:gap-2.5 tw:text-white"><span aria-hidden="true" class="tw:size-3.5 tw:rounded-full tw:border-2 tw:border-solid tw:border-[#60a5fa]" />Menyalakan server aplikasi</li>
         <li class="tw:flex tw:items-center tw:gap-2.5 tw:text-[#94a3b8]"><span aria-hidden="true" class="tw:size-3.5 tw:rounded-full tw:border-2 tw:border-solid tw:border-[#475569]" />Memeriksa kesiapan</li>
       </ol>
@@ -83,7 +83,7 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
         <span class="tw:flex tw:items-center tw:gap-2"><span aria-hidden="true" class="tw:size-2 tw:rounded-full tw:bg-ok" />Preview aktif<template v-if="timed"> · sisa sesi <b class="tw:font-mono tw:text-ink">{{ time }}</b></template></span>
         <span class="tw:flex tw:items-center tw:gap-3">
           <span class="tw:font-mono tw:text-[11.5px] tw:font-medium tw:text-muted">{{ deviceLabel }}</span>
-          <button type="button" class="tw:m-0 tw:min-h-9 tw:cursor-pointer tw:rounded-[9px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:py-0 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="emit('stop')">Akhiri sesi</button>
+          <button type="button" class="tw:m-0 tw:inline-flex tw:min-h-9 tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-[9px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:py-0 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="emit('stop')"><Icon name="material-symbols:stop" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Akhiri sesi</button>
         </span>
       </div>
     </template>
@@ -92,14 +92,14 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
     <div v-else-if="phase === 'full'" :class="panel" class="tw:bg-[#fff7ed] tw:text-ink">
       <p class="tw:m-0 tw:font-display tw:text-xl tw:leading-[1.3] tw:font-bold">Preview sedang ramai</p>
       <p class="tw:m-0 tw:max-w-[360px] tw:font-sans tw:text-sm tw:leading-[1.6] tw:text-ink-2">Posisi Anda: {{ queue }} dalam antrean. Halaman ini akan mulai otomatis.</p>
-      <button type="button" :class="darkBtn" class="tw:mt-2" @click="emit('images')">Lihat gambar dulu</button>
+      <button type="button" :class="darkBtn" class="tw:mt-2" @click="emit('images')"><Icon name="material-symbols:image-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Lihat gambar dulu</button>
     </div>
 
     <!-- sesi berakhir -->
     <div v-else :class="panel" class="tw:bg-linear-160 tw:from-[#e8eaf3] tw:to-bg tw:text-ink">
       <p class="tw:m-0 tw:font-display tw:text-xl tw:leading-[1.3] tw:font-bold">Sesi preview selesai</p>
       <p class="tw:m-0 tw:max-w-[360px] tw:font-sans tw:text-sm tw:leading-[1.6] tw:text-ink-2">Dihentikan karena tidak aktif. Data contoh sudah direset.</p>
-      <button type="button" :class="darkBtn" class="tw:mt-2" @click="emit('start')">Mulai lagi</button>
+      <button type="button" :class="darkBtn" class="tw:mt-2" @click="emit('start')"><Icon name="material-symbols:refresh" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Mulai lagi</button>
     </div>
   </div>
 </template>

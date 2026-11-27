@@ -17,6 +17,6 @@ defineProps({
       <span class="tw:font-sans tw:text-base tw:font-bold">{{ seller.name }}</span>
       <span class="tw:font-sans tw:text-[13px] tw:font-medium tw:text-ink-2">{{ count }} produk cocok dengan “{{ q }}” · {{ seller.products }} produk total</span>
     </span>
-    <span class="tw:font-sans tw:text-[13.5px] tw:font-semibold tw:whitespace-nowrap tw:text-brand">Kunjungi →</span>
+    <span class="tw:inline-flex tw:items-center tw:gap-2 tw:font-sans tw:text-[13.5px] tw:font-semibold tw:whitespace-nowrap tw:text-brand">Kunjungi <Icon name="material-symbols:arrow-forward" class="tw:size-[16px] tw:shrink-0" aria-hidden="true" /></span>
   </NuxtLink>
 </template>

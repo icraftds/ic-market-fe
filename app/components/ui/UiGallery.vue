@@ -36,10 +36,10 @@ const btn = 'tw:absolute tw:top-1/2 tw:flex tw:size-11 tw:-translate-y-1/2 tw:cu
       <UiImg :src="items[current]?.src" :alt="items[current]?.alt || alt" ratio="4/3" eager />
       <template v-if="items.length > 1">
         <button type="button" :class="btn" class="tw:left-3" aria-label="Gambar sebelumnya" @click="go(current - 1)">
-          <Icon name="lucide:chevron-left" class="tw:size-5" aria-hidden="true" />
+          <Icon name="material-symbols:chevron-left" class="tw:size-5" aria-hidden="true" />
         </button>
         <button type="button" :class="btn" class="tw:right-3" aria-label="Gambar berikutnya" @click="go(current + 1)">
-          <Icon name="lucide:chevron-right" class="tw:size-5" aria-hidden="true" />
+          <Icon name="material-symbols:chevron-right" class="tw:size-5" aria-hidden="true" />
         </button>
         <span class="tw:absolute tw:right-3 tw:bottom-3 tw:rounded-chip tw:bg-hero/80 tw:px-2 tw:py-1 tw:text-xs tw:font-semibold tw:text-white" aria-live="polite">{{ current + 1 }} / {{ items.length }}</span>
       </template>

@@ -30,7 +30,7 @@ const storeInitial = computed(() => (storeName.value.trim()[0] || 'C').toUpperCa
         <span class="tw:font-sans tw:text-[13.5px] tw:font-bold">{{ storeName }}</span>
         <span class="tw:font-sans tw:text-[11.5px] tw:font-medium tw:text-[#86efac]">Disetujui</span>
       </span>
-      <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="m6 8 4 4 4-4" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <Icon name="material-symbols:expand-more" class="tw:size-[18px] tw:text-[#94a3b8]" aria-hidden="true" />
     </button>
 
     <nav aria-label="Menu Seller Center" class="tw:flex tw:flex-col tw:gap-[14px]">
@@ -46,7 +46,7 @@ const storeInitial = computed(() => (storeName.value.trim()[0] || 'C').toUpperCa
             ? 'tw:bg-side-active tw:font-semibold tw:text-white tw:shadow-[inset_3px_0_0_#3b82f6]'
             : 'tw:bg-transparent tw:font-medium tw:text-[#cbd5e1]'"
         >
-          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path :d="it.icon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <Icon :name="it.icon" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />
           <span class="tw:flex-1">{{ it.label }}</span>
           <span v-if="it.badge" class="tw:rounded-full tw:bg-seller tw:px-[7px] tw:py-0.5 tw:font-sans tw:text-[10.5px] tw:font-bold tw:text-white">{{ it.badge }}</span>
         </NuxtLink>
@@ -56,6 +56,6 @@ const storeInitial = computed(() => (storeName.value.trim()[0] || 'C').toUpperCa
     <NuxtLink
       :to="`/store/${storeSlug}`"
       class="tw:mt-auto tw:flex tw:min-h-11 tw:items-center tw:gap-2 tw:px-[10px] tw:font-sans tw:text-[13px] tw:font-semibold tw:text-[#cbd5e1] tw:no-underline tw:focus-visible:ring-[3px] tw:focus-visible:ring-[#3b82f6]/60 tw:focus-visible:outline-none"
-    >↗ Lihat halaman toko</NuxtLink>
+    ><Icon name="material-symbols:open-in-new" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Lihat halaman toko</NuxtLink>
   </aside>
 </template>

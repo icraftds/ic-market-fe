@@ -9,12 +9,12 @@ export const cartTints = ['#ece8f5', '#f3ece4', '#e4f0ec']
 export const catalogTints = ['#e6ebf5', '#ece8f5', '#e4f0ec', '#f3ece4']
 
 export const categories = [
-  { slug: 'software', name: 'Software', title: 'Software & source code aplikasi web', icon: 'lucide:code-xml', iconPath: 'M8 9l-3 3 3 3M16 9l3 3-3 3M13.5 6l-3 12', tint: '#e6ebf5', count: 5 },
-  { slug: 'template', name: 'Template', title: 'Template website', icon: 'lucide:layout-template', iconPath: 'M4 5h16v14H4zM4 9h16M9 9v10', tint: '#ece8f5', count: 5 },
-  { slug: 'web-template', name: 'Web Template', title: 'Web template', icon: 'lucide:globe', iconPath: 'M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18', tint: '#e4f0ec', count: 1 },
-  { slug: 'ui-kit', name: 'UI Kit', title: 'UI Kit', icon: 'lucide:layout-grid', iconPath: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', tint: '#f3ece4', count: 1 },
-  { slug: 'grafis', name: 'Grafis', title: 'Grafis', icon: 'lucide:image', iconPath: 'M4 18l5-6 4 4 3-3 4 5M4 5h16v14H4z', tint: '#e8eaf3', count: 1 },
-  { slug: 'audio', name: 'Audio', title: 'Audio', icon: 'lucide:music', iconPath: 'M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0M19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0', tint: '#efe8e4', count: 1 }
+  { slug: 'software', name: 'Software', title: 'Software & source code aplikasi web', icon: 'material-symbols:code', iconPath: 'M8 9l-3 3 3 3M16 9l3 3-3 3M13.5 6l-3 12', tint: '#e6ebf5', count: 5 },
+  { slug: 'template', name: 'Template', title: 'Template website', icon: 'material-symbols:dashboard-outline', iconPath: 'M4 5h16v14H4zM4 9h16M9 9v10', tint: '#ece8f5', count: 5 },
+  { slug: 'web-template', name: 'Web Template', title: 'Web template', icon: 'material-symbols:public', iconPath: 'M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18', tint: '#e4f0ec', count: 1 },
+  { slug: 'ui-kit', name: 'UI Kit', title: 'UI Kit', icon: 'material-symbols:grid-view-outline', iconPath: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', tint: '#f3ece4', count: 1 },
+  { slug: 'grafis', name: 'Grafis', title: 'Grafis', icon: 'material-symbols:image-outline', iconPath: 'M4 18l5-6 4 4 3-3 4 5M4 5h16v14H4z', tint: '#e8eaf3', count: 1 },
+  { slug: 'audio', name: 'Audio', title: 'Audio', icon: 'material-symbols:music-note', iconPath: 'M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0M19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0', tint: '#efe8e4', count: 1 }
 ]
 
 // Toko tunggal di papan desain: 14 produk aktif, 6 bisa dicoba live. 12 produk berasal dari papan, 2 template tambahan (extra: true) agar hitungan 'Template 5' dan total 14 konsisten.

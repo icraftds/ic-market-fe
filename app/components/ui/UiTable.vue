@@ -94,10 +94,7 @@ const colAttrs = column => (column.width ? { style: { width: column.width } } : 
                 @click="toggleSort(column)"
               >
                 <slot :name="`head-${column.key}`" :column="column">{{ column.label }}</slot>
-                <svg viewBox="0 0 12 14" width="10" height="12" aria-hidden="true" class="tw:shrink-0" :class="sort?.key === column.key ? 'tw:text-brand' : 'tw:text-slate-300'">
-                  <path d="M6 1 9.5 5H2.5L6 1Z" :fill="sort?.key === column.key && sort.dir === 'asc' ? 'currentColor' : '#cbd5e1'" />
-                  <path d="M6 13 2.5 9h7L6 13Z" :fill="sort?.key === column.key && sort.dir === 'desc' ? 'currentColor' : '#cbd5e1'" />
-                </svg>
+                <Icon :name="sort?.key === column.key ? (sort.dir === 'asc' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') : 'material-symbols:unfold-more'" class="tw:size-3.5 tw:shrink-0" :class="sort?.key === column.key ? 'tw:text-brand' : 'tw:text-slate-300'" aria-hidden="true" />
               </button>
               <slot v-else :name="`head-${column.key}`" :column="column">{{ column.label }}</slot>
             </th>

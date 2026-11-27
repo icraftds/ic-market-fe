@@ -19,7 +19,7 @@ const tintOf = (i) => catalogTints[i % catalogTints.length]
   <div>
     <UiEmptyState v-if="!items.length" class="tw:mt-4" title="Tidak ada produk yang cocok" text="Coba ubah atau hapus sebagian filter.">
       <template #actions>
-        <UiButton variant="outline" @click="emit('reset')">Reset filter</UiButton>
+        <UiButton variant="outline" icon="material-symbols:refresh" @click="emit('reset')">Reset filter</UiButton>
       </template>
     </UiEmptyState>
 

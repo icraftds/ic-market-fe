@@ -77,7 +77,7 @@ onBeforeUnmount(() => { if (import.meta.client) document.body.style.overflow = '
               class="tw:inline-flex tw:size-11 tw:cursor-pointer tw:items-center tw:justify-center tw:rounded-field tw:border-0 tw:bg-transparent tw:text-ink-2 tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
               @click="close"
             >
-              <Icon name="lucide:x" size="20" aria-hidden="true" />
+              <Icon name="material-symbols:close" size="20" aria-hidden="true" />
             </button>
           </header>
           <div class="tw:flex-1 tw:overflow-y-auto tw:p-5"><slot /></div>

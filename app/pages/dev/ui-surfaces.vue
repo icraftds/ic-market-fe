@@ -25,7 +25,7 @@ const crumbs = [{ label: 'Beranda', href: '/' }, { label: 'Kategori', href: '/ka
       <h2 class="tw:m-0 tw:text-sm tw:font-bold tw:text-ink-2">UiAlert</h2>
       <UiAlert tone="info" title="Info">Pesanan sedang diproses.</UiAlert>
       <UiAlert tone="success" title="Berhasil">Produk disimpan.</UiAlert>
-      <UiAlert tone="warn" title="Perhatian" dismissible>Stok hampir habis.<template #action><UiButton size="sm" variant="outline">Tambah stok</UiButton></template></UiAlert>
+      <UiAlert tone="warn" title="Perhatian" dismissible>Stok hampir habis.<template #action><UiButton size="sm" variant="outline" icon="material-symbols:add">Tambah stok</UiButton></template></UiAlert>
       <UiAlert tone="danger" title="Gagal">Pembayaran ditolak.</UiAlert>
     </section>
 
@@ -65,32 +65,32 @@ const crumbs = [{ label: 'Beranda', href: '/' }, { label: 'Kategori', href: '/ka
     <section class="tw:flex tw:flex-col tw:gap-3">
       <h2 class="tw:m-0 tw:text-sm tw:font-bold tw:text-ink-2">UiStatCard</h2>
       <div class="tw:grid tw:gap-3 tw:sm:grid-cols-2 tw:lg:grid-cols-4">
-        <UiStatCard icon="lucide:shopping-bag" label="Pesanan" value="128" note="+12% minggu ini" />
-        <UiStatCard icon="lucide:wallet" tone="ok" label="Pendapatan" value="Rp 4,2 jt" note="Bulan ini" />
-        <UiStatCard icon="lucide:clock" tone="warn" label="Menunggu" value="7" />
-        <UiStatCard icon="lucide:circle-x" tone="bad" label="Dibatalkan" value="3" note="Perlu ditinjau" />
+        <UiStatCard icon="material-symbols:shopping-bag-outline" label="Pesanan" value="128" note="+12% minggu ini" />
+        <UiStatCard icon="material-symbols:account-balance-wallet-outline" tone="ok" label="Pendapatan" value="Rp 4,2 jt" note="Bulan ini" />
+        <UiStatCard icon="material-symbols:schedule" tone="warn" label="Menunggu" value="7" />
+        <UiStatCard icon="material-symbols:error-outline" tone="bad" label="Dibatalkan" value="3" note="Perlu ditinjau" />
       </div>
     </section>
 
     <section class="tw:flex tw:flex-col tw:gap-3">
       <h2 class="tw:m-0 tw:text-sm tw:font-bold tw:text-ink-2">UiEmptyState</h2>
       <UiEmptyState title="Belum ada pesanan" text="Pesanan baru akan muncul di sini.">
-        <template #actions><UiButton>Lihat produk</UiButton><UiButton variant="outline">Muat ulang</UiButton></template>
+        <template #actions><UiButton icon="material-symbols:storefront-outline">Lihat produk</UiButton><UiButton variant="outline" icon="material-symbols:refresh">Muat ulang</UiButton></template>
       </UiEmptyState>
     </section>
 
     <section class="tw:flex tw:flex-col tw:gap-3">
       <h2 class="tw:m-0 tw:text-sm tw:font-bold tw:text-ink-2">UiDrawer</h2>
       <div class="tw:flex tw:gap-2">
-        <UiButton variant="outline" @click="left = true">Menu (kiri)</UiButton>
-        <UiButton variant="outline" @click="right = true">Filter (kanan)</UiButton>
+        <UiButton variant="outline" icon="material-symbols:menu" @click="left = true">Menu (kiri)</UiButton>
+        <UiButton variant="outline" icon="material-symbols:filter-list" @click="right = true">Filter (kanan)</UiButton>
       </div>
       <UiDrawer v-model="left" side="left" title="Menu">
         <nav class="tw:flex tw:flex-col tw:gap-1"><a href="/" class="tw:rounded-field tw:p-3 tw:text-ink tw:no-underline tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">Beranda</a><a href="/orders" class="tw:rounded-field tw:p-3 tw:text-ink tw:no-underline tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none">Pesanan</a></nav>
       </UiDrawer>
       <UiDrawer v-model="right" title="Filter">
         <p class="tw:m-0 tw:text-sm tw:text-ink-2">Isi filter di sini.</p>
-        <template #footer><UiButton block @click="right = false">Terapkan</UiButton></template>
+        <template #footer><UiButton block icon="material-symbols:check" @click="right = false">Terapkan</UiButton></template>
       </UiDrawer>
     </section>
   </main>

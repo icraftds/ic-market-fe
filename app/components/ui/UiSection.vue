@@ -28,7 +28,7 @@ defineProps({
           class="tw:inline-flex tw:min-h-11 tw:shrink-0 tw:items-center tw:gap-1 tw:rounded-field tw:px-2 tw:text-sm tw:font-semibold tw:text-brand tw:no-underline tw:hover:underline tw:focus-visible:ring-[3px] tw:focus-visible:ring-brand/40 tw:focus-visible:outline-none"
         >
           {{ actionLabel }}
-          <Icon name="lucide:arrow-right" class="tw:size-4" aria-hidden="true" />
+          <Icon name="material-symbols:arrow-forward" class="tw:size-4" aria-hidden="true" />
         </component>
       </slot>
     </header>

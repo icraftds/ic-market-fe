@@ -26,7 +26,7 @@ function saveLater() {
   cart.remove(p.value.id)
   ui.push({ tone: 'info', title: 'Disimpan untuk nanti', message: p.value.name })
 }
-const act = 'tw:m-0 tw:min-h-7 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink-2 tw:hover:text-ink tw:hover:underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none'
+const act = 'tw:m-0 tw:inline-flex tw:min-h-7 tw:items-center tw:gap-2 tw:cursor-pointer tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink-2 tw:hover:text-ink tw:hover:underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none'
 </script>
 
 <template>
@@ -56,8 +56,8 @@ const act = 'tw:m-0 tw:min-h-7 tw:cursor-pointer tw:border-0 tw:bg-transparent t
       <span class="tw:font-mono tw:text-[10.5px] tw:font-medium tw:tracking-[0.08em] tw:text-muted tw:uppercase">{{ line.label }}</span>
       <NuxtLink :to="`/product/${p.slug}`" class="tw:font-sans tw:text-[14.5px] tw:leading-[1.4] tw:font-semibold tw:text-ink tw:no-underline tw:hover:text-brand">{{ p.name }}</NuxtLink>
       <span class="tw:flex tw:gap-3.5 tw:font-sans tw:text-[12.5px] tw:font-semibold">
-        <button type="button" :class="act" @click="remove">Hapus</button>
-        <button type="button" :class="act" @click="saveLater">Simpan untuk nanti</button>
+        <button type="button" :class="act" @click="remove"><Icon name="material-symbols:delete-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Hapus</button>
+        <button type="button" :class="act" @click="saveLater"><Icon name="material-symbols:bookmark-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Simpan untuk nanti</button>
       </span>
     </div>
     <span class="tw:flex tw:items-center tw:gap-[7px] tw:font-display tw:text-lg tw:font-extrabold">

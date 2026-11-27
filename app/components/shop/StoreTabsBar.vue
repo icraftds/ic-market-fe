@@ -18,7 +18,7 @@ const tab = 'tw:-mb-px tw:p-3.5 tw:no-underline tw:text-ink-2 tw:hover:text-bran
     </nav>
     <form role="search" class="tw:mb-2 tw:flex tw:items-center tw:gap-2 tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:max-sm:w-full" @submit.prevent>
       <label for="qs" class="tw:sr-only">Cari di toko ini</label>
-      <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true" class="tw:flex-none"><circle cx="9" cy="9" r="5.5" fill="none" stroke="#6f6f68" stroke-width="1.7" /><path d="m13.5 13.5 3.5 3.5" stroke="#6f6f68" stroke-width="1.7" stroke-linecap="round" /></svg>
+      <Icon name="material-symbols:search" class="tw:size-[18px] tw:flex-none tw:text-muted" aria-hidden="true" />
       <input
         id="qs"
         :value="modelValue"

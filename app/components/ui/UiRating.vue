@@ -19,9 +19,9 @@ const px = computed(() => (props.size === 'sm' ? 'tw:size-3.5' : 'tw:size-4'))
   <span v-if="has" class="tw:inline-flex tw:items-center tw:gap-1.5 tw:text-sm tw:text-ink-2" role="img" :aria-label="`Rating ${v.toFixed(1)} dari 5${count !== null ? `, ${count} ulasan` : ''}`">
     <span class="tw:inline-flex tw:gap-0.5" aria-hidden="true">
       <span v-for="i in 5" :key="i" class="tw:relative tw:inline-block" :class="px">
-        <Icon name="lucide:star" class="tw:absolute tw:inset-0 tw:text-line" :class="px" />
+        <Icon name="material-symbols:star" class="tw:absolute tw:inset-0 tw:text-line" :class="px" />
         <span class="tw:absolute tw:inset-y-0 tw:left-0 tw:overflow-hidden" :class="v >= i ? 'tw:w-full' : v > i - 1 ? (v - (i - 1) >= 0.75 ? 'tw:w-3/4' : v - (i - 1) >= 0.5 ? 'tw:w-1/2' : 'tw:w-1/4') : 'tw:w-0'">
-          <Icon name="lucide:star" class="tw:text-coin tw:fill-coin" :class="px" />
+          <Icon name="material-symbols:star" class="tw:text-coin" :class="px" />
         </span>
       </span>
     </span>

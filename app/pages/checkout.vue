@@ -32,7 +32,7 @@ function reset() {
     <CheckoutHeader />
     <div class="tw:mx-auto tw:max-w-[720px] tw:px-6 tw:pt-7 tw:pb-16">
       <template v-if="step === 'pay'">
-        <NuxtLink to="/cart" class="tw:inline-flex tw:min-h-9 tw:items-center tw:gap-1.5 tw:text-[13.5px] tw:font-semibold tw:text-ink-2 tw:no-underline tw:hover:text-brand">← Kembali ke keranjang</NuxtLink>
+        <NuxtLink to="/cart" class="tw:inline-flex tw:min-h-9 tw:items-center tw:gap-1.5 tw:text-[13.5px] tw:font-semibold tw:text-ink-2 tw:no-underline tw:hover:text-brand"><Icon name="material-symbols:arrow-back" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Kembali ke keranjang</NuxtLink>
         <h1 class="tw:m-0 tw:mt-1.5 tw:mb-5 tw:font-display tw:text-[32px] tw:font-extrabold tw:tracking-[-.02em]">Checkout</h1>
         <div class="tw:overflow-hidden tw:rounded-[20px] tw:border tw:border-solid tw:border-line tw:bg-surface">
           <CheckoutItems :lines="lines" />

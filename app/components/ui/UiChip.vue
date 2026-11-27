@@ -10,7 +10,8 @@ const props = defineProps({
   count: { type: [Number, String], default: null },
   disabled: { type: Boolean, default: false },
   to: { type: [String, Object], default: null },
-  href: { type: String, default: null }
+  href: { type: String, default: null },
+  icon: { type: String, default: null }
 })
 defineEmits(['click'])
 
@@ -32,6 +33,7 @@ const tag = computed(() => (props.to ? NuxtLink : props.href ? 'a' : 'button'))
     :class="selected ? 'tw:border-ink tw:bg-ink tw:text-white' : 'tw:border-line tw:bg-surface tw:text-ink tw:hover:border-muted tw:hover:bg-bg'"
     @click="$emit('click', $event)"
   >
+    <Icon v-if="icon" :name="icon" class="tw:size-4 tw:shrink-0" aria-hidden="true" />
     <slot />
     <span v-if="count !== null && count !== ''" class="tw:font-mono tw:text-[11px] tw:font-semibold" :class="selected ? 'tw:text-zinc-300' : 'tw:text-muted'">{{ count }}</span>
   </component>

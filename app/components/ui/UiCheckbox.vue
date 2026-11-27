@@ -28,8 +28,8 @@ const id = useId()
         :class="error ? 'tw:border-bad' : 'tw:border-ink-2'"
         @change="emit('update:modelValue', $event.target.checked)"
       >
-      <Icon v-if="indeterminate" name="lucide:minus" class="tw:pointer-events-none tw:absolute tw:inset-0.5 tw:size-4 tw:text-white" aria-hidden="true" />
-      <Icon v-else name="lucide:check" class="tw:pointer-events-none tw:absolute tw:inset-0.5 tw:size-4 tw:text-white tw:opacity-0 tw:peer-checked:opacity-100" aria-hidden="true" />
+      <Icon v-if="indeterminate" name="material-symbols:remove" class="tw:pointer-events-none tw:absolute tw:inset-0.5 tw:size-4 tw:text-white" aria-hidden="true" />
+      <Icon v-else name="material-symbols:check" class="tw:pointer-events-none tw:absolute tw:inset-0.5 tw:size-4 tw:text-white tw:opacity-0 tw:peer-checked:opacity-100" aria-hidden="true" />
     </span>
     <span v-if="label || description || $slots.default" class="tw:flex tw:flex-col tw:gap-0.5">
       <span class="tw:text-sm tw:font-semibold tw:text-ink"><slot>{{ label }}</slot></span>

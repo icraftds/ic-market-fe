@@ -12,18 +12,18 @@ const inAdmin = computed(() => route.path.startsWith('/admin/'))
 const sellerGroups = [
   {
     label: 'Ringkasan',
-    items: [{ to: '/seller/dashboard', label: 'Dashboard', icon: 'fa-gauge-high' }]
+    items: [{ to: '/seller/dashboard', label: 'Dashboard', icon: 'material-symbols:dashboard-outline' }]
   },
   {
     label: 'Toko',
     items: [
-      { to: '/seller/products', label: 'Produk Saya', icon: 'fa-box-open' },
-      { to: '/seller/orders', label: 'Pesanan Masuk', icon: 'fa-receipt' }
+      { to: '/seller/products', label: 'Produk Saya', icon: 'material-symbols:inventory-2-outline' },
+      { to: '/seller/orders', label: 'Pesanan Masuk', icon: 'material-symbols:receipt-long-outline' }
     ]
   },
   {
     label: 'Keuangan',
-    items: [{ to: '/seller/finance', label: 'Finance', icon: 'fa-wallet' }]
+    items: [{ to: '/seller/finance', label: 'Finance', icon: 'material-symbols:account-balance-wallet-outline' }]
   }
 ]
 
@@ -31,28 +31,28 @@ const adminGroups = [
   {
     label: 'Verifikasi',
     items: [
-      { to: '/admin/onboardings', label: 'Onboarding', icon: 'fa-clipboard-check' },
-      { to: '/admin/stores', label: 'Toko', icon: 'fa-store' }
+      { to: '/admin/onboardings', label: 'Onboarding', icon: 'material-symbols:fact-check-outline' },
+      { to: '/admin/stores', label: 'Toko', icon: 'material-symbols:storefront-outline' }
     ]
   },
   {
     label: 'Katalog',
     items: [
-      { to: '/admin/products', label: 'Produk', icon: 'fa-box' },
-      { to: '/admin/reviews', label: 'Ulasan', icon: 'fa-star' },
-      { to: '/admin/vouchers', label: 'Voucher', icon: 'fa-ticket' }
+      { to: '/admin/products', label: 'Produk', icon: 'material-symbols:inventory-2-outline' },
+      { to: '/admin/reviews', label: 'Ulasan', icon: 'material-symbols:star-outline' },
+      { to: '/admin/vouchers', label: 'Voucher', icon: 'material-symbols:sell-outline' }
     ]
   },
   {
     label: 'Transaksi',
     items: [
-      { to: '/admin/orders', label: 'Pesanan', icon: 'fa-receipt' },
-      { to: '/admin/payouts', label: 'Payouts', icon: 'fa-money-bill-transfer' }
+      { to: '/admin/orders', label: 'Pesanan', icon: 'material-symbols:receipt-long-outline' },
+      { to: '/admin/payouts', label: 'Payouts', icon: 'material-symbols:payments-outline' }
     ]
   },
   {
     label: 'Sistem',
-    items: [{ to: '/admin/settings', label: 'Pengaturan', icon: 'fa-gear' }]
+    items: [{ to: '/admin/settings', label: 'Pengaturan', icon: 'material-symbols:settings-outline' }]
   }
 ]
 
@@ -107,14 +107,14 @@ const handleLogout = async () => {
             class="nav-link"
             :class="{ active: isActive(item.to) }"
           >
-            <i class="fa-solid" :class="item.icon"></i>
+            <Icon :name="item.icon" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />
             <span>{{ item.label }}</span>
           </NuxtLink>
         </div>
       </nav>
 
       <NuxtLink to="/" class="nav-back">
-        <i class="fa-solid fa-arrow-left"></i>
+        <Icon name="material-symbols:arrow-back" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />
         <span>Kembali ke Toko</span>
       </NuxtLink>
     </aside>
@@ -122,7 +122,7 @@ const handleLogout = async () => {
     <div class="dash-body">
       <header class="dash-topbar">
         <button type="button" class="icon-btn burger" aria-label="Buka menu" @click="isSidebarOpen = !isSidebarOpen">
-          <i class="fa-solid fa-bars"></i>
+          <Icon name="material-symbols:menu" class="tw:size-5" aria-hidden="true" />
         </button>
 
         <div class="topbar-title">
@@ -132,7 +132,7 @@ const handleLogout = async () => {
 
         <div class="topbar-right">
           <NuxtLink v-if="!inAdmin" to="/seller/products/create" class="btn-primary">
-            <i class="fa-solid fa-plus"></i><span>Tambah Produk</span>
+            <Icon name="material-symbols:add" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" /><span>Tambah Produk</span>
           </NuxtLink>
 
           <div v-if="session" class="user-wrap">
@@ -142,14 +142,14 @@ const handleLogout = async () => {
                 <strong>{{ session.name }}</strong>
                 <small>{{ session.role }}</small>
               </span>
-              <i class="fa-solid fa-chevron-down caret"></i>
+              <Icon name="material-symbols:expand-more" class="tw:size-[18px] tw:shrink-0 caret" aria-hidden="true" />
             </button>
 
             <div v-if="isUserMenuOpen" class="user-menu">
-              <NuxtLink to="/profile" class="menu-item"><i class="fa-solid fa-user"></i>Profil Saya</NuxtLink>
-              <NuxtLink to="/" class="menu-item"><i class="fa-solid fa-store"></i>Lihat Storefront</NuxtLink>
+              <NuxtLink to="/profile" class="menu-item"><Icon name="material-symbols:person-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Profil Saya</NuxtLink>
+              <NuxtLink to="/" class="menu-item"><Icon name="material-symbols:storefront-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Lihat Storefront</NuxtLink>
               <button type="button" class="menu-item danger" @click="handleLogout">
-                <i class="fa-solid fa-right-from-bracket"></i>Keluar
+                <Icon name="material-symbols:logout" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Keluar
               </button>
             </div>
           </div>

@@ -14,9 +14,9 @@ const SESSION = 872 // 14:32
 const IMG_COUNT = 6
 const thumbFrom = ['tw:from-[#e6ebf5]', 'tw:from-[#ece8f5]', 'tw:from-[#e4f0ec]', 'tw:from-[#f3ece4]', 'tw:from-[#e8eaf3]', 'tw:from-[#efe8e4]']
 const devDefs = [
-  { id: 'desktop', label: 'Tampilan desktop', icon: 'M3 5h18v11H3zM8 20h8M12 16v4', text: 'Desktop · 1280 px' },
-  { id: 'tablet', label: 'Tampilan tablet', icon: 'M6 3h12v18H6zM11 18h2', text: 'Tablet · 768 px' },
-  { id: 'mobile', label: 'Tampilan ponsel', icon: 'M8 3h8v18H8zM11 18h2', text: 'Ponsel · 390 px' }
+  { id: 'desktop', label: 'Tampilan desktop', icon: 'material-symbols:desktop-windows-outline', text: 'Desktop · 1280 px' },
+  { id: 'tablet', label: 'Tampilan tablet', icon: 'material-symbols:tablet-mac-outline', text: 'Tablet · 768 px' },
+  { id: 'mobile', label: 'Tampilan ponsel', icon: 'material-symbols:smartphone', text: 'Ponsel · 390 px' }
 ]
 
 const hasLive = computed(() => !!props.product.live)
@@ -96,7 +96,7 @@ const arrow = 'tw:absolute tw:top-1/2 tw:m-0 tw:grid tw:size-11 tw:-translate-y-
   <section ref="root" aria-label="Preview produk" class="tw:min-w-0 tw:flex-[999_1_620px] tw:rounded-[22px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-3.5 tw:max-lg:rounded-none tw:max-lg:border-0 tw:max-lg:bg-transparent tw:max-lg:p-0">
     <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3 tw:px-0.5 tw:pt-0.5 tw:pb-3.5 tw:max-lg:px-0 tw:max-lg:pt-0 tw:max-lg:pb-3">
       <div role="tablist" aria-label="Mode tampilan" class="tw:flex tw:gap-1 tw:rounded-xl tw:bg-subtle tw:p-1 tw:max-lg:w-full tw:max-lg:rounded-[10px] tw:max-lg:p-[3px]">
-        <button type="button" role="tab" :aria-selected="mode === 'img'" :class="[tabBase, mode === 'img' ? tabOn : tabOff]" @click="mode = 'img'">Gambar <span class="tw:font-mono tw:text-[11px] tw:font-medium tw:text-muted">{{ IMG_COUNT }}</span></button>
+        <button type="button" role="tab" :aria-selected="mode === 'img'" :class="[tabBase, mode === 'img' ? tabOn : tabOff]" @click="mode = 'img'"><Icon name="material-symbols:image-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Gambar <span class="tw:font-mono tw:text-[11px] tw:font-medium tw:text-muted">{{ IMG_COUNT }}</span></button>
         <button v-if="hasLive" type="button" role="tab" :aria-selected="mode === 'live'" :class="[tabBase, mode === 'live' ? tabOn : tabOff]" @click="mode = 'live'"><span aria-hidden="true" class="tw:size-[7px] tw:rounded-full tw:bg-[#22c55e]" />Live Preview</button>
       </div>
       <div v-if="mode === 'live' && phase === 'running'" class="tw:flex tw:items-center tw:gap-1.5">
@@ -109,8 +109,8 @@ const arrow = 'tw:absolute tw:top-1/2 tw:m-0 tw:grid tw:size-11 tw:-translate-y-
           class="tw:m-0 tw:grid tw:size-10 tw:cursor-pointer tw:place-items-center tw:rounded-[10px] tw:border tw:border-solid tw:p-0 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
           :class="device === d.id ? 'tw:border-ink tw:bg-ink tw:text-white' : 'tw:border-line tw:bg-surface tw:text-ink'"
           @click="device = d.id"
-        ><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path :d="d.icon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
-        <button type="button" class="tw:m-0 tw:flex tw:min-h-10 tw:cursor-pointer tw:items-center tw:gap-[7px] tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3.5 tw:py-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="live?.fullscreen()">Layar penuh<svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="M8 4H4v12h12v-4M11 4h5v5M16 4l-7 7" fill="none" stroke="#111110" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
+        ><Icon :name="d.icon" class="tw:size-[18px]" aria-hidden="true" /></button>
+        <button type="button" class="tw:m-0 tw:flex tw:min-h-10 tw:cursor-pointer tw:items-center tw:gap-[7px] tw:rounded-[10px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3.5 tw:py-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="live?.fullscreen()"><Icon name="material-symbols:fullscreen" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Layar penuh</button>
       </div>
     </div>
 
@@ -132,8 +132,8 @@ const arrow = 'tw:absolute tw:top-1/2 tw:m-0 tw:grid tw:size-11 tw:-translate-y-
     <template v-else>
       <div class="tw:relative tw:grid tw:aspect-[16/10] tw:place-items-center tw:rounded-[14px] tw:bg-linear-135 tw:from-[#e6ebf5] tw:to-[#f1ede6]">
         <span role="img" :aria-label="`${product.name}, gambar ${img + 1} dari ${IMG_COUNT}`" class="tw:font-mono tw:text-xs tw:font-semibold tw:tracking-[0.08em] tw:text-ink-2 tw:max-lg:text-[11px]">[ GAMBAR {{ img + 1 }} DARI {{ IMG_COUNT }} ]</span>
-        <button type="button" aria-label="Gambar sebelumnya" class="tw:left-3" :class="arrow" @click="prev"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m12 5-5 5 5 5" fill="none" stroke="#111110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
-        <button type="button" aria-label="Gambar berikutnya" class="tw:right-3" :class="arrow" @click="next"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m8 5 5 5-5 5" fill="none" stroke="#111110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
+        <button type="button" aria-label="Gambar sebelumnya" class="tw:left-3" :class="arrow" @click="prev"><Icon name="material-symbols:chevron-left" class="tw:size-5" aria-hidden="true" /></button>
+        <button type="button" aria-label="Gambar berikutnya" class="tw:right-3" :class="arrow" @click="next"><Icon name="material-symbols:chevron-right" class="tw:size-5" aria-hidden="true" /></button>
       </div>
       <div class="tw:mt-3 tw:flex tw:gap-2.5 tw:overflow-x-auto">
         <button

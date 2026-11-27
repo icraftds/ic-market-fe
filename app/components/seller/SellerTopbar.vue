@@ -20,13 +20,13 @@ const heading = computed(() => props.title || sellerNavActive(route.path)?.label
         aria-label="Notifikasi"
         class="tw:relative tw:grid tw:size-[42px] tw:cursor-pointer tw:place-items-center tw:rounded-[10px] tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16ZM10 20h4" fill="none" stroke="#0f172a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <Icon name="material-symbols:notifications-outline" class="tw:size-[18px] tw:text-[#0f172a]" aria-hidden="true" />
         <span class="tw:absolute tw:top-2 tw:right-[9px] tw:size-2 tw:rounded-full tw:bg-[#ef4444]" />
       </button>
       <NuxtLink
         to="/seller/products/create"
         class="tw:flex tw:min-h-[42px] tw:items-center tw:gap-2 tw:rounded-[10px] tw:bg-seller tw:px-4 tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"
-      >+ Tambah Produk</NuxtLink>
+      ><Icon name="material-symbols:add" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Tambah Produk</NuxtLink>
     </div>
   </header>
 </template>
