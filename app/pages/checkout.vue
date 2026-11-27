@@ -13,6 +13,8 @@ onMounted(() => { useAuthStore().ensureSession().then(() => cart.ensureLoaded())
 
 const step = ref('pay')
 const paying = ref(false)
+const payError = ref('') // galat bayar ditampilkan di halaman (bukan hanya toast)
+const pendingOrderId = ref('')
 onMounted(() => { if (!wallet.isMock) wallet.syncBalance() })
 const voucher = ref(false)
 const paid = ref([])
@@ -59,18 +61,22 @@ async function pay() {
   }
   // Mode API: pembayaran nyata (iCoin). Tidak pernah menampilkan sukses tanpa konfirmasi server.
   paying.value = true
+  payError.value = ''
+  pendingOrderId.value = ''
   const picked = lines.value
   let created = false
   try {
     const order = await checkoutOrder({ items: picked.map((l) => ({ productId: l.productId })), paymentMethod: 'icmarket_coins', ...(voucherCode.value ? { voucherCode: voucherCode.value } : {}) })
     created = true
+    pendingOrderId.value = order?.transaction_id || ''
     if (order?.status !== 'completed') await payOrder(order.transaction_id) // produk gratis langsung completed
     paid.value = picked
     removeVoucher()
     cart.dropSelected()
     step.value = 'done'
   } catch (e) {
-    ui.push({ tone: 'danger', message: normalizeError(e).message || 'Pembayaran gagal. Silakan coba lagi.' })
+    payError.value = normalizeError(e).message || 'Pembayaran gagal. Silakan coba lagi.'
+    ui.push({ tone: 'danger', message: payError.value })
     // Checkout sudah membuat pesanan pending & mengosongkan keranjang server: muat ulang agar tampilan jujur.
     if (created) await cart.reload()
   } finally {
@@ -95,7 +101,7 @@ function reset() {
         <h1 class="tw:m-0 tw:mt-1.5 tw:mb-5 tw:font-display tw:text-[32px] tw:font-extrabold tw:tracking-[-.02em]">Checkout</h1>
         <div class="tw:overflow-hidden tw:rounded-[20px] tw:border tw:border-solid tw:border-line tw:bg-surface">
           <CheckoutItems :lines="lines" />
-          <CheckoutPayMethod :balance="wallet.format()" :remain="wallet.format(wallet.balance - payable)" />
+          <CheckoutPayMethod :balance="wallet.format()" :remain="wallet.format(wallet.balance - payable)" :unknown="!wallet.isMock && wallet.balance === null" />
           <CheckoutVoucher v-if="wallet.isMock" :applied="voucher" :cashback="wallet.format(cashback)" @toggle="voucher = !voucher" />
           <CheckoutVoucherApi
             v-else
@@ -108,6 +114,10 @@ function reset() {
           />
           <UiAlert v-if="insufficient" tone="warn" title="Saldo iCoin tidak cukup" class="tw:mx-[22px] tw:mb-4">
             Kurang Z {{ wallet.format(payable - Number(wallet.balance)) }}. <NuxtLink to="/topup" class="tw:font-bold tw:text-brand">Top up saldo</NuxtLink> lalu kembali ke sini.
+          </UiAlert>
+          <UiAlert v-if="payError" tone="danger" title="Pembayaran belum berhasil" class="tw:mx-[22px] tw:mb-4">
+            {{ payError }}
+            <template v-if="pendingOrderId"> Pesanan <span class="tw:font-mono tw:text-xs">{{ pendingOrderId }}</span> tersimpan dan menunggu pembayaran; cek di <NuxtLink to="/orders" class="tw:font-bold tw:text-brand">Pesanan Saya</NuxtLink>.</template>
           </UiAlert>
           <CheckoutSummary :total="wallet.format(payable)" :disabled="!lines.length || paying || insufficient" @pay="pay" />
         </div>

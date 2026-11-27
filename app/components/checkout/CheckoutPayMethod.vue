@@ -1,5 +1,6 @@
 <script setup>
-defineProps({ balance: { type: String, required: true }, remain: { type: String, required: true } })
+// unknown: saldo belum bisa dimuat (layanan wallet down) -> jangan tampilkan angka 0/negatif yang menyesatkan.
+defineProps({ balance: { type: String, required: true }, remain: { type: String, required: true }, unknown: Boolean })
 </script>
 
 <template>
@@ -9,7 +10,8 @@ defineProps({ balance: { type: String, required: true }, remain: { type: String,
       <span class="tw:grid tw:size-9 tw:place-items-center tw:rounded-[10px] tw:bg-ink tw:font-display tw:text-base tw:font-extrabold tw:text-coin">Z</span>
       <span class="tw:flex tw:flex-1 tw:flex-col">
         <span class="tw:text-[14.5px] tw:font-bold">Saldo iCoin</span>
-        <span class="tw:text-[12.5px] tw:font-medium tw:text-ink-2">Saldo {{ balance }} · sisa {{ remain }} setelah bayar</span>
+        <span v-if="unknown" class="tw:text-[12.5px] tw:font-medium tw:text-ink-2">Saldo belum dapat dimuat. Pembayaran tetap diperiksa server.</span>
+        <span v-else class="tw:text-[12.5px] tw:font-medium tw:text-ink-2">Saldo {{ balance }} · sisa {{ remain }} setelah bayar</span>
       </span>
       <NuxtLink to="/topup" class="tw:text-[13px] tw:font-semibold tw:text-brand tw:no-underline">Top up</NuxtLink>
     </div>
