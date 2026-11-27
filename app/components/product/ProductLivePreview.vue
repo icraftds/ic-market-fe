@@ -78,10 +78,8 @@ onBeforeUnmount(() => {
   document.removeEventListener('fullscreenchange', syncFullscreen)
 })
 
-const host = computed(() => {
-  if (!props.sessionUrl) return `preview.icraftds.id/${props.slug.split('-').slice(0, 2).join('-')}`
-  try { return new URL(props.sessionUrl).host } catch { return 'preview' }
-})
+const previewRoute = computed(() => `/product/${encodeURIComponent(props.slug)}/preview`)
+const host = computed(() => `market.icraftds.id/product/${props.slug || 'preview'}/preview`)
 
 function fullscreen() {
   frame.value?.requestFullscreen?.()
@@ -156,7 +154,7 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
         <span class="tw:flex tw:items-center tw:gap-2"><span aria-hidden="true" class="tw:size-2 tw:rounded-full tw:bg-ok" />Preview aktif<template v-if="timed"> · sisa sesi <b class="tw:font-mono tw:text-ink">{{ time }}</b></template></span>
         <span class="tw:flex tw:items-center tw:gap-3">
           <span class="tw:font-mono tw:text-[11.5px] tw:font-medium tw:text-muted">{{ deviceLabel }}</span>
-          <a v-if="sessionUrl" :href="sessionUrl" target="_blank" rel="noopener noreferrer" class="tw:inline-flex tw:min-h-9 tw:items-center tw:gap-1.5 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-brand tw:no-underline tw:hover:underline"><Icon name="material-symbols:open-in-new" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Buka di tab baru</a>
+          <a v-if="sessionUrl" :href="previewRoute" target="_blank" rel="noopener noreferrer" class="tw:inline-flex tw:min-h-9 tw:items-center tw:gap-1.5 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-brand tw:no-underline tw:hover:underline"><Icon name="material-symbols:open-in-new" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Buka di tab baru</a>
           <button type="button" class="tw:m-0 tw:inline-flex tw:min-h-9 tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-[9px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:py-0 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="emit('stop')"><Icon name="material-symbols:stop" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Akhiri sesi</button>
         </span>
       </div>

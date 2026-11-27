@@ -84,6 +84,7 @@ async function startReal() {
     if (mine !== runId) return // dibatalkan (Akhiri sesi / pindah tab) selagi menunggu
     if (!s.url) throw new Error('empty')
     sessionUrl.value = s.url
+    try { sessionStorage.setItem(`ic_preview_session:${props.product.slug}`, JSON.stringify(s)) } catch {}
     const secs = s.expiresAt ? Math.floor((Date.parse(s.expiresAt) - Date.now()) / 1000) : SESSION
     remaining.value = Math.max(1, Number.isFinite(secs) ? secs : SESSION)
     phase.value = 'running'
@@ -109,6 +110,7 @@ function stop() {
   clearTimers()
   sessionUrl.value = ''
   errorMessage.value = ''
+  try { sessionStorage.removeItem(`ic_preview_session:${props.product.slug}`) } catch {}
   phase.value = isStatic.value ? 'static' : 'idle'
 }
 function tryLive() {
