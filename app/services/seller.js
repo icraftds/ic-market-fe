@@ -72,6 +72,45 @@ export async function getBankAccount() {
   return mapBank(await api('seller/bank-account', REQ))
 }
 
+/** updateBankAccount({ bankCode, accountNumber, accountHolder }) -> simpan/ganti rekening payout dari Seller Center. */
+export async function updateBankAccount({ bankCode, accountNumber, accountHolder }) {
+  const api = useApi()
+  return mapBank(await api('seller/bank-account', {
+    ...REQ,
+    method: 'PUT',
+    body: {
+      bank_code: String(bankCode || '').trim(),
+      account_number: String(accountNumber || '').replace(/\s+/g, ''),
+      account_holder: String(accountHolder || '').trim()
+    }
+  }))
+}
+
+/** getVerification() -> { legal_name, id_card_uploaded, selfie_uploaded, complete } */
+export async function getVerification() {
+  const api = useApi()
+  return api('seller/verification', REQ)
+}
+
+/** uploadVerification('id_card' | 'selfie', file) -> { kind, path } */
+export async function uploadVerification(kind, file) {
+  const api = useApi()
+  const body = new FormData()
+  body.append('kind', kind)
+  body.append('file', file)
+  return api('seller/verification/upload', { ...REQ, method: 'POST', body })
+}
+
+/** updateVerification({ legalName, idCardPath, selfiePath }) -> { legal_name, id_card_uploaded, selfie_uploaded, complete } */
+export async function updateVerification({ legalName, idCardPath, selfiePath } = {}) {
+  const api = useApi()
+  const body = {}
+  if (legalName !== undefined && String(legalName).trim()) body.legal_name = String(legalName).trim()
+  if (idCardPath) body.id_card_path = idCardPath
+  if (selfiePath) body.selfie_path = selfiePath
+  return api('seller/verification', { ...REQ, method: 'PUT', body })
+}
+
 /** listTransactions({ type: semua|Penjualan|Komisi|Payout|Refund | sale|commission|payout|refund, page, limit<=50 }) -> { rows, meta } */
 export const listTransactions = ({ type = 'semua', page = 1, limit = 20 } = {}) =>
   paged('seller/transactions', { type: ledgerTypeParam(type), page, limit }, mapLedger, limit)

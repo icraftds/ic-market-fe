@@ -18,7 +18,7 @@ const accountPlaceholder = computed(() => (store.accountSaved ? `•••• ${
 
 <template>
   <div>
-    <OnboardingWizardStepTitle title="Rekening payout" :text="`Hasil penjualan (setelah komisi ${commissionPercent}%) dicairkan ke rekening ini.`" />
+    <OnboardingWizardStepTitle title="Rekening payout (opsional)" :text="`Hasil penjualan (setelah komisi ${commissionPercent}%) dicairkan ke rekening ini. Bisa dilewati dan diisi nanti di Seller Center.`" />
     <div class="tw:flex tw:flex-col tw:gap-[18px]">
       <OnboardingWizardField label="Bank" :error="err('bank')">
         <template #default="{ id, invalid, describedBy }">

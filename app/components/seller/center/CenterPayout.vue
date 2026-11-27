@@ -1,4 +1,7 @@
 <script setup>
+import * as sellerApi from '~/services/seller.js'
+import { listBanks } from '~/services/onboarding.js'
+
 /** CenterPayout: tab Payout papan V2SellerCenter (saldo, rekening tujuan, riwayat). */
 const seller = useSellerStore()
 const ui = useUiStore()
@@ -46,7 +49,42 @@ async function confirmPayout() {
   // 422 dengan pesan field: tetap di dialog; 409/lainnya: toast dari store, tutup dialog.
   if (row || !payoutError.value) confirmOpen.value = false
 }
-const changeBank = () => ui.push({ tone: 'info', message: api ? 'Penggantian rekening dilakukan lewat dukungan IC Market.' : 'Ganti rekening dibuka di Pengaturan (contoh).' })
+const bankOpen = ref(false)
+const bankSaving = ref(false)
+const bankOptions = ref([])
+const bankForm = reactive({ bankCode: '', accountNumber: '', accountHolder: '' })
+const bankErr = ref('')
+
+async function openBankModal() {
+  if (!api) {
+    ui.push({ tone: 'info', message: 'Ganti rekening dibuka di Pengaturan (contoh).' })
+    return
+  }
+  bankErr.value = ''
+  bankForm.accountNumber = ''
+  bankOpen.value = true
+  if (!bankOptions.value.length) {
+    bankOptions.value = await listBanks().catch(() => [])
+  }
+}
+
+async function saveBank() {
+  bankErr.value = ''
+  if (!bankForm.bankCode) { bankErr.value = 'Pilih bank terlebih dahulu.'; return }
+  if (!/^\d{6,20}$/.test(bankForm.accountNumber.replace(/\s+/g, ''))) { bankErr.value = 'Nomor rekening harus 6–20 digit angka.'; return }
+  if (bankForm.accountHolder.trim().length < 3) { bankErr.value = 'Nama pemilik rekening minimal 3 karakter.'; return }
+  bankSaving.value = true
+  try {
+    await sellerApi.updateBankAccount(bankForm)
+    bankOpen.value = false
+    ui.push({ tone: 'success', message: 'Rekening payout berhasil disimpan.' })
+    seller.loadFinance({ force: true })
+  } catch (e) {
+    bankErr.value = e?.message || 'Gagal menyimpan rekening.'
+  } finally {
+    bankSaving.value = false
+  }
+}
 </script>
 
 <template>
@@ -89,7 +127,7 @@ const changeBank = () => ui.push({ tone: 'info', message: api ? 'Penggantian rek
           <span class="tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-[#15803d]">{{ fin.bankStatus }}</span>
         </span>
       </div>
-      <button type="button" class="tw:m-0 tw:mt-[14px] tw:inline-flex tw:cursor-pointer tw:items-center tw:gap-1.5 tw:rounded-md tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-seller tw:hover:underline tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none" @click="changeBank"><Icon name="material-symbols:edit-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Ganti rekening</button>
+      <button type="button" class="tw:m-0 tw:mt-[14px] tw:inline-flex tw:cursor-pointer tw:items-center tw:gap-1.5 tw:rounded-md tw:border-0 tw:bg-transparent tw:p-0 tw:font-sans tw:text-[13px] tw:font-semibold tw:text-seller tw:hover:underline tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none" @click="openBankModal"><Icon name="material-symbols:edit-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />{{ fin.bank && fin.bank !== 'Belum diatur' ? 'Ganti rekening' : 'Atur rekening payout' }}</button>
     </div>
   </div>
 
@@ -125,6 +163,30 @@ const changeBank = () => ui.push({ tone: 'info', message: api ? 'Penggantian rek
     <template #footer>
       <UiButton variant="outline" icon="material-symbols:close" @click="confirmOpen = false">Batal</UiButton>
       <UiButton variant="brand" :loading="sending" icon="material-symbols:account-balance-wallet-outline" @click="confirmPayout">Ya, cairkan</UiButton>
+    </template>
+  </UiModal>
+  <UiModal v-model:open="bankOpen" size="sm" title="Rekening payout" description="Hasil penjualan akan dicairkan ke rekening ini.">
+    <form class="tw:flex tw:flex-col tw:gap-3.5" @submit.prevent="saveBank">
+      <label class="tw:flex tw:flex-col tw:gap-1.5 tw:font-sans tw:text-[13px] tw:font-semibold">
+        Bank
+        <select v-model="bankForm.bankCode" class="tw:min-h-11 tw:rounded-[10px] tw:border tw:border-solid tw:border-[#cbd5e1] tw:bg-white tw:px-3 tw:font-sans tw:text-[14px] tw:text-hero">
+          <option value="">Pilih bank</option>
+          <option v-for="b in bankOptions" :key="b.code" :value="b.code">{{ b.name }}</option>
+        </select>
+      </label>
+      <label class="tw:flex tw:flex-col tw:gap-1.5 tw:font-sans tw:text-[13px] tw:font-semibold">
+        Nomor rekening
+        <input v-model="bankForm.accountNumber" type="text" inputmode="numeric" autocomplete="off" placeholder="Hanya angka (6–20 digit)" class="tw:min-h-11 tw:rounded-[10px] tw:border tw:border-solid tw:border-[#cbd5e1] tw:bg-white tw:px-3 tw:font-mono tw:text-[14px] tw:text-hero">
+      </label>
+      <label class="tw:flex tw:flex-col tw:gap-1.5 tw:font-sans tw:text-[13px] tw:font-semibold">
+        Nama pemilik rekening
+        <input v-model="bankForm.accountHolder" type="text" placeholder="Sesuai buku tabungan" class="tw:min-h-11 tw:rounded-[10px] tw:border tw:border-solid tw:border-[#cbd5e1] tw:bg-white tw:px-3 tw:font-sans tw:text-[14px] tw:text-hero">
+      </label>
+      <p v-if="bankErr" role="alert" class="tw:m-0 tw:text-[12.5px] tw:font-semibold tw:text-bad">{{ bankErr }}</p>
+    </form>
+    <template #footer>
+      <UiButton variant="outline" @click="bankOpen = false">Batal</UiButton>
+      <UiButton variant="brand" :loading="bankSaving" icon="material-symbols:save-outline" @click="saveBank">Simpan rekening</UiButton>
     </template>
   </UiModal>
   </template>

@@ -103,8 +103,10 @@ test('validateStep non-strict meniru mode mock lama', () => {
   assert.ok(validateStep({ accountNo: '12345', bank: 'x', accountName: 'y' }, 2, { strict: false }).accountNo)
 })
 
-test('validateStep identitas: berkas dan persetujuan wajib', () => {
-  assert.deepEqual(Object.keys(validateStep({ fullName: '', idCardUploaded: false, selfieUploaded: true, agree: false }, 3)).sort(), ['agree', 'fullName', 'idCard'])
+test('validateStep identitas: KTP opsional, persetujuan ketentuan wajib', () => {
+  assert.deepEqual(Object.keys(validateStep({ fullName: '', idCardUploaded: false, selfieUploaded: false, agree: false }, 3)).sort(), ['agree'])
+  assert.deepEqual(validateStep({ fullName: '', idCardUploaded: false, selfieUploaded: false, agree: true }, 3), {})
+  assert.deepEqual(validateStep({ bank: '', accountNo: '', accountName: '' }, 2), {})
 })
 
 test('validateFile: tipe dan ukuran', () => {

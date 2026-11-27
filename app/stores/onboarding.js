@@ -64,7 +64,12 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const submitted = computed(() => step.value === 5)
   const stepNo = computed(() => Math.min(step.value + 1, 5))
   const isFirst = computed(() => step.value === 0)
-  const nextLabel = computed(() => (step.value === 4 ? 'Kirim untuk ditinjau' : step.value === 1 ? 'Lanjut (bisa dilewati)' : 'Lanjut'))
+  const nextLabel = computed(() => {
+    if (step.value === 4) return 'Kirim untuk ditinjau'
+    if (step.value === 1) return 'Lanjut (bisa dilewati)'
+    if (step.value === 2 && !form.value.bank && !form.value.accountNo && !accountSaved.value) return 'Lewati dulu'
+    return 'Lanjut'
+  })
   const url = computed(() => 'icraftds.id/toko/' + form.value.slug)
   const chosenKinds = computed(() => form.value.kinds)
   const busy = computed(() => loading.value || saving.value || submitting.value)
@@ -82,10 +87,10 @@ export const useOnboardingStore = defineStore('onboarding', () => {
 
   const summary = computed(() => {
     const f = form.value
-    let bankText = summaryFallback.bank
-    if (mock) bankText = f.bank && f.accountNo ? f.bank + ' •••• ' + f.accountNo.slice(-4) : summaryFallback.bank
+    let bankText = 'Belum diisi (bisa diisi di Seller Center)'
+    if (mock) bankText = f.bank && f.accountNo ? f.bank + ' •••• ' + f.accountNo.slice(-4) : 'Belum diisi (bisa diisi di Seller Center)'
     else if (f.bank && (f.accountNo || f.accountLast4)) bankText = bankLabel.value + ' •••• ' + (f.accountLast4 || f.accountNo.slice(-4))
-    const idText = f.idCardUploaded || f.selfieUploaded ? 'Identitas terunggah' : summaryFallback.identity
+    const idText = f.idCardUploaded || f.selfieUploaded ? 'Identitas terunggah' : 'Belum diunggah (bisa dilengkapi di Seller Center)'
     return [
       { k: 'Nama toko', v: f.storeName, edit: 0 },
       { k: 'Link', v: url.value, edit: 0 },
@@ -264,9 +269,9 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     showErrors.value = false
     if (step.value === 4) return submit()
     if (mock) { step.value += 1; return true }
-    if (step.value === 1) {
-      // Langkah logo opsional: hanya simpan bila ada perubahan.
-      if (dirty.value.includes(1) && !(await saveStepToServer(1))) return false
+    if (step.value === 1 || step.value === 2) {
+      // Langkah logo & rekening opsional: hanya simpan bila ada perubahan.
+      if (dirty.value.includes(step.value) && !(await saveStepToServer(step.value))) return false
     } else if (!(await saveStepToServer(step.value))) return false
     step.value += 1
     return true

@@ -4,6 +4,7 @@
  * Item aktif ditentukan dari route (sellerNavActive di ~/utils/sellerNav).
  */
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 
 const groups = sellerNavGroups
@@ -12,26 +13,105 @@ const activeId = computed(() => sellerNavActive(route.path)?.id || null)
 const storeName = computed(() => auth.user?.storeName || 'Creative Studio')
 const storeSlug = computed(() => auth.user?.storeSlug || 'creative-studio')
 const storeInitial = computed(() => (storeName.value.trim()[0] || 'C').toUpperCase())
+
+const menuOpen = ref(false)
+const loggingOut = ref(false)
+const menuRoot = ref(null)
+
+function onDocClick(e) {
+  if (menuOpen.value && menuRoot.value && !menuRoot.value.contains(e.target)) menuOpen.value = false
+}
+function onKey(e) {
+  if (e.key === 'Escape' && menuOpen.value) menuOpen.value = false
+}
+onMounted(() => {
+  document.addEventListener('click', onDocClick)
+  document.addEventListener('keydown', onKey)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocClick)
+  document.removeEventListener('keydown', onKey)
+})
+watch(() => route.fullPath, () => { menuOpen.value = false })
+
+async function handleLogout() {
+  if (loggingOut.value) return
+  loggingOut.value = true
+  try {
+    await auth.logout()
+    menuOpen.value = false
+    await router.push('/')
+  } finally {
+    loggingOut.value = false
+  }
+}
 </script>
 
 <template>
   <aside class="tw:box-border tw:flex tw:max-w-full tw:flex-[1_1_240px] tw:flex-col tw:gap-[18px] tw:bg-side tw:px-[14px] tw:py-5 tw:text-[#cbd5e1]">
     <div class="tw:flex tw:items-baseline tw:gap-2 tw:px-2">
-      <span class="tw:font-display tw:text-[24px] tw:font-extrabold tw:text-white"><span class="tw:text-[#60a5fa]">iC</span> Market</span>
+      <NuxtLink to="/" class="tw:font-display tw:text-[24px] tw:font-extrabold tw:text-white tw:no-underline"><span class="tw:text-[#60a5fa]">iC</span> Market</NuxtLink>
       <span class="tw:font-mono tw:text-[9.5px] tw:font-semibold tw:tracking-[.08em] tw:text-[#94a3b8]">SELLER CENTER</span>
     </div>
 
-    <button
-      type="button"
-      class="tw:flex tw:min-h-[52px] tw:cursor-pointer tw:items-center tw:gap-[10px] tw:rounded-xl tw:border tw:border-solid tw:border-[#1e2d4a] tw:bg-side-active tw:p-[10px] tw:text-left tw:text-white tw:focus-visible:ring-[3px] tw:focus-visible:ring-[#3b82f6]/60 tw:focus-visible:outline-none"
-    >
-      <span class="tw:grid tw:size-8 tw:place-items-center tw:rounded-[9px] tw:bg-white tw:font-display tw:text-[15px] tw:font-extrabold tw:text-side">{{ storeInitial }}</span>
-      <span class="tw:flex tw:flex-1 tw:flex-col">
-        <span class="tw:font-sans tw:text-[13.5px] tw:font-bold">{{ storeName }}</span>
-        <span class="tw:font-sans tw:text-[11.5px] tw:font-medium tw:text-[#86efac]">Disetujui</span>
-      </span>
-      <Icon name="material-symbols:expand-more" class="tw:size-[18px] tw:text-[#94a3b8]" aria-hidden="true" />
-    </button>
+    <div ref="menuRoot" class="tw:relative">
+      <button
+        type="button"
+        :aria-expanded="menuOpen ? 'true' : 'false'"
+        aria-haspopup="menu"
+        class="tw:flex tw:min-h-[52px] tw:w-full tw:cursor-pointer tw:items-center tw:gap-[10px] tw:rounded-xl tw:border tw:border-solid tw:border-[#1e2d4a] tw:bg-side-active tw:p-[10px] tw:text-left tw:text-white tw:hover:border-[#334155] tw:focus-visible:ring-[3px] tw:focus-visible:ring-[#3b82f6]/60 tw:focus-visible:outline-none"
+        @click="menuOpen = !menuOpen"
+      >
+        <span class="tw:grid tw:size-8 tw:shrink-0 tw:place-items-center tw:rounded-[9px] tw:bg-white tw:font-display tw:text-[15px] tw:font-extrabold tw:text-side">{{ storeInitial }}</span>
+        <span class="tw:flex tw:min-w-0 tw:flex-1 tw:flex-col">
+          <span class="tw:truncate tw:font-sans tw:text-[13.5px] tw:font-bold">{{ storeName }}</span>
+          <span class="tw:font-sans tw:text-[11.5px] tw:font-medium tw:text-[#86efac]">Disetujui</span>
+        </span>
+        <Icon name="material-symbols:expand-more" class="tw:size-[18px] tw:shrink-0 tw:text-[#94a3b8] tw:transition-transform" :class="menuOpen ? 'tw:rotate-180' : ''" aria-hidden="true" />
+      </button>
+
+      <div
+        v-if="menuOpen"
+        role="menu"
+        class="tw:absolute tw:top-[calc(100%+6px)] tw:right-0 tw:left-0 tw:z-30 tw:flex tw:flex-col tw:gap-0.5 tw:rounded-xl tw:border tw:border-solid tw:border-[#243452] tw:bg-[#0f172a] tw:p-1.5 tw:shadow-2xl"
+      >
+        <div v-if="auth.user?.email" class="tw:border-0 tw:border-b tw:border-solid tw:border-[#1e293b] tw:px-2.5 tw:py-2">
+          <p class="tw:m-0 tw:truncate tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-white">{{ auth.user.name }}</p>
+          <p class="tw:m-0 tw:truncate tw:font-sans tw:text-[11px] tw:text-[#94a3b8]">{{ auth.user.email }}</p>
+        </div>
+        <NuxtLink
+          :to="`/store/${storeSlug}`"
+          role="menuitem"
+          class="tw:flex tw:min-h-9 tw:items-center tw:gap-2 tw:rounded-lg tw:px-2.5 tw:font-sans tw:text-[13px] tw:font-medium tw:text-[#e2e8f0] tw:no-underline tw:hover:bg-white/10"
+        >
+          <Icon name="material-symbols:storefront-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Lihat halaman toko
+        </NuxtLink>
+        <NuxtLink
+          to="/seller/pengaturan"
+          role="menuitem"
+          class="tw:flex tw:min-h-9 tw:items-center tw:gap-2 tw:rounded-lg tw:px-2.5 tw:font-sans tw:text-[13px] tw:font-medium tw:text-[#e2e8f0] tw:no-underline tw:hover:bg-white/10"
+        >
+          <Icon name="material-symbols:settings-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Pengaturan &amp; verifikasi
+        </NuxtLink>
+        <NuxtLink
+          to="/"
+          role="menuitem"
+          class="tw:flex tw:min-h-9 tw:items-center tw:gap-2 tw:rounded-lg tw:px-2.5 tw:font-sans tw:text-[13px] tw:font-medium tw:text-[#e2e8f0] tw:no-underline tw:hover:bg-white/10"
+        >
+          <Icon name="material-symbols:home-outline" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Kembali ke IC Market
+        </NuxtLink>
+        <div class="tw:my-1 tw:h-px tw:bg-[#1e293b]" />
+        <button
+          type="button"
+          role="menuitem"
+          :disabled="loggingOut"
+          class="tw:m-0 tw:flex tw:min-h-9 tw:w-full tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-lg tw:border-0 tw:bg-transparent tw:px-2.5 tw:text-left tw:font-sans tw:text-[13px] tw:font-semibold tw:text-[#fca5a5] tw:hover:bg-[#ef4444]/15 tw:disabled:opacity-60"
+          @click="handleLogout"
+        >
+          <Icon name="material-symbols:logout" class="tw:size-4 tw:shrink-0" aria-hidden="true" />{{ loggingOut ? 'Keluar…' : 'Keluar' }}
+        </button>
+      </div>
+    </div>
 
     <nav aria-label="Menu Seller Center" class="tw:flex tw:flex-col tw:gap-[14px]">
       <div v-for="g in groups" :key="g.label" class="tw:flex tw:flex-col tw:gap-0.5">

@@ -11,7 +11,7 @@ const upErr = (u, key) => u.error || err(key)
 
 <template>
   <div>
-    <OnboardingWizardStepTitle title="Verifikasi identitas" text="Hanya dilihat tim peninjau IC Market, tidak pernah ditampilkan ke pembeli." />
+    <OnboardingWizardStepTitle title="Verifikasi identitas &amp; ketentuan" text="Unggah KTP &amp; swafoto bersifat opsional saat daftar dan bisa dilengkapi nanti di Seller Center. Cukup centang Ketentuan Seller untuk lanjut." />
     <div class="tw:flex tw:flex-col tw:gap-[18px]">
       <OnboardingWizardField label="Nama lengkap sesuai identitas" :error="err('fullName')">
         <template #default="{ id, invalid, describedBy }">

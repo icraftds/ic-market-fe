@@ -170,19 +170,23 @@ export function validateStep(form, i, { strict = true, accountSaved = false } = 
     if (!(f.kinds || []).length) e.kinds = 'Pilih minimal satu jenis produk'
     if (str(f.tagline).length > TAGLINE_MAX) e.tagline = 'Maks. ' + TAGLINE_MAX + ' karakter'
   } else if (i === 2) {
-    if (!f.bank) e.bank = 'Pilih bank'
-    const noOk = accountSaved && !f.accountNo ? true : (strict ? /^\d{6,20}$/ : /^\d{6,}$/).test(str(f.accountNo))
-    if (!noOk) e.accountNo = strict ? 'Hanya angka, 6-20 digit' : 'Hanya angka, minimal 6 digit'
-    const holder = str(f.accountName).trim()
-    if (!holder || (strict && holder.length < 3)) e.accountName = holder ? 'Nama pemilik rekening minimal 3 karakter' : 'Nama pemilik rekening wajib diisi'
+    // Rekening payout opsional di onboarding (bisa dilewati & diisi nanti di Seller Center).
+    // Jika mulai diisi sebagian, lengkapi field rekening lainnya agar tidak setengah-setengah.
+    const anyBank = !!(f.bank || str(f.accountNo).trim() || str(f.accountName).trim() || accountSaved)
+    if (anyBank) {
+      if (!f.bank) e.bank = 'Pilih bank'
+      const noOk = accountSaved && !f.accountNo ? true : (strict ? /^\d{6,20}$/ : /^\d{6,}$/).test(str(f.accountNo))
+      if (!noOk) e.accountNo = strict ? 'Hanya angka, 6-20 digit' : 'Hanya angka, minimal 6 digit'
+      const holder = str(f.accountName).trim()
+      if (!holder || (strict && holder.length < 3)) e.accountName = holder ? 'Nama pemilik rekening minimal 3 karakter' : 'Nama pemilik rekening wajib diisi'
+    }
   } else if (i === 3) {
+    // Verifikasi KTP & swafoto opsional di onboarding (bisa dilewati & diisi nanti di Seller Center).
+    // Hanya persetujuan Ketentuan Seller yang wajib; jika nama identitas & rekening keduanya diisi, harus cocok.
     const full = str(f.fullName).trim()
-    if (!full || (strict && full.length < 3)) e.fullName = full ? 'Nama lengkap minimal 3 karakter' : 'Nama lengkap wajib diisi'
-    if (!f.idCardUploaded) e.idCard = 'Foto kartu identitas wajib diunggah'
-    if (!f.selfieUploaded) e.selfie = 'Swafoto dengan identitas wajib diunggah'
-    // Cermin aturan server saat kirim: nama pemilik rekening harus sama dengan nama di identitas.
+    if (full && strict && full.length < 3) e.fullName = 'Nama lengkap minimal 3 karakter'
     const norm = (v) => str(v).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
-    if (strict && !e.fullName && norm(f.accountName) && norm(f.fullName) !== norm(f.accountName)) e.fullName = 'Nama harus sama dengan pemilik rekening'
+    if (strict && full && !e.fullName && norm(f.accountName) && norm(full) !== norm(f.accountName)) e.fullName = 'Nama harus sama dengan pemilik rekening'
     if (!f.agree) e.agree = 'Setujui Ketentuan Seller untuk melanjutkan'
   }
   return e
