@@ -46,9 +46,23 @@ export default defineNuxtConfig({
     }
   },
 
+  hooks: {
+    // File *Map.js (pemeta API -> UI) diimpor eksplisit. Jangan auto-import: namanya bentrok antar domain
+    // (rupiah, fmt, mapProduct, mapFieldErrors, ...) dan Nuxt akan diam-diam memilih salah satunya.
+    'imports:extend': (imports) => {
+      for (let i = imports.length - 1; i >= 0; i--) {
+        if (/[\\/]utils[\\/]\w+Map\.js$/.test(imports[i].from)) imports.splice(i, 1)
+      }
+    }
+  },
+
   routeRules: {
     '/cart': { ssr: false },
     '/checkout': { ssr: false },
+    '/seller/**': { ssr: false },
+    '/seller/register': { ssr: true },
+    '/akun/**': { ssr: false },
+    '/hosting/pesan': { ssr: false },
     '/**': { headers: { 'x-content-type-options': 'nosniff', 'permissions-policy': 'camera=(), microphone=(), geolocation=()' } }
   },
 

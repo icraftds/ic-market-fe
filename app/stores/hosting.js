@@ -70,7 +70,7 @@ export const useHostingStore = defineStore('hosting', () => {
         s.params = pkey
         return true
       } catch (e) {
-        if (seqs[key] === mine) s.error = normalizeError(e)
+        if (seqs[key] === mine) s.error = { ...normalizeError(e), message: normalizeError(e).message }
         return false
       } finally {
         if (seqs[key] === mine) s.loading = false

@@ -1,4 +1,5 @@
 <script setup>
+import { digitalFileView } from '~/utils/sellerMap'
 definePageMeta({ layout: 'seller-center', middleware: 'require-seller' })
 useSeoMeta({ title: 'Detail Produk | Seller Center IC Market', robots: 'noindex' })
 

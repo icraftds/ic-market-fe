@@ -48,7 +48,7 @@ onMounted(async () => {
             if (user) {
                 // Check role and redirect
                 if (user.role === 'seller') {
-                    router.push('/seller/dashboard')
+                    router.push('/seller')
                 } else if (user.role === 'admin') {
                     router.push('/admin/stores')
                 } else {

@@ -355,7 +355,7 @@ onBeforeUnmount(() => {
                     </NuxtLink>
                   </template>
                   <template v-if="role === 'seller'">
-                    <NuxtLink to="/seller/dashboard" class="dd-item" @click="isMenuOpen = false">
+                    <NuxtLink to="/seller" class="dd-item" @click="isMenuOpen = false">
                       <i class="fa-solid fa-chart-line"></i><span>Dashboard Seller</span>
                     </NuxtLink>
                     <NuxtLink to="/seller/products" class="dd-item" @click="isMenuOpen = false">
@@ -432,7 +432,7 @@ onBeforeUnmount(() => {
         >Voucher Saya</NuxtLink>
 
         <!-- Seller: menu lengkap ada di sidebar Seller Center, di sini cukup satu pintu masuk -->
-        <NuxtLink v-if="role === 'seller'" to="/seller/dashboard" class="nb-link highlight">Seller Center</NuxtLink>
+        <NuxtLink v-if="role === 'seller'" to="/seller" class="nb-link highlight">Seller Center</NuxtLink>
 
         <!-- Admin links -->
         <template v-if="role === 'admin'">

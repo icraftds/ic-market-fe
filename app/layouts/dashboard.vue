@@ -12,7 +12,7 @@ const inAdmin = computed(() => route.path.startsWith('/admin/'))
 const sellerGroups = [
   {
     label: 'Ringkasan',
-    items: [{ to: '/seller/dashboard', label: 'Dashboard', icon: 'material-symbols:dashboard-outline' }]
+    items: [{ to: '/seller', label: 'Dashboard', icon: 'material-symbols:dashboard-outline' }]
   },
   {
     label: 'Toko',

@@ -102,13 +102,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
     // Seller boleh melihat halaman publik toko (beranda, produk, toko, kategori, info) seperti pembeli,
     // tetapi halaman khusus pembeli (keranjang, checkout, pesanan, dst.) tetap diarahkan ke dashboard seller.
     if (role === 'seller') {
-        const allowedSellerPaths = ['/seller/dashboard', '/seller/products', '/seller/orders', '/seller/finance', '/logout', '/profile']
+        const allowedSellerPaths = ['/seller', '/seller/products', '/seller/orders', '/seller/finance', '/logout', '/profile']
         const publicPaths = ['/', '/blog', '/faq', '/panduan', '/kebijakan', '/tentang']
         const publicPrefixes = ['/product/', '/store/', '/kategori/']
         const isPublicPage = publicPaths.includes(path) || publicPrefixes.some((prefix) => path.startsWith(prefix))
 
         if (!allowedSellerPaths.includes(path) && !path.startsWith('/seller/') && !isPublicPage) {
-            return navigateTo('/seller/dashboard')
+            return navigateTo('/seller')
         }
     }
 

@@ -48,7 +48,7 @@ const storeBanner = computed(() => {
       tone: account.applicationStatus === 'rejected' ? 'warn' : 'info',
       title: `Pengajuan seller: ${labels[account.applicationStatus] || account.applicationStatus}`,
       text: 'Cek detail pengajuan membuka toko di IC Market.',
-      to: '/seller/apply',
+      to: '/seller/onboarding',
       cta: 'Lihat pengajuan'
     }
   }
