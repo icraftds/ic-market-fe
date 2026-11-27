@@ -70,3 +70,13 @@ export async function suggest(q) {
 }
 
 export const isNotFound = (e) => e instanceof ApiError && e.status === 404
+
+/**
+ * POST /products/{id}/preview/session -> { url, expiresAt }. Sesi dibuat HANYA saat pembeli menekan tombol (bukan otomatis).
+ * Error: 404 = preview belum tersedia, 429 = terlalu sering, 503 = engine penuh/tidak tersedia.
+ */
+export async function startPreviewSession(productId) {
+  const api = useApi()
+  const d = await api(`products/${Number(productId)}/preview/session`, { method: 'POST', auth: 'optional' })
+  return { url: String(d?.url || ''), expiresAt: d?.expires_at || null }
+}

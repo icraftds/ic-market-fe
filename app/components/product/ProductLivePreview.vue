@@ -13,13 +13,18 @@ const props = defineProps({
   time: { type: String, default: '14:32' },
   queue: { type: Number, default: 2 },
   slug: { type: String, default: '' },
-  timed: { type: Boolean, default: true }
+  timed: { type: Boolean, default: true },
+  sessionUrl: { type: String, default: '' }, // URL sesi dari orchestrator (mode API); kosong = simulasi (mock)
+  errorMessage: { type: String, default: '' }
 })
 const emit = defineEmits(['start', 'stop', 'images'])
 
 const frame = ref(null)
 const frameWidth = { desktop: 'tw:w-full', tablet: 'tw:w-[560px]', mobile: 'tw:w-[320px]' }
-const host = computed(() => `preview.icraftds.id/${props.slug.split('-').slice(0, 2).join('-')}`)
+const host = computed(() => {
+  if (!props.sessionUrl) return `preview.icraftds.id/${props.slug.split('-').slice(0, 2).join('-')}`
+  try { return new URL(props.sessionUrl).host } catch { return 'preview' }
+})
 
 function fullscreen() {
   frame.value?.requestFullscreen?.()
@@ -73,7 +78,16 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
             <span aria-hidden="true" class="tw:size-[9px] tw:rounded-full tw:bg-[#ef4444]" /><span aria-hidden="true" class="tw:size-[9px] tw:rounded-full tw:bg-[#f59e0b]" /><span aria-hidden="true" class="tw:size-[9px] tw:rounded-full tw:bg-[#22c55e]" />
             <span class="tw:ml-2 tw:min-w-0 tw:flex-1 tw:overflow-hidden tw:rounded-md tw:bg-ink tw:px-2.5 tw:py-[5px] tw:font-mono tw:text-[11px] tw:font-medium tw:text-ellipsis tw:whitespace-nowrap tw:text-[#a3a39c]">{{ host }}</span>
           </div>
-          <div class="tw:flex tw:h-[420px] tw:flex-col tw:items-center tw:justify-center tw:gap-2.5 tw:bg-hero tw:p-6 tw:text-center">
+          <iframe
+            v-if="sessionUrl"
+            :src="sessionUrl"
+            :title="`Live preview ${slug}`"
+            class="tw:block tw:h-[520px] tw:w-full tw:border-0 tw:bg-white tw:max-lg:h-[460px]"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+            allow="fullscreen"
+            referrerpolicy="no-referrer"
+          />
+          <div v-else class="tw:flex tw:h-[420px] tw:flex-col tw:items-center tw:justify-center tw:gap-2.5 tw:bg-hero tw:p-6 tw:text-center">
             <span class="tw:font-mono tw:text-xs tw:font-semibold tw:tracking-[0.08em] tw:text-[#93c5fd]">[ APLIKASI BERJALAN DI SINI ]</span>
             <span class="tw:max-w-[360px] tw:font-sans tw:text-[13px] tw:leading-[1.6] tw:font-normal tw:text-[#cbd5e1]">iframe sandbox dari layanan ic-preview. Pembeli bisa klik dan mencoba semua fitur.</span>
           </div>
@@ -83,16 +97,21 @@ const panel = 'tw:flex tw:aspect-[16/10] tw:flex-col tw:items-center tw:justify-
         <span class="tw:flex tw:items-center tw:gap-2"><span aria-hidden="true" class="tw:size-2 tw:rounded-full tw:bg-ok" />Preview aktif<template v-if="timed"> · sisa sesi <b class="tw:font-mono tw:text-ink">{{ time }}</b></template></span>
         <span class="tw:flex tw:items-center tw:gap-3">
           <span class="tw:font-mono tw:text-[11.5px] tw:font-medium tw:text-muted">{{ deviceLabel }}</span>
+          <a v-if="sessionUrl" :href="sessionUrl" target="_blank" rel="noopener noreferrer" class="tw:inline-flex tw:min-h-9 tw:items-center tw:gap-1.5 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-brand tw:no-underline tw:hover:underline"><Icon name="material-symbols:open-in-new" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Buka di tab baru</a>
           <button type="button" class="tw:m-0 tw:inline-flex tw:min-h-9 tw:cursor-pointer tw:items-center tw:gap-2 tw:rounded-[9px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-3 tw:py-0 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none" @click="emit('stop')"><Icon name="material-symbols:stop" class="tw:size-4 tw:shrink-0" aria-hidden="true" />Akhiri sesi</button>
         </span>
       </div>
     </template>
 
-    <!-- server penuh -->
+    <!-- server penuh / error -->
     <div v-else-if="phase === 'full'" :class="panel" class="tw:bg-[#fff7ed] tw:text-ink">
-      <p class="tw:m-0 tw:font-display tw:text-xl tw:leading-[1.3] tw:font-bold">Preview sedang ramai</p>
-      <p class="tw:m-0 tw:max-w-[360px] tw:font-sans tw:text-sm tw:leading-[1.6] tw:text-ink-2">Posisi Anda: {{ queue }} dalam antrean. Halaman ini akan mulai otomatis.</p>
-      <button type="button" :class="darkBtn" class="tw:mt-2" @click="emit('images')"><Icon name="material-symbols:image-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Lihat gambar dulu</button>
+      <p class="tw:m-0 tw:font-display tw:text-xl tw:leading-[1.3] tw:font-bold">{{ errorMessage ? 'Preview belum bisa dibuka' : 'Preview sedang ramai' }}</p>
+      <p v-if="errorMessage" class="tw:m-0 tw:max-w-[360px] tw:font-sans tw:text-sm tw:leading-[1.6] tw:text-ink-2">{{ errorMessage }}</p>
+      <p v-else class="tw:m-0 tw:max-w-[360px] tw:font-sans tw:text-sm tw:leading-[1.6] tw:text-ink-2">Posisi Anda: {{ queue }} dalam antrean. Halaman ini akan mulai otomatis.</p>
+      <div class="tw:mt-2 tw:flex tw:flex-wrap tw:justify-center tw:gap-2.5">
+        <button v-if="errorMessage" type="button" :class="darkBtn" @click="emit('start')"><Icon name="material-symbols:refresh" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Coba lagi</button>
+        <button type="button" :class="errorMessage ? 'tw:m-0 tw:inline-flex tw:min-h-[50px] tw:cursor-pointer tw:items-center tw:justify-center tw:gap-[9px] tw:rounded-xl tw:border tw:border-solid tw:border-line tw:bg-surface tw:px-[22px] tw:font-sans tw:text-[15px] tw:font-semibold tw:text-ink tw:hover:bg-subtle tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none' : darkBtn" @click="emit('images')"><Icon name="material-symbols:image-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Lihat gambar dulu</button>
+      </div>
     </div>
 
     <!-- sesi berakhir -->

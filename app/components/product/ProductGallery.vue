@@ -6,10 +6,16 @@
  * Uji status lewat ?preview=statis|penuh|berakhir (hanya tampilan; tidak menyalakan apa pun).
  */
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { startPreviewSession } from '~/services/catalog'
+import { normalizeError } from '~/services/errors'
 
 const props = defineProps({ product: { type: Object, required: true } })
 
 const route = useRoute()
+const mock = isMockMode({ designMock: useRuntimeConfig().public.designMock })
+const sessionUrl = ref('') // mode API: URL sesi nyata dari orchestrator
+const errorMessage = ref('')
+let runId = 0
 const SESSION = 872 // 14:32
 const IMG_COUNT = 6
 const thumbFrom = ['tw:from-[#e6ebf5]', 'tw:from-[#ece8f5]', 'tw:from-[#e4f0ec]', 'tw:from-[#f3ece4]', 'tw:from-[#e8eaf3]', 'tw:from-[#efe8e4]']
@@ -57,14 +63,52 @@ function run() {
     }
   }, 1000)
 }
+function tick() {
+  clearInterval(tickTimer)
+  tickTimer = setInterval(() => {
+    remaining.value -= 1
+    if (remaining.value <= 0) {
+      clearTimers()
+      sessionUrl.value = ''
+      phase.value = 'ended'
+    }
+  }, 1000)
+}
+// Mode API: panggil POST /products/{id}/preview/session. Hanya dijalankan karena klik pembeli, tidak pernah otomatis.
+async function startReal() {
+  const mine = ++runId
+  phase.value = 'starting'
+  errorMessage.value = ''
+  try {
+    const s = await startPreviewSession(props.product.id)
+    if (mine !== runId) return // dibatalkan (Akhiri sesi / pindah tab) selagi menunggu
+    if (!s.url) throw new Error('empty')
+    sessionUrl.value = s.url
+    const secs = s.expiresAt ? Math.floor((Date.parse(s.expiresAt) - Date.now()) / 1000) : SESSION
+    remaining.value = Math.max(1, Number.isFinite(secs) ? secs : SESSION)
+    phase.value = 'running'
+    tick()
+  } catch (e) {
+    if (mine !== runId) return
+    const st = normalizeError(e).status
+    errorMessage.value = st === 404 ? 'Preview untuk produk ini belum tersedia.'
+      : st === 429 ? 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.'
+      : 'Server preview sedang penuh atau tidak tersedia. Coba lagi sebentar lagi, atau lihat gambar dulu.'
+    phase.value = 'full'
+  }
+}
 function start() {
   clearTimers()
+  if (!mock) return startReal()
   if (isStatic.value) return run()
   phase.value = 'starting'
   startTimer = setTimeout(run, 2500)
 }
 function stop() {
+  runId++
   clearTimers()
+  sessionUrl.value = ''
+  errorMessage.value = ''
   phase.value = isStatic.value ? 'static' : 'idle'
 }
 function tryLive() {
@@ -83,7 +127,7 @@ onMounted(() => {
     }, 3000)
   }
 })
-onBeforeUnmount(clearTimers)
+onBeforeUnmount(() => { runId++; clearTimers() })
 
 const prev = () => { img.value = (img.value + total.value - 1) % total.value }
 const next = () => { img.value = (img.value + 1) % total.value }
@@ -126,6 +170,8 @@ const arrow = 'tw:absolute tw:top-1/2 tw:m-0 tw:grid tw:size-11 tw:-translate-y-
       :queue="queue"
       :slug="product.slug"
       :timed="!isStatic"
+      :session-url="sessionUrl"
+      :error-message="errorMessage"
       @start="start"
       @stop="stop"
       @images="mode = 'img'"
