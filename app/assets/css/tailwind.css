@@ -8,14 +8,14 @@
 @import "tailwindcss/utilities.css" prefix(tw) source(none);
 
 @source "../../components/ui";
-@source "../../pages/dev";
-@source "../../pages/v2";
+@source "../../pages";
+@source "../../components";
 @source "../../components/layout";
 @source "../../components/product";
 @source "../../components/seller";
 @source "../../components/shop";
-@source "../../layouts/v2.vue";
-@source "../../layouts/v2-seller.vue";
+@source "../../layouts/storefront.vue";
+@source "../../layouts/seller-center.vue";
 
 /* Token desain: dipetakan dari variabel yang sudah ada di style.css supaya warna tetap satu sumber. */
 @theme {

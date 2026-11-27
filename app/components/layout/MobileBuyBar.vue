@@ -8,7 +8,7 @@ import { number } from '~/utils/format'
 const props = defineProps({
   price: { type: [Number, String], default: 0 },
   productId: { type: [Number, String], default: null },
-  buyTo: { type: String, default: '/v2/checkout' }
+  buyTo: { type: String, default: '/checkout' }
 })
 const emit = defineEmits(['add', 'buy'])
 const cart = useCartStore()

@@ -54,7 +54,7 @@ const storeInitial = computed(() => (storeName.value.trim()[0] || 'C').toUpperCa
     </nav>
 
     <NuxtLink
-      :to="`/v2/toko/${storeSlug}`"
+      :to="`/store/${storeSlug}`"
       class="tw:mt-auto tw:flex tw:min-h-11 tw:items-center tw:gap-2 tw:px-[10px] tw:font-sans tw:text-[13px] tw:font-semibold tw:text-[#cbd5e1] tw:no-underline tw:focus-visible:ring-[3px] tw:focus-visible:ring-[#3b82f6]/60 tw:focus-visible:outline-none"
     >↗ Lihat halaman toko</NuxtLink>
   </aside>

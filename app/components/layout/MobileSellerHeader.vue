@@ -4,7 +4,7 @@ const props = defineProps({
   storeName: { type: String, default: '' },
   initial: { type: String, default: '' },
   status: { type: String, default: 'Disetujui' },
-  addTo: { type: String, default: '/v2/seller/produk/baru' }
+  addTo: { type: String, default: '/seller/products/create' }
 })
 const auth = useAuthStore()
 const name = computed(() => props.storeName || auth.user?.storeName || 'Toko Saya')

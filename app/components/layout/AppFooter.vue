@@ -7,33 +7,33 @@ const catalog = useCatalogStore()
 const columns = computed(() => [
   {
     title: 'Kategori',
-    links: catalog.categories.map((c) => ({ label: c.name, to: `/v2/kategori/${c.slug}` }))
+    links: catalog.categories.map((c) => ({ label: c.name, to: `/kategori/${c.slug}` }))
   },
   {
     title: 'Produk',
     links: [
-      { label: 'Terbaru', to: '/v2/cari?urut=terbaru' },
-      { label: 'Bisa dicoba live', to: '/v2/cari?live=1' },
-      { label: 'Gratis', to: '/v2/cari?harga=gratis' },
-      { label: 'Voucher', to: '/v2/voucher' }
+      { label: 'Terbaru', to: '/cari?urut=terbaru' },
+      { label: 'Bisa dicoba live', to: '/cari?live=1' },
+      { label: 'Gratis', to: '/cari?harga=gratis' },
+      { label: 'Voucher', to: '/vouchers' }
     ]
   },
   {
     title: 'Bantuan',
     links: [
-      { label: 'FAQ', to: '/v2/bantuan/faq' },
-      { label: 'Panduan Pembelian', to: '/v2/bantuan/panduan-pembelian' },
-      { label: 'Kebijakan Layanan', to: '/v2/bantuan/kebijakan' },
-      { label: 'Hubungi Kami', to: '/v2/bantuan/kontak' }
+      { label: 'FAQ', to: '/faq' },
+      { label: 'Panduan Pembelian', to: '/panduan' },
+      { label: 'Kebijakan Layanan', to: '/kebijakan' },
+      { label: 'Hubungi Kami', to: '/kebijakan' }
     ]
   },
   {
     title: 'Kreator',
     links: [
-      { label: 'Buka Toko', to: '/v2/buka-toko' },
-      { label: 'Seller Center', to: '/v2/seller' },
-      { label: 'Panduan Seller', to: '/v2/bantuan/panduan-seller' },
-      { label: 'Blog', to: '/v2/blog' }
+      { label: 'Buka Toko', to: '/seller/register' },
+      { label: 'Seller Center', to: '/seller' },
+      { label: 'Panduan Seller', to: '/panduan' },
+      { label: 'Blog', to: '/blog' }
     ]
   }
 ])

@@ -24,7 +24,7 @@ const heading = computed(() => props.title || sellerNavActive(route.path)?.label
         <span class="tw:absolute tw:top-2 tw:right-[9px] tw:size-2 tw:rounded-full tw:bg-[#ef4444]" />
       </button>
       <NuxtLink
-        to="/v2/seller/produk/baru"
+        to="/seller/products/create"
         class="tw:flex tw:min-h-[42px] tw:items-center tw:gap-2 tw:rounded-[10px] tw:bg-seller tw:px-4 tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"
       >+ Tambah Produk</NuxtLink>
     </div>

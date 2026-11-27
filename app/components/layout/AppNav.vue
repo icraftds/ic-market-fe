@@ -10,15 +10,15 @@ const auth = useAuthStore()
 
 const links = computed(() => {
   const list = [
-    { label: 'Beranda', to: '/v2', exact: true, tone: 'plain' },
-    { label: 'Game-Z', to: '/v2/game-z', tone: 'plain' }
+    { label: 'Beranda', to: '/', exact: true, tone: 'plain' },
+    { label: 'Game-Z', to: '/game-z', tone: 'plain' }
   ]
-  if (auth.isSeller) list.push({ label: 'Toko Saya', to: auth.user?.hasStore ? `/v2/toko/${auth.user.storeSlug}` : '/v2/buka-toko', tone: 'brand' })
+  if (auth.isSeller) list.push({ label: 'Toko Saya', to: auth.user?.hasStore ? `/store/${auth.user.storeSlug}` : '/seller/register', tone: 'brand' })
   list.push({ label: 'Jasa Hosting', soon: true })
   if (auth.isLoggedIn) {
-    list.push({ label: 'Pesanan Saya', to: '/v2/pesanan', tone: 'plain' }, { label: 'Voucher Saya', to: '/v2/voucher', tone: 'plain' })
+    list.push({ label: 'Pesanan Saya', to: '/orders', tone: 'plain' }, { label: 'Voucher Saya', to: '/vouchers', tone: 'plain' })
   }
-  if (auth.isSeller) list.push({ label: 'Seller Center', to: '/v2/seller', tone: 'brand' })
+  if (auth.isSeller) list.push({ label: 'Seller Center', to: '/seller', tone: 'brand' })
   return list
 })
 

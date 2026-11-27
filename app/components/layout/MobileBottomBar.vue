@@ -7,10 +7,10 @@ const route = useRoute()
 const ui = useUiStore()
 
 const items = [
-  { label: 'Dashboard', to: '/v2/seller', exact: true, icon: 'M4 13h6V4H4v9ZM14 20h6v-9h-6v9ZM4 20h6v-4H4v4ZM14 8h6V4h-6v4Z' },
-  { label: 'Produk', to: '/v2/seller/produk', icon: 'M4 7l8-4 8 4-8 4-8-4ZM4 7v10l8 4 8-4V7' },
-  { label: 'Pesanan', to: '/v2/seller/pesanan', icon: 'M6 4h12l1 16H5L6 4ZM9 8a3 3 0 0 0 6 0' },
-  { label: 'Keuangan', to: '/v2/seller/keuangan', icon: 'M3 7h18v12H3zM3 11h18' }
+  { label: 'Dashboard', to: '/seller', exact: true, icon: 'M4 13h6V4H4v9ZM14 20h6v-9h-6v9ZM4 20h6v-4H4v4ZM14 8h6V4h-6v4Z' },
+  { label: 'Produk', to: '/seller/products', icon: 'M4 7l8-4 8 4-8 4-8-4ZM4 7v10l8 4 8-4V7' },
+  { label: 'Pesanan', to: '/seller/orders', icon: 'M6 4h12l1 16H5L6 4ZM9 8a3 3 0 0 0 6 0' },
+  { label: 'Keuangan', to: '/seller/finance', icon: 'M3 7h18v12H3zM3 11h18' }
 ]
 const isActive = (i) => (i.exact ? route.path === i.to : route.path === i.to || route.path.startsWith(`${i.to}/`))
 const itemCls = "tw:relative tw:flex tw:flex-col tw:items-center tw:gap-[3px] tw:after:absolute tw:after:-inset-y-1.5 tw:after:inset-x-0 tw:after:content-[''] tw:no-underline tw:focus-visible:ring-2 tw:focus-visible:ring-seller tw:focus-visible:outline-none"

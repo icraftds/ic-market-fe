@@ -15,7 +15,7 @@ Semua store memakai gaya setup (`defineStore('id', () => {...})`), tanpa API, da
 | `useAuthStore` | `auth.js` | `user` (awal: seller, sesuai header papan), `isLoggedIn`, `isSeller` | `loginMock(role='seller')`, `logout()` |
 | `useWalletStore` | `wallet.js` | `balance` = 1250000 (iCoin Z) | `format(n?)`, `topupMock(n)` |
 | `useCartStore` | `cart.js` | `items` (id 2, 5 dipilih; 1 tidak), `lines`, `count`, `selectedCount`, `selectedTotal`, `allSelected` | `add`, `remove`, `toggle`, `toggleAll(bool)`, `removeSelected`, `clear`, `has` |
-| `useCatalogStore` | `catalog.js` | `products`, `categories`, `sellers`, `bySlug(slug)`, `byId(id)`, `byCategory(slug\|'semua')`, `sellerBySlug`, `categoryBySlug`, `related(id)`, `sellerProducts(slug)`, `liveProducts`, `categoryTabs` | `search(q)` (saran header), `searchAll(q, {exact})` (halaman /v2/cari, dengan koreksi ejaan) |
+| `useCatalogStore` | `catalog.js` | `products`, `categories`, `sellers`, `bySlug(slug)`, `byId(id)`, `byCategory(slug\|'semua')`, `sellerBySlug`, `categoryBySlug`, `related(id)`, `sellerProducts(slug)`, `liveProducts`, `categoryTabs` | `search(q)` (saran header), `searchAll(q, {exact})` (halaman /cari, dengan koreksi ejaan) |
 | `useUiStore` | `ui.js` | `mobileNavOpen`, `filterOpen`, `toasts` | `toggleMobileNav`, `push(toast)`, `dismiss(id)` |
 
 ## Catatan data

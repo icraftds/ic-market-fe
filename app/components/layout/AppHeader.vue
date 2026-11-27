@@ -26,7 +26,7 @@ const focused = ref(false)
 const dismissed = ref(false)
 const active = ref(-1)
 
-const searchPage = computed(() => route.path.startsWith('/v2/cari'))
+const searchPage = computed(() => route.path.startsWith('/cari'))
 const open = computed(() => focused.value && !dismissed.value && q.value.trim().length > 0)
 const highlighted = computed(() => focused.value || searchPage.value)
 const activeId = computed(() => {
@@ -46,7 +46,7 @@ const submit = () => {
   const term = q.value.trim()
   if (!term) return
   close()
-  navigateTo({ path: '/v2/cari', query: { q: term } })
+  navigateTo({ path: '/cari', query: { q: term } })
 }
 const onKey = (e) => {
   const n = suggest.value?.items?.length || 0
@@ -68,7 +68,7 @@ const select = () => { close(); input.value?.blur() }
 <template>
   <header class="tw:border-0 tw:border-b tw:border-solid tw:border-line tw:bg-surface tw:font-sans tw:leading-normal tw:text-ink">
     <div class="tw:mx-auto tw:flex tw:max-w-[1200px] tw:flex-wrap tw:items-center tw:gap-5 tw:px-6 tw:py-3.5">
-      <NuxtLink to="/v2" aria-label="IC Market" class="tw:flex tw:items-baseline tw:gap-1.5 tw:font-display tw:text-[28px] tw:font-extrabold tw:tracking-[-.02em] tw:text-inherit tw:no-underline tw:hover:text-brand">
+      <NuxtLink to="/" aria-label="IC Market" class="tw:flex tw:items-baseline tw:gap-1.5 tw:font-display tw:text-[28px] tw:font-extrabold tw:tracking-[-.02em] tw:text-inherit tw:no-underline tw:hover:text-brand">
         <span class="tw:text-brand">iC</span><span>Market</span>
       </NuxtLink>
 
@@ -105,7 +105,7 @@ const select = () => { close(); input.value?.blur() }
       </div>
 
       <div class="tw:flex tw:items-center tw:gap-3.5">
-        <NuxtLink to="/v2/keranjang" class="tw:flex tw:min-h-11 tw:flex-col tw:items-center tw:justify-center tw:gap-0.5 tw:text-[11px] tw:font-semibold tw:text-[#44443f] tw:no-underline tw:hover:text-brand">
+        <NuxtLink to="/cart" class="tw:flex tw:min-h-11 tw:flex-col tw:items-center tw:justify-center tw:gap-0.5 tw:text-[11px] tw:font-semibold tw:text-[#44443f] tw:no-underline tw:hover:text-brand">
           <span class="tw:relative tw:flex">
             <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 4h2.5l2 11h10l2-8H7" fill="none" stroke="#111110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><circle cx="9" cy="19" r="1.4" fill="#111110" /><circle cx="17" cy="19" r="1.4" fill="#111110" /></svg>
             <span v-if="cart.count > 0" aria-hidden="true" class="tw:absolute tw:-top-1.5 tw:-right-2.5 tw:grid tw:h-4 tw:min-w-4 tw:place-items-center tw:rounded-full tw:bg-brand tw:px-1 tw:font-sans tw:text-[10px] tw:leading-none tw:font-bold tw:text-white">{{ cart.count }}</span>
@@ -114,14 +114,14 @@ const select = () => { close(); input.value?.blur() }
         </NuxtLink>
 
         <template v-if="auth.isLoggedIn">
-          <NuxtLink to="/v2/topup" class="tw:flex tw:min-h-11 tw:items-center tw:gap-[9px] tw:rounded-[10px] tw:border-[1.5px] tw:border-solid tw:border-[#e8f0ff] tw:bg-[#f5f9ff] tw:px-3 tw:py-1.5 tw:text-inherit tw:no-underline tw:hover:text-brand">
+          <NuxtLink to="/topup" class="tw:flex tw:min-h-11 tw:items-center tw:gap-[9px] tw:rounded-[10px] tw:border-[1.5px] tw:border-solid tw:border-[#e8f0ff] tw:bg-[#f5f9ff] tw:px-3 tw:py-1.5 tw:text-inherit tw:no-underline tw:hover:text-brand">
             <span aria-hidden="true" class="tw:grid tw:size-[26px] tw:place-items-center tw:rounded-lg tw:bg-ink tw:font-display tw:text-[13px] tw:font-extrabold tw:text-coin">Z</span>
             <span class="tw:flex tw:flex-col tw:leading-[1.15]">
               <span class="tw:font-mono tw:text-[9.5px] tw:font-semibold tw:tracking-[.06em] tw:text-brand">ICOINZ</span>
               <span class="tw:font-sans tw:text-[13px] tw:font-bold"><span class="tw:sr-only">Saldo </span>{{ number(wallet.balance) }}</span>
             </span>
           </NuxtLink>
-          <NuxtLink :to="auth.isSeller ? '/v2/seller' : '/v2/pesanan'" class="tw:flex tw:min-h-11 tw:items-center tw:gap-[9px] tw:text-inherit tw:no-underline tw:hover:text-brand">
+          <NuxtLink :to="auth.isSeller ? '/seller' : '/orders'" class="tw:flex tw:min-h-11 tw:items-center tw:gap-[9px] tw:text-inherit tw:no-underline tw:hover:text-brand">
             <span aria-hidden="true" class="tw:grid tw:size-[34px] tw:place-items-center tw:rounded-full tw:bg-[#0ea5e9] tw:font-sans tw:text-sm tw:font-bold tw:text-white">{{ auth.user?.initial }}</span>
             <span class="tw:flex tw:flex-col tw:leading-[1.2]">
               <span class="tw:font-sans tw:text-[13px] tw:font-semibold">{{ auth.user?.name }}</span>
@@ -129,7 +129,7 @@ const select = () => { close(); input.value?.blur() }
             </span>
           </NuxtLink>
         </template>
-        <NuxtLink v-else to="/v2/masuk" class="tw:flex tw:min-h-11 tw:items-center tw:rounded-[12px] tw:bg-ink tw:px-[22px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:hover:text-white tw:hover:bg-ink-2">Masuk</NuxtLink>
+        <NuxtLink v-else to="/login" class="tw:flex tw:min-h-11 tw:items-center tw:rounded-[12px] tw:bg-ink tw:px-[22px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:no-underline tw:hover:text-white tw:hover:bg-ink-2">Masuk</NuxtLink>
       </div>
     </div>
     <AppNav />

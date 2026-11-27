@@ -47,7 +47,6 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    '/v2/**': { ssr: false, headers: { 'x-robots-tag': 'noindex' } },
     '/**': { headers: { 'x-content-type-options': 'nosniff', 'permissions-policy': 'camera=(), microphone=(), geolocation=()' } }
   },
 

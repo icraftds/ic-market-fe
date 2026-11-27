@@ -2,7 +2,7 @@
 /**
  * MobileTopBar: bar atas halaman dalam (V2Mobile katalog & produk): tombol kembali, judul, aksi.
  * variant: 'title' (judul tebal 16px, katalog) | 'crumb' (induk 14px abu, produk).
- * action: '' | 'search' (ikon cari, ke /v2/cari) | 'share' (teks Bagikan, emit share). Slot "action" menggantikan.
+ * action: '' | 'search' (ikon cari, ke /cari) | 'share' (teks Bagikan, emit share). Slot "action" menggantikan.
  */
 const props = defineProps({
   title: { type: String, default: '' },
@@ -32,7 +32,7 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-3 tw:after:content-['
     ><span aria-hidden="true">‹</span></button>
     <span class="tw:flex-1 tw:font-sans" :class="variant === 'crumb' ? 'tw:text-sm tw:font-semibold tw:text-ink-2' : 'tw:text-base tw:font-bold tw:text-ink'">{{ title }}</span>
     <slot name="action">
-      <NuxtLink v-if="action === 'search'" to="/v2/cari" aria-label="Cari" class="tw:flex tw:text-ink" :class="hit">
+      <NuxtLink v-if="action === 'search'" to="/cari" aria-label="Cari" class="tw:flex tw:text-ink" :class="hit">
         <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="#111110" stroke-width="1.7" /><path d="m13.5 13.5 3.5 3.5" stroke="#111110" stroke-width="1.7" stroke-linecap="round" /></svg>
       </NuxtLink>
       <button

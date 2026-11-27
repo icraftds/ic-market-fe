@@ -23,10 +23,10 @@ const result = computed(() => {
 const categoryName = (slug) => catalog.categories.find((c) => c.slug === slug)?.name || ''
 
 const items = computed(() => [
-  ...result.value.products.map((p) => ({ key: `p-${p.id}`, to: `/v2/produk/${p.slug}` })),
-  ...result.value.categories.map((c) => ({ key: `c-${c.slug}`, to: `/v2/kategori/${c.slug}` })),
-  ...result.value.sellers.map((s) => ({ key: `s-${s.slug}`, to: `/v2/toko/${s.slug}` })),
-  { key: 'all', to: { path: '/v2/cari', query: { q: term.value } } }
+  ...result.value.products.map((p) => ({ key: `p-${p.id}`, to: `/product/${p.slug}` })),
+  ...result.value.categories.map((c) => ({ key: `c-${c.slug}`, to: `/kategori/${c.slug}` })),
+  ...result.value.sellers.map((s) => ({ key: `s-${s.slug}`, to: `/store/${s.slug}` })),
+  { key: 'all', to: { path: '/cari', query: { q: term.value } } }
 ])
 const empty = computed(() => !result.value.products.length && !result.value.categories.length && !result.value.sellers.length)
 const idx = (key) => items.value.findIndex((i) => i.key === key)
@@ -69,7 +69,7 @@ defineExpose({ items })
         v-for="(p, i) in result.products"
         :id="optId(`p-${p.id}`)"
         :key="p.id"
-        :to="`/v2/produk/${p.slug}`"
+        :to="`/product/${p.slug}`"
         role="option"
         :aria-selected="activeIndex === idx(`p-${p.id}`)"
         :class="[rowCls, activeIndex === idx(`p-${p.id}`) ? 'tw:bg-subtle' : '']"
@@ -90,7 +90,7 @@ defineExpose({ items })
         v-for="c in result.categories"
         :id="optId(`c-${c.slug}`)"
         :key="c.slug"
-        :to="`/v2/kategori/${c.slug}`"
+        :to="`/kategori/${c.slug}`"
         role="option"
         :aria-selected="activeIndex === idx(`c-${c.slug}`)"
         :class="[rowCls, activeIndex === idx(`c-${c.slug}`) ? 'tw:bg-subtle' : '']"
@@ -110,7 +110,7 @@ defineExpose({ items })
         v-for="s in result.sellers"
         :id="optId(`s-${s.slug}`)"
         :key="s.slug"
-        :to="`/v2/toko/${s.slug}`"
+        :to="`/store/${s.slug}`"
         role="option"
         :aria-selected="activeIndex === idx(`s-${s.slug}`)"
         :class="[rowCls, activeIndex === idx(`s-${s.slug}`) ? 'tw:bg-subtle' : '']"
@@ -126,7 +126,7 @@ defineExpose({ items })
 
     <NuxtLink
       :id="optId('all')"
-      :to="{ path: '/v2/cari', query: { q: term } }"
+      :to="{ path: '/cari', query: { q: term } }"
       role="option"
       :aria-selected="activeIndex === idx('all')"
       class="tw:mt-1 tw:border-0 tw:border-t tw:border-solid tw:border-line tw:text-[13.5px] tw:font-semibold tw:text-brand"

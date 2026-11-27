@@ -16,19 +16,19 @@ const coin = computed(() => {
   const f = (v, d) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: d }).format(v)
   return n >= 1000000 ? `${f(n / 1000000, 2)} jt` : f(n, 0)
 })
-const tokoSaya = computed(() => (auth.user?.hasStore ? '/v2/seller' : '/v2/buka-toko'))
+const tokoSaya = computed(() => (auth.user?.hasStore ? '/seller' : '/seller/register'))
 const links = computed(() => [
-  { label: 'Beranda', to: '/v2', exact: true, tone: 'plain' },
-  { label: 'Game-Z', to: '/v2/game-z', tone: 'plain' },
+  { label: 'Beranda', to: '/', exact: true, tone: 'plain' },
+  { label: 'Game-Z', to: '/game-z', tone: 'plain' },
   { label: 'Toko Saya', to: tokoSaya.value, tone: 'brand' },
-  { label: 'Pesanan', to: '/v2/pesanan', tone: 'plain' },
-  { label: 'Voucher', to: '/v2/voucher', tone: 'plain' }
+  { label: 'Pesanan', to: '/orders', tone: 'plain' },
+  { label: 'Voucher', to: '/vouchers', tone: 'plain' }
 ])
 const isActive = (l) => (l.exact ? route.path === l.to : route.path === l.to || route.path.startsWith(`${l.to}/`))
 
 function submit() {
   const term = q.value.trim()
-  router.push(term ? { path: '/v2/cari', query: { q: term } } : '/v2/cari')
+  router.push(term ? { path: '/cari', query: { q: term } } : '/cari')
 }
 
 const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-['']"
@@ -37,12 +37,12 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-
 <template>
   <header class="tw:flex tw:flex-col tw:gap-2.5 tw:border-0 tw:border-b tw:border-solid tw:border-line tw:bg-surface tw:px-4 tw:pt-3 tw:pb-2.5">
     <div class="tw:flex tw:items-center tw:justify-between">
-      <NuxtLink to="/v2" aria-label="IC Market" class="tw:font-display tw:text-[22px] tw:font-extrabold tw:tracking-[-0.02em] tw:text-ink tw:no-underline">
+      <NuxtLink to="/" aria-label="IC Market" class="tw:font-display tw:text-[22px] tw:font-extrabold tw:tracking-[-0.02em] tw:text-ink tw:no-underline">
         <span class="tw:text-brand">iC</span> Market
       </NuxtLink>
       <span class="tw:flex tw:items-center tw:gap-3">
         <NuxtLink
-          to="/v2/topup"
+          to="/topup"
           :aria-label="`Saldo iCoin ${coin}, isi saldo`"
           class="tw:flex tw:items-center tw:gap-1.5 tw:rounded-lg tw:border tw:border-solid tw:border-[#e8f0ff] tw:bg-[#f5f9ff] tw:px-2 tw:py-1 tw:font-sans tw:text-[11.5px] tw:font-bold tw:text-ink tw:no-underline"
           :class="hit"
@@ -50,7 +50,7 @@ const hit = "tw:relative tw:after:absolute tw:after:-inset-2.5 tw:after:content-
           <span aria-hidden="true" class="tw:grid tw:size-[18px] tw:place-items-center tw:rounded-[5px] tw:bg-ink tw:font-display tw:text-[10px] tw:font-extrabold tw:text-coin">Z</span>{{ coin }}
         </NuxtLink>
         <NuxtLink
-          to="/v2/keranjang"
+          to="/cart"
           :aria-label="cart.count ? `Keranjang, ${cart.count} item` : 'Keranjang'"
           class="tw:flex tw:text-ink"
           :class="hit"

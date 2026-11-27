@@ -19,7 +19,7 @@ const tints = [
 
 <template>
   <NuxtLink
-    :to="`/v2/produk/${product.slug}`"
+    :to="`/product/${product.slug}`"
     class="tw:block tw:overflow-hidden tw:rounded-xl tw:border tw:border-solid tw:border-line tw:bg-surface tw:text-ink tw:no-underline tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
   >
     <img v-if="product.image" :src="product.image" alt="" loading="lazy" class="tw:block tw:aspect-[4/3] tw:w-full tw:object-cover">
