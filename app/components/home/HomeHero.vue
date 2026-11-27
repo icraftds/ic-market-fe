@@ -52,7 +52,7 @@ const focusRing = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-
     <span class="tw:hidden tw:items-center tw:gap-2 tw:rounded-full tw:border tw:border-solid tw:border-[#cfe1ff] tw:bg-[#eaf2ff] tw:px-3.5 tw:py-[7px] tw:font-sans tw:text-xs tw:font-semibold tw:text-[#1d4ed8] tw:lg:inline-flex">
       <Icon name="material-symbols:bolt" class="tw:size-[16px] tw:shrink-0" aria-hidden="true" />IC Market · Open Store
     </span>
-    <h1 class="tw:mx-auto tw:mt-[22px] tw:mb-0 tw:max-w-[900px] tw:font-display tw:text-[length:clamp(40px,6vw,72px)] tw:leading-[1.04] tw:font-extrabold tw:tracking-[-0.03em] tw:text-hero tw:max-lg:mt-0 tw:max-lg:max-w-none tw:max-lg:text-[34px] tw:max-lg:leading-[1.05]">Aset Digital <em class="tw:bg-linear-90 tw:from-brand tw:to-[#7c5cff] tw:bg-clip-text tw:text-transparent tw:italic tw:max-lg:bg-none tw:max-lg:bg-clip-border tw:max-lg:text-brand">Premium</em>,<br class="tw:max-lg:hidden"> Harga Terjangkau.</h1>
+    <h1 class="tw:mx-auto tw:mt-[22px] tw:mb-0 tw:max-w-[900px] tw:font-display tw:text-[length:clamp(40px,6vw,72px)] tw:leading-[1.04] tw:font-extrabold tw:tracking-[-0.03em] tw:text-hero tw:max-lg:mt-0 tw:max-lg:max-w-none tw:max-lg:text-[34px] tw:max-lg:leading-[1.05]">Aset Digital <em class="tw:-mr-[0.14em] tw:bg-linear-90 tw:from-brand tw:to-[#7c5cff] tw:bg-clip-text tw:py-[0.06em] tw:pr-[0.14em] tw:text-transparent tw:italic tw:max-lg:bg-none tw:max-lg:bg-clip-border tw:max-lg:text-brand">Premium</em>,<br class="tw:max-lg:hidden"> Harga Terjangkau.</h1>
 
     <div role="group" aria-label="Produk hot" class="tw:mx-auto tw:mt-11 tw:flex tw:h-[290px] tw:items-end tw:justify-center tw:pl-[38px] tw:max-lg:hidden">
       <NuxtLink
