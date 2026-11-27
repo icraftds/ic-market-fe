@@ -4,15 +4,14 @@ export default defineNuxtPlugin(nuxtApp => {
     const auth = useSsoAuth()
     if (auth.session.value) {
         if (auth.walletInitializationPending.value) auth.initializeWallet().catch(() => {})
-        else if (auth.walletBalance.value === null) auth.fetchWallet().catch(() => {})
+        else if (auth.walletBalance.value === null) auth.fetchWallet(null, { cache: true }).catch(() => {})
     }
+    // Cek sesi hanya saat tab kembali aktif setelah jeda TTL (tidak polling tiap 30 dtk atau tiap focus).
     const check = () => {
-        if (document.visibilityState === 'visible' && auth.session.value) auth.syncSession().catch(() => {})
+        if (document.visibilityState === 'visible' && auth.session.value) auth.syncSession(false).catch(() => {})
     }
-    const timer = setInterval(check, 30000)
-    window.addEventListener('focus', check)
     document.addEventListener('visibilitychange', check)
     nuxtApp.vueApp.onUnmount(() => {
-        clearInterval(timer); window.removeEventListener('focus', check); document.removeEventListener('visibilitychange', check)
+        document.removeEventListener('visibilitychange', check)
     })
 })

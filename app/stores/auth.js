@@ -51,12 +51,45 @@ export const useAuthStore = defineStore('auth', () => {
   const ready = computed(() => status.value === 'ready')
 
   let inflight = null
+  const STORE_CACHE_KEY = 'icmarket-auth-store-cache'
+  const STORE_CACHE_TTL = 5 * 60 * 1000
+  const readStoreCache = (uid) => {
+    if (!import.meta.client || typeof sessionStorage === 'undefined' || !uid) return null
+    try {
+      const c = JSON.parse(sessionStorage.getItem(STORE_CACHE_KEY) || 'null')
+      if (c && c.uid === uid && Date.now() - c.at < STORE_CACHE_TTL) return c
+    } catch { /* abaikan */ }
+    return null
+  }
+  const writeStoreCache = (uid, nextStore, nextStoreStatus, nextAppStatus) => {
+    if (!import.meta.client || typeof sessionStorage === 'undefined' || !uid) return
+    try {
+      sessionStorage.setItem(STORE_CACHE_KEY, JSON.stringify({
+        uid,
+        store: nextStore,
+        storeStatus: nextStoreStatus,
+        applicationStatus: nextAppStatus,
+        at: Date.now()
+      }))
+    } catch { /* abaikan */ }
+  }
+  const clearStoreCache = () => {
+    if (!import.meta.client || typeof sessionStorage === 'undefined') return
+    try { sessionStorage.removeItem(STORE_CACHE_KEY) } catch { /* abaikan */ }
+  }
 
-  async function loadStore(r, initialAppStatus = null, initialStoreStatus = null) {
+  async function loadStore(r, initialAppStatus = null, initialStoreStatus = null, uid = null) {
     store.value = null
     storeStatus.value = initialStoreStatus
     applicationStatus.value = initialAppStatus
     if (r !== 'seller' && r !== 'buyer') return
+    const cached = readStoreCache(uid)
+    if (cached) {
+      store.value = cached.store ?? null
+      storeStatus.value = cached.storeStatus ?? initialStoreStatus
+      applicationStatus.value = cached.applicationStatus ?? initialAppStatus
+      return
+    }
     try {
       const api = useApi()
       const res = await api('seller/store', { auth: 'required', raw: true })
@@ -71,6 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
         const app = await api('seller/application', { auth: 'required' })
         if (app?.application?.status) applicationStatus.value = app.application.status
       }
+      writeStoreCache(uid, store.value, storeStatus.value, applicationStatus.value)
     } catch {
       // Gagal memuat toko tidak boleh memutus sesi; pertahankan status dari /api/user jika ada.
     }
@@ -86,6 +120,7 @@ export const useAuthStore = defineStore('auth', () => {
         storeStatus: storeStatus.value,
         applicationStatus: applicationStatus.value
       }
+      writeStoreCache(user.value.id, store.value, storeStatus.value, applicationStatus.value)
     }
   }
 
@@ -113,7 +148,7 @@ export const useAuthStore = defineStore('auth', () => {
       storeStatus.value = userStoreStatus
       applicationStatus.value = userAppStatus
     } else {
-      await loadStore(s.role, userAppStatus, userStoreStatus)
+      await loadStore(s.role, userAppStatus, userStoreStatus, s.id)
     }
     user.value = fromSession(s, store.value, applicationStatus.value)
   }
@@ -155,6 +190,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    clearStoreCache()
     if (!isMock) {
       try { await useDemoAuth().logout() } catch { /* sesi lokal tetap dibersihkan */ }
       store.value = null
