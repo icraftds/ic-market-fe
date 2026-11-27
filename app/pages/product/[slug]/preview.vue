@@ -13,11 +13,6 @@ const route = useRoute()
 const catalog = useCatalogStore()
 const slug = computed(() => String(route.params.slug || '').trim().toLowerCase())
 
-useHead({
-  title: computed(() => (product.value ? `Live Preview: ${product.value.name}` : 'Live Preview')),
-  meta: [{ name: 'robots', content: 'noindex, nofollow' }]
-})
-
 const devDefs = [
   { id: 'desktop', label: 'Desktop', icon: 'material-symbols:desktop-windows-outline', cls: 'tw:w-full tw:h-full' },
   { id: 'tablet', label: 'Tablet', icon: 'material-symbols:tablet-mac-outline', cls: 'tw:w-[768px] tw:max-w-full tw:h-full tw:rounded-xl tw:shadow-2xl' },
@@ -30,6 +25,11 @@ const errorMessage = ref('')
 const sessionUrl = ref('')
 const device = ref('desktop')
 const remaining = ref(600)
+
+useHead({
+  title: computed(() => (product.value ? `Live Preview: ${product.value.name}` : 'Live Preview')),
+  meta: [{ name: 'robots', content: 'noindex, nofollow' }]
+})
 
 const curDev = computed(() => devDefs.find((d) => d.id === device.value) || devDefs[0])
 const time = computed(() => `${String(Math.floor(remaining.value / 60)).padStart(2, '0')}:${String(remaining.value % 60).padStart(2, '0')}`)
