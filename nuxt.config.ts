@@ -47,6 +47,9 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
+    '/cart': { ssr: false },
+    '/checkout': { ssr: false },
+    '/cari': { ssr: false },
     '/**': { headers: { 'x-content-type-options': 'nosniff', 'permissions-policy': 'camera=(), microphone=(), geolocation=()' } }
   },
 

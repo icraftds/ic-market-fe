@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@iconify-json/lucide": "1.2.160",
+    "@iconify-json/material-symbols": "1.2.101",
     "@nuxt/icon": "2.6.3",
     "@pinia/nuxt": "1.0.3",
     "@tiptap/pm": "^3.35.0",

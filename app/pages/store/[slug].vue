@@ -1,407 +1,63 @@
 <script setup>
-const productApi = useProductApi()
-import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'storefront' })
 
 const route = useRoute()
-const router = useRouter()
-const { session } = useDemoAuth()
+const catalog = useCatalogStore()
+const siteUrl = String(useRuntimeConfig().public.siteUrl || '').replace(/\/$/, '')
 
-const {
-  refreshCatalog
-} = useProductCatalog()
+const seller = catalog.sellerBySlug(String(route.params.slug))
+if (!seller) throw createError({ statusCode: 404, statusMessage: 'Toko tidak ditemukan', fatal: true })
 
-const config = useRuntimeConfig()
+const products = computed(() => catalog.sellerProducts(seller.slug))
+const q = ref('')
+const canonical = `${siteUrl}/store/${seller.slug}`
+const title = `${seller.name} | IC Market`
+const description = `${seller.shortDesc} ${products.value.length} produk digital dari ${seller.name} di IC Market.`
 
-const slugKey = String(route.params.slug || '').trim().toLowerCase()
-const dynamicStore = useState(`store-${slugKey}`, () => null)
-const dynamicProducts = useState(`store-products-${slugKey}`, () => [])
-const paginationMeta = useState(`store-meta-${slugKey}`, () => null)
-const isLoading = ref(!dynamicStore.value)
-
-/*
- * Data dummy dari file ZIP tetap dipertahankan sebagai seed/test.
- * Semua produk dummy punya seller yang sesuai dengan route /store/{slug}.
- */
-const stores = {
-  'creative-studio': {
-    name: 'Creative Studio',
-    category: 'Web & Digital Product',
-    description: 'Kumpulan template web dan aset digital untuk membantu proyek kreatif dan bisnis.',
-    rating: '4.9',
-    products: [
-      {
-        id: 'dummy-ecommerce-super',
-        name: 'Template E-Commerce Super',
-        category: 'Web Template',
-        price: 350000,
-        image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80',
-        tags: ['HTML', 'E-Commerce']
-      },
-      {
-        id: 'dummy-admin-dashboard',
-        name: 'Admin Dashboard Pro',
-        category: 'Web Template',
-        price: 199000,
-        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80',
-        tags: ['Dashboard', 'HTML']
-      }
-    ]
-  },
-  'codecraft-store': {
-    name: 'CodeCraft Store',
-    category: 'Source Code',
-    description: 'Source code dan starter project untuk mempercepat pengembangan aplikasi.',
-    rating: '4.8',
-    products: [
-      {
-        id: 'dummy-laravel-pos',
-        name: 'Laravel Point of Sales',
-        category: 'Source Code',
-        price: 250000,
-        image: 'https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=600&q=80',
-        tags: ['Source Code', 'Laravel', 'PHP']
-      }
-    ]
-  },
-  'pixel-art-lab': {
-    name: 'Pixel Art Lab',
-    category: 'UI/UX Design',
-    description: 'UI kit dan aset desain untuk kebutuhan aplikasi mobile maupun web.',
-    rating: '5.0',
-    products: [
-      {
-        id: 'dummy-mobile-ui',
-        name: 'Mobile App UI Kit',
-        category: 'UI Kit',
-        price: 120000,
-        image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=600&q=80',
-        tags: ['UI Kit', 'Mobile', 'Figma']
-      },
-      {
-        id: 'dummy-startup-ui',
-        name: 'UI/UX Startup Kit',
-        category: 'UI Kit',
-        price: 150000,
-        image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80',
-        tags: ['Figma', 'Design']
-      }
-    ]
-  },
-  'icraft-demo-store': {
-    name: 'iCraft Demo Store',
-    category: 'Digital Product',
-    description: 'Koleksi produk digital demo dari ekosistem iCraft Marketplace.',
-    rating: '4.7',
-    products: [
-      {
-        id: 'dummy-icraft-kit',
-        name: 'iCraft Starter Design Kit',
-        category: 'UI Kit',
-        price: 150000,
-        image: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=600&q=80',
-        tags: ['UI Kit', 'Figma', 'Design']
-      }
-    ]
-  },
-  'design-hub': {
-    name: 'Design Hub',
-    category: 'Design Asset',
-    description: 'Aset desain sederhana untuk wireframe dan kebutuhan ide awal produk.',
-    rating: '4.8',
-    products: [
-      {
-        id: 'dummy-wireframe-pack',
-        name: 'Wireframe Pack — Gratis',
-        category: 'Design Asset',
-        price: 0,
-        image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80',
-        tags: ['Wireframe', 'Design', 'Free']
-      }
-    ]
-  }
-}
-
-const requestedSlug = computed(() => String(route.params.slug || '').trim().toLowerCase())
-
-const storeAliases = {
-  'pixel-works': 'pixel-art-lab',
-  'toko-icraft': 'icraft-demo-store'
-}
-
-const slug = computed(() => storeAliases[requestedSlug.value] || requestedSlug.value)
-
-const normalizeDynamicProduct = (product) => {
-  const rawImg = Array.isArray(product.images) ? product.images[0] : null
-  const firstImgUrl = typeof rawImg === 'string' ? rawImg : rawImg?.imageUrl
-  const storeName = dynamicStore.value?.name || product.seller?.store?.name || product.seller?.name || product.storeName || 'Seller'
-  const storeSlug = dynamicStore.value?.slug || product.seller?.store?.slug || slug.value
-  return {
-    ...product,
-    id: product.catalogId || product.id,
-    productId: product.id,
-    catalogId: product.catalogId,
-    name: product.name,
-    category: product.category || 'Digital Product',
-    price: Number(product.price || 0),
-    image:
-      product.image_url ||
-      product.thumbnailUrl ||
-      firstImgUrl ||
-      'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=600&q=80',
-    tags:
-      typeof product.tags === 'string' 
-        ? product.tags.split(',').map(t => t.trim()).filter(Boolean)
-        : (Array.isArray(product.tags) && product.tags.length
-            ? product.tags
-            : [product.category, product.type].filter(Boolean)),
-    storeName,
-    storeSlug,
-    storeId: product.storeId || dynamicStore.value?.id || '',
-    storeApplicationId: product.storeApplicationId || '',
-    tenantSchema: product.tenantSchema || '',
-    type: product.type || 'Digital',
-    digitalFiles: Array.isArray(product.digitalFiles) ? product.digitalFiles : (Array.isArray(product.digital_files) ? product.digital_files : [])
-  }
-}
-
-const store = computed(() => {
-  /*
-   * Toko seller asli/dinamis mendapat prioritas.
-   * Kalau slug tidak ada di data dinamis, baru fallback ke dummy seed.
-   */
-  if (dynamicStore.value) {
-    return {
-      name: dynamicStore.value.name,
-      category: dynamicStore.value.category || 'Digital Product',
-      description:
-        dynamicStore.value.description ||
-        `Koleksi produk dari ${dynamicStore.value.name}.`,
-      rating: dynamicStore.value.rating || 'Baru',
-      products: dynamicProducts.value.map(normalizeDynamicProduct),
-      applicationId: dynamicStore.value.applicationId,
-      storeId: dynamicStore.value.id,
-      schemaName: dynamicStore.value.schemaName,
-      isDynamic: true
-    }
-  }
-
-  return stores[slug.value] || null
-})
-
-const siteUrl = String(config.public.siteUrl).replace(/\/$/, '')
 useSeoMeta({
-  title: () => store.value ? `Toko ${store.value.name}` : 'Toko',
-  description: () => (`${store.value?.name || 'Seller'} di IC Market: ${store.value?.description || 'koleksi aset digital berkualitas'}. Akses instan dan garansi 30 hari.`).slice(0, 158),
-  ogTitle: () => store.value ? `Toko ${store.value.name} | IC Market` : 'IC Market',
-  ogUrl: () => `${siteUrl}/store/${slug.value}`,
-  robots: () => store.value || isLoading.value ? 'index, follow' : 'noindex'
+  title,
+  description,
+  ogTitle: title,
+  ogDescription: description,
+  ogType: 'website',
+  ogUrl: canonical
 })
-useHead(() => ({
-  link: [{ rel: 'canonical', href: `${siteUrl}/store/${slug.value}` }],
-  script: store.value?.isDynamic ? [{
+useHead({
+  link: [{ rel: 'canonical', href: canonical }],
+  script: [{
     type: 'application/ld+json',
-    innerHTML: JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: `Toko ${store.value.name}`,
-      url: `${siteUrl}/store/${slug.value}`,
-      description: store.value.description,
-      mainEntity: { '@type': 'ItemList', itemListElement: store.value.products.filter(item => item.slug).map((item, i) => ({ '@type': 'ListItem', position: i + 1, url: `${siteUrl}/product/${item.slug}`, name: item.name })) }
-    }).replace(/</g, '\\u003c')
-  }] : []
-}))
-
-const formatCoin = (value) => Number(value || 0).toLocaleString('id-ID')
-
-const { fetchCart, cart: apiCart, addToCart: apiAddToCart } = useCart()
-
-const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80';
-
-const catalogImage = (product) => {
-    return product.image || FALLBACK_PRODUCT_IMAGE;
-};
-const catalogRating = (product) => Number(product?.rating || 0);
-const catalogReviews = (product) => Number(product?.review_count || 0);
-
-const isInCart = (productId) => {
-    return apiCart.value?.some(item => item.product_id === productId || item.id === productId);
-};
-
-const handleDirectBuy = async (product, e) => {
-    if (product.price === 0) return;
-    useState('global_loader').value = true;
-    const success = await apiAddToCart(product.id || product.catalogId || product.productId, 1);
-    if (success) {
-        router.push('/checkout');
-    } else {
-        useState('global_loader').value = false;
-    }
-};
-
-const animateToCart = (btn) => {
-    if (!import.meta.client || !btn) return;
-    const rect = btn.getBoundingClientRect();
-    const cartBtn = document.querySelector('#cart-btn');
-    if (!cartBtn) return;
-    const cartBtnRect = cartBtn.getBoundingClientRect();
-    const dot = document.createElement('div');
-    dot.style.position = 'fixed';
-    dot.style.left = (rect.left + rect.width / 2) + 'px';
-    dot.style.top = (rect.top + rect.height / 2) + 'px';
-    dot.style.width = '20px';
-    dot.style.height = '20px';
-    dot.style.borderRadius = '50%';
-    dot.style.background = 'var(--primary, #1472ff)';
-    dot.style.boxShadow = '0 0 10px var(--primary, #1472ff)';
-    dot.style.zIndex = '999999';
-    dot.style.transition = 'all 0.7s cubic-bezier(0.25, 1, 0.5, 1)';
-    document.body.appendChild(dot);
-    setTimeout(() => {
-        dot.style.left = (cartBtnRect.left + cartBtnRect.width / 2) + 'px';
-        dot.style.top = (cartBtnRect.top + cartBtnRect.height / 2) + 'px';
-        dot.style.transform = 'scale(0.2)';
-        dot.style.opacity = '0';
-    }, 50);
-    setTimeout(() => {
-        dot.remove();
-        cartBtn.style.transform = 'scale(1.2)';
-        setTimeout(() => cartBtn.style.transform = '', 200);
-    }, 700);
-};
-
-const handleAddCart = async (product, e) => {
-    if (product.price === 0) {
-        alert('Mulai mengunduh...');
-        return;
-    }
-    const productId = product.id || product.catalogId || product.productId;
-    if (isInCart(productId)) return;
-    
-    const btn = e.currentTarget;
-    animateToCart(btn);
-    await apiAddToCart(productId, 1);
-};
-
-
-
-const currentPage = ref(1)
-const changePage = async (page) => { currentPage.value = page; await fetchStoreData() }
-const fetchStoreData = async () => {
-  isLoading.value = true
-  try {
-    const storeRes = await productApi(`${config.public.apiBase}/stores/${slug.value}`).catch(() => null)
-    if (storeRes && storeRes.success) {
-      dynamicStore.value = storeRes.data
-    }
-
-    const prodRes = await productApi(`${config.public.apiBase}/products?store_slug=${slug.value}&page=${currentPage.value}&limit=12`).catch(() => null)
-    if (prodRes && prodRes.success) {
-      paginationMeta.value = prodRes.meta
-      dynamicProducts.value = prodRes.data
-    }
-  } catch (error) {
-    console.error('Failed to load store data:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// SEO: ambil data toko + produk di server supaya HTML awal sudah berisi konten.
-if (import.meta.server) {
-  await useAsyncData(`store-ssr-${slugKey}`, async () => { await fetchStoreData(); return true })
-  if (!store.value) setResponseStatus(useRequestEvent(), 404)
-}
-
-onMounted(() => {
-  if (!dynamicStore.value) fetchStoreData()
+    innerHTML: JSON.stringify([
+      { '@context': 'https://schema.org', '@type': 'Organization', name: seller.name, url: canonical, description: seller.about },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Beranda', item: `${siteUrl}/` },
+          { '@type': 'ListItem', position: 2, name: 'Toko', item: canonical },
+          { '@type': 'ListItem', position: 3, name: seller.name, item: canonical }
+        ]
+      }
+    ])
+  }]
 })
 </script>
 
 <template>
   <div>
-  <main class="store-page">
-    <div v-if="store" class="store-container">
-      <NuxtLink to="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Kembali ke toko</NuxtLink>
+    <section class="tw:mx-auto tw:max-w-shop tw:px-6 tw:pt-[22px] tw:max-sm:px-4">
+      <nav aria-label="Breadcrumb" class="tw:mb-3.5 tw:flex tw:flex-wrap tw:gap-2 tw:font-sans tw:text-[13.5px] tw:font-normal tw:text-muted">
+        <NuxtLink to="/" class="tw:text-inherit tw:no-underline tw:hover:text-brand">Beranda</NuxtLink><span aria-hidden="true">/</span><NuxtLink :to="`/store/${seller.slug}`" class="tw:text-inherit tw:no-underline tw:hover:text-brand">Toko</NuxtLink><span aria-hidden="true">/</span><span aria-current="page" class="tw:font-semibold tw:text-ink">{{ seller.name }}</span>
+      </nav>
+      <ShopStoreProfileCard :seller="seller" />
+    </section>
 
-      <section class="store-hero">
-        <div class="store-avatar">{{ store.name.charAt(0) }}</div>
-        <div class="store-copy">
-          <p class="eyebrow">TOKO DIGITAL</p>
-          <h1>{{ store.name }}</h1>
-          <p class="store-category">
-            {{ store.category }} · ★ {{ store.rating }}
-          </p>
-          <p class="store-description">{{ store.description }}</p>
-        </div>
-      </section>
+    <section id="produk" class="tw:mx-auto tw:max-w-shop tw:px-6 tw:pt-7 tw:max-sm:px-4">
+      <ShopStoreTabsBar v-model="q" :store-name="seller.name" :count="products.length" />
+      <ShopStoreProductList :products="products" :query="q" :seller-slug="seller.slug" />
+    </section>
 
-      <section class="catalog-section">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">KOLEKSI PRODUK</p>
-            <h2>Produk dari {{ store.name }}</h2>
-          </div>
-          <span>{{ store.products.length }} produk</span>
-        </div>
-
-        <div v-if="store.products.length" class="product-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; align-items: start;">
-          <ProductCard
-            v-for="product in store.products"
-            :key="product.id || product.catalogId"
-            :product="product"
-            :show-quick-view="false"
-            @add-cart="handleAddCart"
-            @direct-buy="handleDirectBuy"
-          />
-        </div>
-
-        <div v-else class="empty-products">
-          <h3>Belum ada produk aktif</h3>
-          <p>Seller belum mempublikasikan produk untuk toko ini.</p>
-        </div>
-      </section>
+    <div class="tw:mx-auto tw:max-w-shop tw:px-6 tw:pt-12 tw:max-sm:px-4">
+      <ShopStoreAbout :seller="seller" />
     </div>
-
-    <div v-else-if="isLoading" class="store-not-found">
-      <h1>Memuat Toko...</h1>
-      <p>Sedang mengambil data toko.</p>
-    </div>
-
-    <div v-else class="store-not-found">
-      <h1>Toko tidak ditemukan</h1>
-      <p>Slug toko yang kamu buka belum tersedia pada katalog.</p>
-      <button type="button" @click="router.push('/')">Kembali ke katalog</button>
-    </div>
-    <ApiPagination :meta="paginationMeta" :busy="isLoading" @page="changePage" />
-  </main>
-  <SiteFooter />
   </div>
 </template>
-
-<style scoped>
-.store-page { min-height: 100vh; padding: 42px 24px 72px; background: #f7f7f5; color: #171717; }
-.store-container { max-width: 1120px; margin: 0 auto; }
-.back-link { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; margin-bottom: 20px; border: 1px solid #e8e8e4; border-radius: 8px; background: #fff; color: #111110; font-size: 14px; font-weight: 600; text-decoration: none; transition: border-color .15s, background .15s; }
-.back-link:hover { border-color: #111110; }
-.back-link i { font-size: 12px; }
-.store-hero { display: flex; gap: 24px; align-items: center; background: #fff; border: 1px solid #e8e8e4; border-radius: 24px; padding: 32px; }
-.store-avatar { width: 88px; height: 88px; display: grid; place-items: center; border-radius: 22px; background: #1463ff; color: white; font-size: 38px; font-weight: 800; }
-.eyebrow, .product-category { margin: 0 0 8px; font-size: 12px; letter-spacing: 2px; color: #888; font-weight: 800; }
-.store-copy h1, .section-heading h2 { margin: 0; font-size: clamp(28px, 4vw, 42px); }
-.store-category { margin: 8px 0; color: #555; font-weight: 700; }
-.store-description { max-width: 650px; margin: 12px 0 0; color: #777; line-height: 1.6; }
-.catalog-section { margin-top: 38px; }
-.section-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 20px; }
-.section-heading h2 { font-size: 26px; }
-.section-heading > span { color: #777; }
-
-.store-not-found { max-width: 700px; margin: 100px auto; text-align: center; }
-.store-not-found h1 { font-size: 36px; }
-.store-not-found p, .empty-products p { color: #777; margin-bottom: 24px; }
-.empty-products { padding: 42px 24px; text-align: center; border: 1px dashed #d7d7d2; border-radius: 18px; background: #fff; }
-.empty-products h3 { margin: 0 0 8px; }
-@media (max-width: 600px) { .store-page { padding: 24px 16px 48px; } .store-hero { flex-direction: column; align-items: flex-start; padding: 24px; } .section-heading { align-items: flex-start; flex-direction: column; } }
-</style>
