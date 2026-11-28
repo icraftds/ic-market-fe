@@ -15,7 +15,14 @@ const cart = useCartStore()
 const ui = useUiStore()
 const busy = ref(false)
 
-const formatLabel = computed(() => (props.product.format === 'JS' ? 'JavaScript' : props.product.format))
+const techChips = computed(() => {
+  const raw = String(props.product.format || '').trim()
+  if (!raw) return []
+  return raw.split(',').map((s) => {
+    const t = s.trim()
+    return t === 'JS' ? 'JavaScript' : t
+  }).filter(Boolean)
+})
 const free = computed(() => Number(props.product.price) === 0)
 
 async function addToCart() {
@@ -50,16 +57,16 @@ const focus = 'tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visi
 
 <template>
   <div class="tw:rounded-[22px] tw:border tw:border-solid tw:border-line tw:bg-surface tw:p-6 tw:max-lg:rounded-none tw:max-lg:border-0 tw:max-lg:bg-transparent tw:max-lg:p-0">
-    <div class="tw:flex tw:flex-wrap tw:gap-2 tw:max-lg:gap-1.5">
+    <div class="tw:flex tw:flex-wrap tw:gap-1.5">
       <span :class="chip">{{ product.categoryName }}</span>
-      <span :class="chip">{{ formatLabel }}</span>
+      <span v-for="t in techChips" :key="t" :class="chip">{{ t }}</span>
     </div>
     <h1 class="tw:mx-0 tw:mt-3.5 tw:mb-0 tw:font-display tw:text-[26px] tw:leading-[1.25] tw:font-bold tw:tracking-[-0.01em] tw:text-ink tw:max-lg:mt-3 tw:max-lg:text-[21px]">{{ product.name }}</h1>
     <a
       v-if="seller"
       href="#seller"
       class="tw:mt-3 tw:inline-flex tw:items-center tw:gap-2 tw:font-sans tw:text-sm tw:font-medium tw:text-ink-2 tw:no-underline tw:hover:text-brand tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none tw:max-lg:mt-2.5 tw:max-lg:text-[13px]"
-    >oleh <span aria-hidden="true" class="tw:grid tw:size-6 tw:place-items-center tw:rounded-full tw:bg-ink tw:font-sans tw:text-[11px] tw:font-bold tw:text-white tw:max-lg:hidden">{{ seller.initial }}</span><b class="tw:text-ink">{{ seller.name }}</b><span v-if="seller.verified" class="tw:lg:hidden">· Terverifikasi</span></a>
+    >oleh <img v-if="seller.logo" :src="seller.logo" :alt="seller.name" class="tw:size-6 tw:rounded-full tw:border tw:border-solid tw:border-line tw:object-cover tw:max-lg:hidden"><span v-else aria-hidden="true" class="tw:grid tw:size-6 tw:place-items-center tw:rounded-full tw:bg-ink tw:font-sans tw:text-[11px] tw:font-bold tw:text-white tw:max-lg:hidden">{{ seller.initial }}</span><b class="tw:text-ink">{{ seller.name }}</b><span v-if="seller.verified" class="tw:lg:hidden">· Terverifikasi</span></a>
 
     <div class="tw:mt-5 tw:flex tw:items-center tw:gap-2.5 tw:border-0 tw:border-t tw:border-solid tw:border-[#efefea] tw:pt-[18px] tw:max-lg:hidden">
       <template v-if="free">
