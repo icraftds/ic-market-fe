@@ -22,7 +22,14 @@ const actionBase = 'tw:flex tw:min-h-[42px] tw:items-center tw:gap-2 tw:rounded-
     </nav>
     <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-4">
       <div class="tw:flex tw:min-w-0 tw:items-center tw:gap-3.5">
-        <span aria-hidden="true" class="tw:h-[54px] tw:w-[72px] tw:flex-none tw:rounded-[10px] tw:border tw:border-solid tw:border-panel-line tw:bg-linear-[135deg,#e6ebf5,#f7f7f5]" />
+        <img
+          v-if="product.images?.[0] || row.images?.[0]"
+          :src="product.images?.[0] || row.images[0]"
+          :alt="product.name"
+          loading="lazy"
+          class="tw:h-[54px] tw:w-[72px] tw:flex-none tw:rounded-[10px] tw:border tw:border-solid tw:border-panel-line tw:object-cover"
+        >
+        <span v-else aria-hidden="true" class="tw:h-[54px] tw:w-[72px] tw:flex-none tw:rounded-[10px] tw:border tw:border-solid tw:border-panel-line tw:bg-linear-[135deg,#e6ebf5,#f7f7f5]" />
         <div class="tw:min-w-0">
           <h1 class="tw:m-0 tw:font-display tw:text-xl tw:leading-tight tw:font-extrabold">{{ product.name }}</h1>
           <div class="tw:mt-1.5 tw:flex tw:flex-wrap tw:items-center tw:gap-2 tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-panel-ink">

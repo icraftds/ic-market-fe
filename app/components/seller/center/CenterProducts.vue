@@ -83,7 +83,14 @@ const th = 'tw:px-2 tw:py-3 tw:text-left'
         <td class="tw:px-[14px] tw:py-3"><input type="checkbox" :checked="p.selected" :aria-label="`Pilih ${p.name}`" class="tw:size-[18px]" @change="seller.toggleSelect(p.id)"></td>
         <td class="tw:px-2 tw:py-3">
           <span class="tw:flex tw:items-center tw:gap-3">
-            <span aria-hidden="true" class="tw:h-10 tw:w-[52px] tw:flex-none tw:rounded-lg tw:bg-linear-[135deg] tw:to-[#f7f7f5]" :class="thumbs[p.tint]" />
+            <img
+              v-if="p.images?.[0]"
+              :src="p.images[0]"
+              :alt="p.name"
+              loading="lazy"
+              class="tw:h-10 tw:w-[52px] tw:flex-none tw:rounded-lg tw:border tw:border-solid tw:border-panel-line tw:object-cover"
+            >
+            <span v-else aria-hidden="true" class="tw:h-10 tw:w-[52px] tw:flex-none tw:rounded-lg tw:bg-linear-[135deg] tw:to-[#f7f7f5]" :class="thumbs[p.tint]" />
             <span class="tw:flex tw:max-w-[320px] tw:flex-col tw:gap-0.5">
               <NuxtLink :to="`/seller/products/${p.id}`" class="tw:font-semibold tw:text-hero tw:no-underline tw:hover:text-seller">{{ p.name }}</NuxtLink>
               <span class="tw:font-sans tw:text-[12px] tw:font-medium tw:text-panel-ink">{{ p.category }}</span>
