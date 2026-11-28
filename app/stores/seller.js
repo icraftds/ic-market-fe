@@ -901,7 +901,18 @@ export const useSellerStore = defineStore('seller', () => {
     clearErrors('settings')
     const s = settings.value
     if (s.name.trim() && s.name.trim() !== profile.value.name) notify('info', 'Nama toko tidak bisa diubah dari sini. Hubungi dukungan IC Market.')
-    return sellerApi.updateSettings({ about: s.about, tagline: s.tagline, hours: s.hours, replyHours: s.replyHours })
+    return sellerApi.updateSettings({
+      about: s.about,
+      tagline: s.tagline,
+      logoUrl: s.logoUrl,
+      bannerUrl: s.bannerUrl,
+      refundPolicy: s.refundPolicy,
+      supportPolicy: s.supportPolicy,
+      supportDays: s.supportDays,
+      replyTimeLabel: s.replyTimeLabel,
+      hours: s.hours,
+      replyHours: s.replyHours
+    })
       .then((saved) => { applySettings(saved); invalidate('settings'); notify('success', 'Pengaturan toko disimpan.'); return true })
       .catch((e) => { fail(e, 'settings'); return false })
   }
