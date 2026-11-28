@@ -1,7 +1,9 @@
 <script setup>
-/** SellerFormGallery: bagian 03 Galeri. Maks. 6 gambar JPG/PNG/WebP 5 MB; gambar pertama jadi sampul. */
+/** SellerFormGallery: bagian 03 Galeri. Maks. 6 gambar (JPG/PNG/WebP maks 5 MB, GIF animasi maks 10 MB & 10 detik); gambar pertama jadi sampul. */
 const MAX = 6
 const MAX_BYTES = 5 * 1024 * 1024
+const MAX_GIF_BYTES = 10 * 1024 * 1024
+const MAX_GIF_SEC = 10.5
 const seller = useSellerStore()
 const ui = useUiStore()
 const picker = ref(null)
@@ -15,30 +17,66 @@ const tiles = [
   'tw:bg-[linear-gradient(135deg,#efe8e4,#f7f7f5)]'
 ]
 const count = computed(() => seller.form.gallery)
-const api = !seller.isMock
 const images = computed(() => seller.form.images || [])
 const error = computed(() => seller.errors.product?.gallery || '')
 const uploading = ref(false)
 
-function onPick(event) {
+/** Baca total durasi (detik) dari blok Graphic Control Extension (0x21 0xF9) pada berkas GIF. */
+async function readGifDuration(file) {
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer())
+    let totalCs = 0
+    for (let i = 0; i < buf.length - 8; i++) {
+      if (buf[i] === 0x21 && buf[i + 1] === 0xF9 && buf[i + 2] === 0x04) {
+        const delay = buf[i + 4] | (buf[i + 5] << 8)
+        totalCs += delay < 2 ? 10 : delay // browser menormalkan delay 0/1cs menjadi 10cs (100ms)
+        i += 7
+      }
+    }
+    return totalCs / 100
+  } catch {
+    return 0
+  }
+}
+
+function isGifSrc(src) {
+  if (!src) return false
+  if (/\.gif(\?|$)/i.test(src)) return true
+  const staged = (seller.form.pendingImages || []).find((p) => p.previewUrl === src)
+  return staged?.file?.type === 'image/gif'
+}
+
+async function onPick(event) {
   const files = Array.from(event.target.files || [])
   event.target.value = ''
-  const okType = /^image\/(jpeg|png|webp)$/
+  const okType = /^image\/(jpeg|png|webp|gif)$/
   let added = 0
   let rejected = 0
+  let tooLong = 0
   const accepted = []
   for (const f of files) {
-    if (!okType.test(f.type) || f.size > MAX_BYTES || seller.form.gallery + added >= MAX) rejected++
-    else { added++; accepted.push(f) }
+    const isGif = f.type === 'image/gif'
+    const limit = isGif ? MAX_GIF_BYTES : MAX_BYTES
+    if (!okType.test(f.type) || f.size > limit || seller.form.gallery + added >= MAX) {
+      rejected++
+      continue
+    }
+    if (isGif) {
+      const dur = await readGifDuration(f)
+      if (dur > MAX_GIF_SEC) { tooLong++; continue }
+    }
+    added++
+    accepted.push(f)
   }
   for (const f of accepted) seller.stageFormImage(f)
-  if (rejected) ui.push({ tone: 'warn', title: 'Sebagian gambar ditolak', message: 'Maks. 6 gambar, JPG/PNG/WebP, 5 MB per file.' })
+  if (tooLong) ui.push({ tone: 'warn', title: 'Durasi GIF terlalu panjang', message: 'Durasi GIF animasi maksimal 10 detik.' })
+  if (rejected) ui.push({ tone: 'warn', title: 'Sebagian gambar ditolak', message: 'Maks. 6 media: JPG/PNG/WebP (5 MB) atau GIF (10 MB, maks 10 dtk).' })
 }
 </script>
 
 <template>
   <SellerFormSection id="galeri" num="03" title="Galeri">
-    <p class="tw:-mt-1.5 tw:mb-0 tw:font-sans tw:text-[13px] tw:text-panel-ink">Maks. 6 gambar, JPG/PNG/WebP, 5 MB per file. Gambar pertama jadi sampul. Gambar baru diunggah saat Anda menyimpan atau memublikasikan produk.</p>
+    <p class="tw:-mt-1.5 tw:mb-0 tw:font-sans tw:text-[13px] tw:text-panel-ink">Maks. 6 media: JPG/PNG/WebP (maks 5 MB) atau GIF animasi (maks 10 MB &amp; 10 detik). Item pertama jadi sampul. Diunggah saat Anda menyimpan atau memublikasikan produk.</p>
     <ul class="tw:m-0 tw:grid tw:list-none tw:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] tw:gap-3 tw:p-0">
       <li
         v-for="n in count"
@@ -48,6 +86,7 @@ function onPick(event) {
       >
         <img v-if="images[n - 1]" :src="images[n - 1]" alt="" class="tw:absolute tw:inset-0 tw:size-full tw:rounded-[10px] tw:object-cover">
         <span v-if="n === 1" class="tw:absolute tw:top-2 tw:left-2 tw:rounded-full tw:bg-seller tw:px-2 tw:py-[3px] tw:font-sans tw:text-[10.5px] tw:font-bold tw:text-white">Sampul</span>
+        <span v-if="isGifSrc(images[n - 1])" class="tw:absolute tw:bottom-2 tw:left-2 tw:rounded-md tw:bg-black/70 tw:px-1.5 tw:py-0.5 tw:font-mono tw:text-[10px] tw:font-bold tw:text-white">GIF</span>
         <button
           type="button"
           :aria-label="`Hapus gambar ${n}`"
@@ -66,12 +105,12 @@ function onPick(event) {
           @click="picker?.click()"
         >
           <Icon name="material-symbols:add-photo-alternate-outline" class="tw:size-6 tw:text-panel-ink" aria-hidden="true" />
-          <span class="tw:text-[12.5px] tw:font-semibold">Tambah gambar</span>
+          <span class="tw:text-[12.5px] tw:font-semibold">Tambah gambar / GIF</span>
           <span class="tw:text-[11.5px] tw:text-panel-ink">{{ count }}/{{ MAX }}</span>
         </button>
       </li>
     </ul>
  <p v-if="error" role="alert" class="tw:m-0 tw:font-sans tw:text-[12px] tw:font-medium tw:text-bad">{{ error }}</p>
-    <input ref="picker" type="file" accept="image/jpeg,image/png,image/webp" multiple class="tw:sr-only" tabindex="-1" aria-hidden="true" @change="onPick">
+    <input ref="picker" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="tw:sr-only" tabindex="-1" aria-hidden="true" @change="onPick">
   </SellerFormSection>
 </template>

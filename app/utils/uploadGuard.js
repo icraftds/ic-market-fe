@@ -3,7 +3,7 @@
 const MB = 1024 * 1024
 
 export const UPLOAD_RULES = {
-  image: { label: 'gambar JPG/PNG/WebP', mimes: ['image/jpeg', 'image/png', 'image/webp'], exts: ['jpg', 'jpeg', 'png', 'webp'], maxBytes: 5 * MB },
+  image: { label: 'gambar JPG/PNG/WebP/GIF', mimes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], exts: ['jpg', 'jpeg', 'png', 'webp', 'gif'], maxBytes: 5 * MB, gifMaxBytes: 10 * MB },
   archive: { label: 'arsip .zip', mimes: ['application/zip', 'application/x-zip-compressed', 'application/x-zip', ''], exts: ['zip'], maxBytes: 100 * MB },
   previewZip: { label: 'arsip .zip', mimes: ['application/zip', 'application/x-zip-compressed', 'application/x-zip', ''], exts: ['zip'], maxBytes: 50 * MB }
 }
@@ -23,8 +23,10 @@ export function validateUpload(file, rule, { maxBytes } = {}) {
   if (!r) throw new Error(`Aturan unggah tidak dikenal: ${rule}`)
   if (!file || typeof file !== 'object') return 'Pilih berkas terlebih dahulu.'
   if (!file.size) return 'Berkas kosong.'
-  const limit = Number(maxBytes) > 0 ? Number(maxBytes) : r.maxBytes
+  const mime = String(file.type || '').toLowerCase()
+  const defaultLimit = mime === 'image/gif' && r.gifMaxBytes ? r.gifMaxBytes : r.maxBytes
+  const limit = Number(maxBytes) > 0 ? Number(maxBytes) : defaultLimit
   if (file.size > limit) return `Ukuran berkas maks. ${Math.round((limit / MB) * 10) / 10} MB.`
-  if (!r.exts.includes(extOf(file.name)) || !r.mimes.includes(String(file.type || '').toLowerCase())) return `Format harus ${r.label}.`
+  if (!r.exts.includes(extOf(file.name)) || !r.mimes.includes(mime)) return `Format harus ${r.label}.`
   return ''
 }
