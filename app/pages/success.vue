@@ -51,19 +51,21 @@ const downloadItem = (item) => {
   
   const files = item.product?.digital_files || item.digital_files || []
   
-  if (files.length === 0) {
+  const urls = files
+    .map((f) => (typeof f === 'string' ? f : (f?.downloadUrl || f?.url || '')))
+    .filter(Boolean)
+
+  if (urls.length === 0) {
     notificationMessage.value = 'File download belum tersedia. Hubungi seller untuk mendapatkan link download.'
     showNotificationModal.value = true
     return
   }
-  
+
   // Buka semua file download
-  files.forEach((file, i) => {
-    if (file.downloadUrl) {
-      setTimeout(() => {
-        window.open(file.downloadUrl, '_blank')
-      }, i * 300)
-    }
+  urls.forEach((url, i) => {
+    setTimeout(() => {
+      window.open(url, '_blank', 'noopener')
+    }, i * 300)
   })
   
   item.downloaded = true

@@ -101,7 +101,7 @@ const loadOrders = async () => {
           category: item.product?.category || 'Digital',
           price: item.price,
           quantity: item.quantity,
-          img: item.product?.img || ''
+          img: item.product?.img || (Array.isArray(item.product?.images) ? (typeof item.product.images[0] === 'string' ? item.product.images[0] : item.product.images[0]?.url || item.product.images[0]?.imageUrl || '') : '')
         }))
         
         // Buat mock storeOrders agar template v-for tidak kosong
@@ -130,7 +130,7 @@ const loadOrders = async () => {
       
       if (import.meta.client && localStorage.getItem('icmarket_order_status') === 'pending') {
         const currentOrderId = localStorage.getItem('icmarket_order_id')
-        const stillPending = res.data.some(o => o.transaction_id === currentOrderId && o.status === 'pending')
+        const stillPending = response.data.some(o => o.transaction_id === currentOrderId && o.status === 'pending')
         if (!stillPending) {
           localStorage.removeItem('icmarket_order_status')
           window.dispatchEvent(new Event('storage'))
@@ -231,22 +231,36 @@ onBeforeUnmount(() => {
   window.removeEventListener('icmarket-orders-updated', loadOrders)
 })
 
+const resolveFileUrl = (file) => {
+  if (!file) return ''
+  if (typeof file === 'string') return file
+  return file.downloadUrl || file.url || ''
+}
+
 const downloadOrderFiles = (item) => {
   const files = item.product?.digital_files || item.digital_files || []
-  if (files.length === 0) {
+  const urls = files.map((f) => ({ url: resolveFileUrl(f), name: f?.fileName || f?.name || '' })).filter((f) => f.url)
+  if (urls.length === 0) {
     openNotification('Info', 'File download belum tersedia. Hubungi seller.')
     return
   }
-  files.forEach((file, i) => {
-    if (file.downloadUrl) {
-      setTimeout(() => window.open(file.downloadUrl, '_blank'), i * 300)
-    }
+  urls.forEach((file, i) => {
+    setTimeout(() => {
+      const a = document.createElement('a')
+      a.href = file.url
+      a.target = '_blank'
+      a.rel = 'noopener'
+      if (file.name) a.download = file.name
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+    }, i * 300)
   })
 }
 
 const isDownloadable = (item) => {
   const files = item.product?.digital_files || item.digital_files || []
-  return files.some(f => f.downloadUrl)
+  return files.some((f) => Boolean(resolveFileUrl(f)))
 }
 
 const hasReviewed = (order, item) => {
@@ -359,7 +373,7 @@ const submitReview = async () => {
                 </div>
                 <span v-if="item.isFree">Gratis</span><span v-else v-html="formatCurrency(item.price * (item.quantity || 1))"></span>
                 <button
-                  v-if="['selesai','completed','paid','success'].includes(String(order.status).toLowerCase()) && (item.type === 'Digital' || item.product?.type === 'Digital')"
+                  v-if="['selesai','completed','paid','success'].includes(String(order.status).toLowerCase()) && String(item.type || item.product?.type || 'Digital') === 'Digital'"
                   class="download-btn"
                   @click="downloadOrderFiles(item)"
                   :title="isDownloadable(item) ? 'Download file' : 'File belum tersedia'"
