@@ -395,6 +395,7 @@ export function mapProduct(p, index = 0) {
     tags: arr(x.tags).map(str).filter(Boolean),
     images: arr(x.images).map(imageUrl).filter(Boolean),
     digitalFiles: arr(x.digital_files),
+    fileSummary: x.file_summary && typeof x.file_summary === 'object' ? x.file_summary : null,
     updatedAt: x.updated_at || null
   }
 }
@@ -448,13 +449,14 @@ export function productToBody(form, status, { create = false } = {}) {
     seo_description: str(f.seoDescription).trim() || null
   }
   if (Array.isArray(f.images)) body.images = f.images
-  if (Array.isArray(f.digitalFiles)) body.digital_files = f.digitalFiles
+  // Saat edit, jangan kirim digital_files: [] bila seller tidak mengganti file (daftar produk menyembunyikan path asli digital_files).
+  if (Array.isArray(f.digitalFiles) && (create || f.digitalFiles.length > 0)) body.digital_files = f.digitalFiles
   return body
 }
 
 /** Produk (hasil mapProduct) -> isian form (kunci sama dengan mocks.emptyForm). */
 export function productToForm(p, base = {}) {
-  const file = digitalFileView(p.digitalFiles)
+  const file = digitalFileView(p.digitalFiles) || (p.fileSummary ? digitalFileView([p.fileSummary]) : null)
   return {
     ...base,
     id: p.id, name: p.name, category: p.category, price: String(p.price), status: p.status, slug: p.slug,
