@@ -55,6 +55,8 @@ export function mapProduct(p, index = 0) {
   const hasDocs = p.has_docs || spec.has_docs ? true : p.has_docs != null ? false : spec.has_docs != null ? false : null
   const updatedAt = p.updated_at || null
   const images = imageList(p.images)
+  const staticCover = images.find((u) => !/\.gif(\?|$)/i.test(u)) || images[0] || null
+  const previewGif = typeof spec.preview_gif === 'string' && spec.preview_gif.trim() ? spec.preview_gif.trim() : null
   const details = [
     { k: 'Tipe', v: p.type || 'Digital' },
     { k: 'Format', v: spec.package_contents || technology || '-' },
@@ -88,9 +90,10 @@ export function mapProduct(p, index = 0) {
     sellerName: store.name || p.seller?.name || '',
     sellerVerified: !!store.verified,
     supportDays,
-    thumbnail: images[0] || null,
-    image: images[0] || null,
+    thumbnail: staticCover,
+    image: staticCover,
     images,
+    previewGif,
     rating: avg,
     reviewCount: Number(p.reviews_count || 0),
     // Hanya ulasan asli (bukan auto-generated) untuk structured data SEO; null bila bukan respons detail.

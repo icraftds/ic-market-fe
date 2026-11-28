@@ -25,8 +25,17 @@ const devDefs = [
   { id: 'mobile', label: 'Tampilan ponsel', icon: 'material-symbols:smartphone', text: 'Ponsel · 390 px' }
 ]
 
-const photos = computed(() => (Array.isArray(props.product.images) ? props.product.images : []))
-const total = computed(() => photos.value.length || IMG_COUNT)
+const media = computed(() => {
+  const list = []
+  if (props.product.previewGif) list.push({ src: props.product.previewGif, isGif: true })
+  const imgs = Array.isArray(props.product.images) ? props.product.images : []
+  for (const src of imgs) {
+    if (src && src !== props.product.previewGif) list.push({ src, isGif: /\.gif(\?|$)/i.test(src) })
+  }
+  return list
+})
+const photos = computed(() => media.value.map((m) => m.src))
+const total = computed(() => media.value.length || IMG_COUNT)
 const hasLive = computed(() => !!props.product.live)
 const mode = ref('img')
 const img = ref(0)
@@ -187,8 +196,9 @@ const arrow = 'tw:absolute tw:top-1/2 tw:m-0 tw:grid tw:size-11 tw:-translate-y-
 
     <template v-else>
       <div class="tw:relative tw:grid tw:aspect-[16/10] tw:place-items-center tw:overflow-hidden tw:rounded-[14px] tw:bg-linear-135 tw:from-[#e6ebf5] tw:to-[#f1ede6]">
-        <img v-if="photos.length" :src="photos[img]" :alt="`${product.name}, gambar ${img + 1} dari ${total}`" decoding="async" class="tw:size-full tw:rounded-[14px] tw:object-cover">
+        <img v-if="media.length" :src="media[img]?.src" :alt="`${product.name}, ${media[img]?.isGif ? 'animasi preview' : `gambar ${img + 1} dari ${total}`}`" decoding="async" class="tw:size-full tw:rounded-[14px] tw:object-cover">
         <span v-else role="img" :aria-label="`${product.name}, gambar ${img + 1} dari ${total}`" class="tw:font-mono tw:text-xs tw:font-semibold tw:tracking-[0.08em] tw:text-ink-2 tw:max-lg:text-[11px]">[ GAMBAR {{ img + 1 }} DARI {{ total }} ]</span>
+        <span v-if="media[img]?.isGif" class="tw:pointer-events-none tw:absolute tw:top-3 tw:left-3 tw:rounded-md tw:bg-black/70 tw:px-2 tw:py-0.5 tw:font-mono tw:text-[11px] tw:font-bold tw:text-white">GIF</span>
         <template v-if="total > 1">
           <button type="button" aria-label="Gambar sebelumnya" class="tw:left-3" :class="arrow" @click="prev"><Icon name="material-symbols:chevron-left" class="tw:size-5" aria-hidden="true" /></button>
           <button type="button" aria-label="Gambar berikutnya" class="tw:right-3" :class="arrow" @click="next"><Icon name="material-symbols:chevron-right" class="tw:size-5" aria-hidden="true" /></button>
@@ -196,15 +206,18 @@ const arrow = 'tw:absolute tw:top-1/2 tw:m-0 tw:grid tw:size-11 tw:-translate-y-
       </div>
       <div v-if="total > 1" class="tw:mt-3 tw:flex tw:gap-2.5 tw:overflow-x-auto">
         <button
-          v-for="(from, i) in (photos.length ? photos : thumbFrom)"
+          v-for="(from, i) in (media.length ? media : thumbFrom)"
           :key="i"
           type="button"
-          :aria-label="`Lihat gambar ${i + 1}`"
+          :aria-label="media.length && from.isGif ? 'Lihat animasi GIF' : `Lihat gambar ${i + 1}`"
           :aria-current="i === img ? 'true' : undefined"
-          class="tw:m-0 tw:h-[58px] tw:w-[88px] tw:flex-none tw:cursor-pointer tw:rounded-[9px] tw:border-solid tw:bg-linear-135 tw:to-bg tw:p-0 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
-          :class="[photos.length ? 'tw:overflow-hidden tw:bg-surface' : from, i === img ? 'tw:border-2 tw:border-ink' : 'tw:border-[1.5px] tw:border-line']"
+          class="tw:relative tw:m-0 tw:h-[58px] tw:w-[88px] tw:flex-none tw:cursor-pointer tw:rounded-[9px] tw:border-solid tw:bg-linear-135 tw:to-bg tw:p-0 tw:focus-visible:ring-2 tw:focus-visible:ring-brand tw:focus-visible:outline-none"
+          :class="[media.length ? 'tw:overflow-hidden tw:bg-surface' : from, i === img ? 'tw:border-2 tw:border-ink' : 'tw:border-[1.5px] tw:border-line']"
           @click="img = i"
-        ><img v-if="photos.length" :src="from" alt="" loading="lazy" decoding="async" class="tw:size-full tw:object-cover"></button>
+        >
+          <img v-if="media.length" :src="from.src" alt="" loading="lazy" decoding="async" class="tw:size-full tw:object-cover">
+          <span v-if="media.length && from.isGif" class="tw:absolute tw:bottom-1 tw:left-1 tw:rounded tw:bg-black/75 tw:px-1 tw:py-px tw:font-mono tw:text-[9px] tw:font-bold tw:text-white">GIF</span>
+        </button>
       </div>
     </template>
   </section>

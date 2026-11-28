@@ -394,6 +394,7 @@ export function mapProduct(p, index = 0) {
     features: arr(x.features).map(str).filter(Boolean),
     tags: arr(x.tags).map(str).filter(Boolean),
     images: arr(x.images).map(imageUrl).filter(Boolean),
+    previewGif: str(spec.preview_gif),
     digitalFiles: arr(x.digital_files),
     fileSummary: x.file_summary && typeof x.file_summary === 'object' ? x.file_summary : null,
     updatedAt: x.updated_at || null
@@ -443,7 +444,8 @@ export function productToBody(form, status, { create = false } = {}) {
       technology: str(f.tech).trim(),
       package_contents: str(f.pack).trim(),
       requirements: str(f.requirements).trim(),
-      support: SUPPORT_TO_API[f.support] || '30'
+      support: SUPPORT_TO_API[f.support] || '30',
+      ...(str(f.previewGif).trim() ? { preview_gif: str(f.previewGif).trim() } : {})
     },
     seo_title: str(f.seoTitle).trim() || null,
     seo_description: str(f.seoDescription).trim() || null
@@ -462,7 +464,7 @@ export function productToForm(p, base = {}) {
     id: p.id, name: p.name, category: p.category, price: String(p.price), status: p.status, slug: p.slug,
     license: p.license, summary: p.summary, description: p.description, tags: [...p.tags], tagDraft: '',
     features: [...p.features], tech: p.technology, pack: p.packageContents, requirements: p.requirements, support: p.support,
-    gallery: p.images.length, images: [...p.images], file, digitalFiles: [...p.digitalFiles], version: p.version,
+    gallery: p.images.length, images: [...p.images], previewGif: p.previewGif || '', pendingPreviewGif: null, file, digitalFiles: [...p.digitalFiles], version: p.version,
     hasDocs: p.hasDocs, seoTitle: p.seoTitle, seoDescription: p.seoDescription,
     profile: p.previewProfile || base.profile || 'static'
   }

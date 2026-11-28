@@ -29,7 +29,7 @@ const emptyOrderStats = () => [
 /** Form kosong mode API: tanpa isian contoh papan. */
 const apiEmptyForm = () => ({
   ...m.emptyForm(),
-  tags: [], features: [], tech: '', gallery: 0, images: [], digitalFiles: [], file: null, version: '1.0', slug: '', profile: 'static',
+  tags: [], features: [], tech: '', gallery: 0, images: [], previewGif: '', pendingPreviewGif: null, digitalFiles: [], file: null, version: '1.0', slug: '', profile: 'static',
   previewEnabled: false, hasDocs: false, seoTitle: '', seoDescription: '', status: 'draf'
 })
 
@@ -665,6 +665,23 @@ export const useSellerStore = defineStore('seller', () => {
     form.value.images = imgs
     form.value.gallery = imgs.length
   }
+  function revokePendingGif(pending) {
+    if (import.meta.client && pending?.previewUrl?.startsWith('blob:')) {
+      try { URL.revokeObjectURL(pending.previewUrl) } catch { /* abaikan */ }
+    }
+  }
+  function stageFormPreviewGif(file) {
+    revokePendingGif(form.value.pendingPreviewGif)
+    const previewUrl = import.meta.client ? URL.createObjectURL(file) : ''
+    form.value.pendingPreviewGif = mock ? null : { file, previewUrl }
+    form.value.previewGif = previewUrl
+    return true
+  }
+  function removeFormPreviewGif() {
+    revokePendingGif(form.value.pendingPreviewGif)
+    form.value.pendingPreviewGif = null
+    form.value.previewGif = ''
+  }
   /** Tahan file ZIP secara lokal sampai produk disimpan/dipublikasikan agar tidak mengunggah file besar bila batal. */
   function stageFormFile(file) {
     const sizeText = (file.size / 1048576).toFixed(1).replace('.', ',') + ' MB'
@@ -674,9 +691,10 @@ export const useSellerStore = defineStore('seller', () => {
   }
 
   // ===== Aksi: form produk =====
-  function newForm() { revokePendingImages(form.value?.pendingImages); form.value = mock ? m.emptyForm() : apiEmptyForm(); clearErrors('product'); resetDraftBuild() }
+  function newForm() { revokePendingImages(form.value?.pendingImages); revokePendingGif(form.value?.pendingPreviewGif); form.value = mock ? m.emptyForm() : apiEmptyForm(); clearErrors('product'); resetDraftBuild() }
   function loadForm(id) {
     revokePendingImages(form.value?.pendingImages)
+    revokePendingGif(form.value?.pendingPreviewGif)
     const p = products.value.find((x) => x.id === Number(id))
     if (!p) return newForm()
     clearErrors('product')
@@ -728,6 +746,17 @@ export const useSellerStore = defineStore('seller', () => {
         f.images[idx] = up.url
         if (import.meta.client && item.previewUrl?.startsWith('blob:')) try { URL.revokeObjectURL(item.previewUrl) } catch { /* abaikan */ }
         f.pendingImages = (f.pendingImages || []).filter((p) => p.previewUrl !== item.previewUrl)
+      } catch (e) {
+        const err = fail(e, 'product')
+        return { ok: false, product: null, missing: [], errors: errors.value.product, error: err }
+      }
+    }
+    if (f.pendingPreviewGif?.file) {
+      try {
+        const up = await sellerApi.uploadFile(f.pendingPreviewGif.file, 'image')
+        revokePendingGif(f.pendingPreviewGif)
+        f.previewGif = up.url
+        f.pendingPreviewGif = null
       } catch (e) {
         const err = fail(e, 'product')
         return { ok: false, product: null, missing: [], errors: errors.value.product, error: err }
@@ -933,7 +962,7 @@ export const useSellerStore = defineStore('seller', () => {
     checklistPct, canPublish,
     format: fmt, rupiah: rp, shortDate, statusLabel, statusTone,
     setPeriod, setProductTab, setFilter, toggleSelect, toggleAll, clearSelection, setProductStatus, bulkSetStatus, bulkSetPrice,
-    deleteProduct, duplicateProduct, startPreview, stopPreview, uploadZip, uploadFormFile, uploadFormImage, stageFormImage, removeFormImage, stageFormFile, newForm, loadForm,
+    deleteProduct, duplicateProduct, startPreview, stopPreview, uploadZip, uploadFormFile, uploadFormImage, stageFormImage, removeFormImage, stageFormPreviewGif, removeFormPreviewGif, stageFormFile, newForm, loadForm,
     addFeature, removeFeature, addTag, removeTag, startDraftBuild, failDraftBuild, resetDraftBuild, saveProduct, replyReview,
     createVoucher, updateVoucher, toggleVoucher, deleteVoucher, requestPayout, setLedgerFilter, toggleNotification, saveNotifications,
     saveSettings, clearErrors,
