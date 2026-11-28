@@ -126,6 +126,51 @@ const label = 'tw:flex tw:flex-col tw:gap-1.5 tw:font-sans tw:text-[13px] tw:fon
 const field = 'tw:m-0 tw:rounded-[10px] tw:border tw:border-solid tw:border-[#cbd5e1] tw:bg-white tw:px-3 tw:font-sans tw:text-hero tw:outline-none tw:focus:border-seller tw:focus:ring-[3px] tw:focus:ring-seller/20'
 const errCls = 'tw:m-0 tw:font-sans tw:text-[12.5px] tw:font-medium tw:text-bad'
 
+// ---- Logo & Banner toko (ditahan lokal dulu sampai klik Simpan agar tidak ada file yatim) ----
+const pendingLogo = ref(null)
+const pendingBanner = ref(null)
+const logoPreview = ref('')
+const bannerPreview = ref('')
+const mediaErr = ref('')
+
+const shownLogo = computed(() => logoPreview.value || seller.settings.logoUrl || '')
+const shownBanner = computed(() => bannerPreview.value || seller.settings.bannerUrl || '')
+
+function clearBlob(r) {
+  if (import.meta.client && r.value?.startsWith('blob:')) try { URL.revokeObjectURL(r.value) } catch { /* abaikan */ }
+  r.value = ''
+}
+function onPickMedia(kind, e) {
+  const file = e.target?.files?.[0]
+  if (e.target) e.target.value = ''
+  if (!file) return
+  const problem = validateFile(kind, file)
+  if (problem) { mediaErr.value = problem; return }
+  mediaErr.value = ''
+  if (kind === 'logo') {
+    clearBlob(logoPreview)
+    pendingLogo.value = file
+    logoPreview.value = import.meta.client ? URL.createObjectURL(file) : ''
+  } else {
+    clearBlob(bannerPreview)
+    pendingBanner.value = file
+    bannerPreview.value = import.meta.client ? URL.createObjectURL(file) : ''
+  }
+}
+function removeMedia(kind) {
+  mediaErr.value = ''
+  if (kind === 'logo') {
+    clearBlob(logoPreview)
+    pendingLogo.value = null
+    seller.settings.logoUrl = null
+  } else {
+    clearBlob(bannerPreview)
+    pendingBanner.value = null
+    seller.settings.bannerUrl = null
+  }
+}
+onBeforeUnmount(() => { clearBlob(logoPreview); clearBlob(bannerPreview) })
+
 async function save() {
   if (!api) {
     seller.saveSettings()
@@ -133,8 +178,26 @@ async function save() {
     return
   }
   saving.value = true
-  await seller.saveSettings() // toast sukses/info/galat dari store; 422 -> pesan di field
-  saving.value = false
+  mediaErr.value = ''
+  try {
+    if (pendingLogo.value) {
+      const up = await sellerApi.uploadStoreMedia('logo', pendingLogo.value)
+      seller.settings.logoUrl = up.url
+      pendingLogo.value = null
+      clearBlob(logoPreview)
+    }
+    if (pendingBanner.value) {
+      const up = await sellerApi.uploadStoreMedia('banner', pendingBanner.value)
+      seller.settings.bannerUrl = up.url
+      pendingBanner.value = null
+      clearBlob(bannerPreview)
+    }
+    await seller.saveSettings() // toast sukses/info/galat dari store; 422 -> pesan di field
+  } catch (e) {
+    mediaErr.value = e?.message || 'Gagal mengunggah logo/banner toko.'
+  } finally {
+    saving.value = false
+  }
 }
 async function toggle(n, e) {
   const ok = await seller.toggleNotification(n.id)
@@ -150,12 +213,56 @@ async function toggle(n, e) {
   </div>
   <div v-else class="tw:flex tw:flex-wrap tw:items-start tw:gap-[14px]">
     <form class="tw:flex tw:min-w-0 tw:flex-[2_1_420px] tw:flex-col tw:gap-4 tw:rounded-2xl tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:p-[22px]" @submit.prevent="save">
-      <h2 class="tw:m-0 tw:font-sans tw:text-[16px] tw:font-bold">Profil toko</h2>
+      <h2 class="tw:m-0 tw:font-sans tw:text-[16px] tw:font-bold">Profil &amp; tampilan toko</h2>
+
+      <!-- Banner & Logo toko -->
+      <div class="tw:flex tw:flex-col tw:gap-3">
+        <div class="tw:relative tw:overflow-hidden tw:rounded-xl tw:border tw:border-solid tw:border-panel-line tw:bg-linear-[135deg,#e6ebf5,#f7f7f5]">
+          <img v-if="shownBanner" :src="shownBanner" alt="Banner toko" class="tw:block tw:h-36 tw:w-full tw:object-cover">
+          <div v-else class="tw:flex tw:h-36 tw:flex-col tw:items-center tw:justify-center tw:gap-1 tw:text-panel-ink">
+            <Icon name="material-symbols:panorama-outline" class="tw:size-7 tw:opacity-60" aria-hidden="true" />
+            <span class="tw:font-sans tw:text-[12.5px] tw:font-medium">Belum ada banner toko (disarankan 1200×300 px)</span>
+          </div>
+          <div class="tw:absolute tw:right-2.5 tw:bottom-2.5 tw:flex tw:items-center tw:gap-1.5">
+            <label class="tw:inline-flex tw:min-h-8 tw:cursor-pointer tw:items-center tw:gap-1.5 tw:rounded-lg tw:bg-white/95 tw:px-3 tw:font-sans tw:text-[12px] tw:font-semibold tw:text-hero tw:shadow-sm tw:hover:bg-white">
+              <Icon name="material-symbols:upload" class="tw:size-4" aria-hidden="true" />{{ shownBanner ? 'Ganti banner' : 'Unggah banner' }}
+              <input type="file" accept="image/jpeg,image/png,image/webp" class="tw:sr-only" @change="onPickMedia('banner', $event)">
+            </label>
+            <button v-if="shownBanner" type="button" class="tw:m-0 tw:inline-flex tw:min-h-8 tw:cursor-pointer tw:items-center tw:rounded-lg tw:border-0 tw:bg-black/65 tw:px-2.5 tw:font-sans tw:text-[12px] tw:font-semibold tw:text-white tw:hover:bg-black/80" @click="removeMedia('banner')">Hapus</button>
+          </div>
+        </div>
+
+        <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-3.5">
+          <div class="tw:relative tw:grid tw:size-16 tw:shrink-0 tw:place-items-center tw:overflow-hidden tw:rounded-2xl tw:border tw:border-solid tw:border-panel-line tw:bg-[#eef2ff] tw:font-display tw:text-xl tw:font-extrabold tw:text-seller">
+            <img v-if="shownLogo" :src="shownLogo" alt="Logo toko" class="tw:size-full tw:object-cover">
+            <span v-else>{{ (seller.settings.name || 'T').charAt(0).toUpperCase() }}</span>
+          </div>
+          <div class="tw:flex tw:flex-col tw:gap-1">
+            <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+              <label class="tw:inline-flex tw:min-h-9 tw:cursor-pointer tw:items-center tw:gap-1.5 tw:rounded-lg tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:px-3 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-hero tw:hover:border-[#cbd5e1]">
+                <Icon name="material-symbols:image-outline" class="tw:size-4" aria-hidden="true" />{{ shownLogo ? 'Ganti logo' : 'Unggah logo' }}
+                <input type="file" accept="image/jpeg,image/png,image/webp" class="tw:sr-only" @change="onPickMedia('logo', $event)">
+              </label>
+              <button v-if="shownLogo" type="button" class="tw:m-0 tw:inline-flex tw:min-h-9 tw:cursor-pointer tw:items-center tw:rounded-lg tw:border tw:border-solid tw:border-panel-line tw:bg-transparent tw:px-3 tw:font-sans tw:text-[12.5px] tw:font-semibold tw:text-bad tw:hover:bg-red-50" @click="removeMedia('logo')">Hapus</button>
+            </div>
+            <span class="tw:font-sans tw:text-[12px] tw:text-panel-ink">Logo persegi (PNG/JPG/WebP, maks 5 MB). Diunggah saat Anda klik Simpan.</span>
+          </div>
+        </div>
+        <p v-if="mediaErr" role="alert" :class="errCls">{{ mediaErr }}</p>
+      </div>
+
       <label :class="label">Nama toko<input v-model="seller.settings.name" type="text" :readonly="api" :class="field" class="tw:min-h-11 tw:text-[14px] tw:font-medium"></label>
       <label :class="label">Link toko<input :value="seller.settings.link" type="text" disabled class="tw:m-0 tw:min-h-11 tw:rounded-[10px] tw:border tw:border-solid tw:border-panel-line tw:bg-[#f8fafc] tw:px-3 tw:font-mono tw:text-[13.5px] tw:font-medium tw:text-panel-ink"></label>
+      <label :class="label">Tagline singkat<input v-model="seller.settings.tagline" type="text" maxlength="80" placeholder="Contoh: Template website siap pakai &amp; ringan" :class="field" class="tw:min-h-11 tw:text-[14px]"><span v-if="fe.tagline" role="alert" :class="errCls">{{ fe.tagline }}</span></label>
       <label :class="label">Tentang toko<textarea v-model="seller.settings.about" rows="4" class="tw:py-2.5 tw:text-[14px] tw:leading-[1.6] tw:font-normal" :class="field" /><span v-if="fe.about" role="alert" :class="errCls">{{ fe.about }}</span></label>
-      <p v-for="(m, k) in fe" :key="k" v-show="k !== 'about'" role="alert" :class="errCls">{{ m }}</p>
-      <button type="submit" :disabled="saving" class="tw:m-0 tw:inline-flex tw:min-h-11 tw:disabled:cursor-not-allowed tw:disabled:opacity-60 tw:cursor-pointer tw:items-center tw:gap-2 tw:self-start tw:rounded-[10px] tw:border-0 tw:bg-seller tw:px-[18px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:hover:bg-blue-700 tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"><Icon name="material-symbols:save-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />Simpan</button>
+      <div class="tw:grid tw:grid-cols-2 tw:gap-3 tw:max-sm:grid-cols-1">
+        <label :class="label">Estimasi balas<input v-model="seller.settings.replyTimeLabel" type="text" maxlength="60" placeholder="Contoh: Balas &lt; 2 jam" :class="field" class="tw:min-h-11 tw:text-[14px]"></label>
+        <label :class="label">Masa dukungan (hari)<input v-model="seller.settings.supportDays" type="number" min="0" max="365" placeholder="30" :class="field" class="tw:min-h-11 tw:text-[14px]"></label>
+      </div>
+      <label :class="label">Kebijakan dukungan<textarea v-model="seller.settings.supportPolicy" rows="2" placeholder="Jelaskan bantuan yang didapat pembeli setelah membeli." class="tw:py-2.5 tw:text-[14px] tw:leading-[1.6] tw:font-normal" :class="field" /></label>
+      <label :class="label">Kebijakan pengembalian<textarea v-model="seller.settings.refundPolicy" rows="2" placeholder="Jelaskan ketentuan pengembalian dana / revisi." class="tw:py-2.5 tw:text-[14px] tw:leading-[1.6] tw:font-normal" :class="field" /></label>
+      <p v-for="(m, k) in fe" :key="k" v-show="k !== 'about' && k !== 'tagline'" role="alert" :class="errCls">{{ m }}</p>
+      <button type="submit" :disabled="saving" class="tw:m-0 tw:inline-flex tw:min-h-11 tw:disabled:cursor-not-allowed tw:disabled:opacity-60 tw:cursor-pointer tw:items-center tw:gap-2 tw:self-start tw:rounded-[10px] tw:border-0 tw:bg-seller tw:px-[18px] tw:font-sans tw:text-[13.5px] tw:font-bold tw:text-white tw:hover:bg-blue-700 tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"><Icon name="material-symbols:save-outline" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />{{ saving ? 'Menyimpan…' : 'Simpan profil toko' }}</button>
     </form>
 
     <section class="tw:flex tw:min-w-0 tw:flex-[1_1_280px] tw:flex-col tw:gap-3 tw:rounded-2xl tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:p-[22px]">

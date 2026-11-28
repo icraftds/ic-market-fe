@@ -316,6 +316,8 @@ export function settingsToBody(s = {}) {
   const body = {}
   if (s.about !== undefined) body.about = str(s.about)
   if (s.tagline !== undefined) body.tagline = str(s.tagline)
+  if (s.logoUrl !== undefined) body.logo_url = s.logoUrl || null
+  if (s.bannerUrl !== undefined) body.banner_url = s.bannerUrl || null
   if (s.refundPolicy !== undefined) body.refund_policy = str(s.refundPolicy)
   if (s.supportPolicy !== undefined) body.support_policy = str(s.supportPolicy)
   if (s.supportDays !== undefined && s.supportDays !== null && s.supportDays !== '') body.support_days = Math.trunc(num(s.supportDays))

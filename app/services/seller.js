@@ -196,6 +196,15 @@ export async function updateStoreProfile(fields) {
   return api('seller/store/profile', { ...REQ, method: 'PUT', body: fields })
 }
 
+/** uploadStoreMedia('logo' | 'banner', file) -> { kind, url, width, height } */
+export async function uploadStoreMedia(kind, file) {
+  const api = useApi()
+  const body = new FormData()
+  body.append('kind', kind)
+  body.append('file', file)
+  return api('seller/store/media', { ...REQ, method: 'POST', body })
+}
+
 // ---------------- produk
 
 /** listProducts({ page, limit<=50 }) -> { rows, meta:{page,lastPage,total} }. Backend belum menyaring status/q dan tidak memberi counts: lakukan di klien. */
