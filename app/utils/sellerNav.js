@@ -10,9 +10,9 @@ export const sellerNavGroups = [
     label: 'TOKO',
     items: [
       { id: 'products', label: 'Produk Saya', to: '/seller/products', icon: 'material-symbols:inventory-2-outline' },
-      { id: 'orders', label: 'Pesanan Masuk', to: '/seller/orders', badge: '3', icon: 'material-symbols:receipt-long-outline' },
+      { id: 'orders', label: 'Pesanan Masuk', to: '/seller/orders', icon: 'material-symbols:receipt-long-outline' },
       { id: 'customers', label: 'Pelanggan', to: '/seller/pelanggan', icon: 'material-symbols:group-outline' },
-      { id: 'reviews', label: 'Ulasan', to: '/seller/ulasan', badge: '1', icon: 'material-symbols:star-outline' }
+      { id: 'reviews', label: 'Ulasan', to: '/seller/ulasan', icon: 'material-symbols:star-outline' }
     ]
   },
   {

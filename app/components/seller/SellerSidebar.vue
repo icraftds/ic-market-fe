@@ -6,9 +6,16 @@
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const seller = useSellerStore()
 
 const groups = sellerNavGroups
 const activeId = computed(() => sellerNavActive(route.path)?.id || null)
+
+const badgeFor = (id) => {
+  if (id === 'orders') return seller.helpOrderCount > 0 ? String(seller.helpOrderCount) : ''
+  if (id === 'reviews') return seller.needsReplyCount > 0 ? String(seller.needsReplyCount) : ''
+  return ''
+}
 
 const storeName = computed(() => auth.user?.storeName || 'Creative Studio')
 const storeSlug = computed(() => auth.user?.storeSlug || 'creative-studio')
@@ -128,7 +135,7 @@ async function handleLogout() {
         >
           <Icon :name="it.icon" class="tw:size-[18px] tw:shrink-0" aria-hidden="true" />
           <span class="tw:flex-1">{{ it.label }}</span>
-          <span v-if="it.badge" class="tw:rounded-full tw:bg-seller tw:px-[7px] tw:py-0.5 tw:font-sans tw:text-[10.5px] tw:font-bold tw:text-white">{{ it.badge }}</span>
+          <span v-if="badgeFor(it.id)" class="tw:rounded-full tw:bg-seller tw:px-[7px] tw:py-0.5 tw:font-sans tw:text-[10.5px] tw:font-bold tw:text-white">{{ badgeFor(it.id) }}</span>
         </NuxtLink>
       </div>
     </nav>

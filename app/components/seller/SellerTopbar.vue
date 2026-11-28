@@ -4,7 +4,9 @@ const props = defineProps({
   title: { type: String, default: '' }
 })
 const route = useRoute()
+const seller = useSellerStore()
 const heading = computed(() => props.title || sellerNavActive(route.path)?.label || 'Dashboard')
+const hasNotif = computed(() => seller.failedBuildCount > 0 || seller.helpOrderCount > 0 || seller.needsReplyCount > 0)
 </script>
 
 <template>
@@ -14,14 +16,14 @@ const heading = computed(() => props.title || sellerNavActive(route.path)?.label
       <p class="tw:mx-0 tw:mt-0.5 tw:mb-0 tw:font-display tw:text-[20px] tw:font-extrabold">{{ heading }}</p>
     </div>
     <div class="tw:flex tw:items-center tw:gap-3">
-      <span class="tw:rounded-full tw:bg-[#fff4d6] tw:px-[10px] tw:py-1 tw:font-sans tw:text-[11px] tw:font-semibold tw:text-[#8a5a00]">Data contoh</span>
+      <span v-if="seller.isMock" class="tw:rounded-full tw:bg-[#fff4d6] tw:px-[10px] tw:py-1 tw:font-sans tw:text-[11px] tw:font-semibold tw:text-[#8a5a00]">Data contoh</span>
       <button
         type="button"
         aria-label="Notifikasi"
         class="tw:relative tw:grid tw:size-[42px] tw:cursor-pointer tw:place-items-center tw:rounded-[10px] tw:border tw:border-solid tw:border-panel-line tw:bg-white tw:focus-visible:ring-[3px] tw:focus-visible:ring-seller/40 tw:focus-visible:outline-none"
       >
         <Icon name="material-symbols:notifications-outline" class="tw:size-[18px] tw:text-[#0f172a]" aria-hidden="true" />
-        <span class="tw:absolute tw:top-2 tw:right-[9px] tw:size-2 tw:rounded-full tw:bg-[#ef4444]" />
+        <span v-if="hasNotif" class="tw:absolute tw:top-2 tw:right-[9px] tw:size-2 tw:rounded-full tw:bg-[#ef4444]" />
       </button>
       <NuxtLink
         to="/seller/products/create"
