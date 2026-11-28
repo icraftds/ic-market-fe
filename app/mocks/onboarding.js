@@ -30,7 +30,7 @@ export const onboardingDefaults = {
 // Papan memakai placeholder "[DAFTAR BANK]"; disalin apa adanya.
 export const bankOptions = ['[DAFTAR BANK]']
 
-export const storeUrlPrefix = 'icraftds.id/toko/'
+export const storeUrlPrefix = 'market.icraftds.id/store/'
 export const taglineMax = 80
 export const commissionPercent = 10
 
@@ -44,7 +44,7 @@ export const summaryFallback = {
 export const reviewTimeline = [
   { t: 'Data toko dikirim', d: 'Baru saja', state: 'done' },
   { t: 'Sedang ditinjau', d: 'Tim memeriksa data toko dan identitas', state: 'cur' },
-  { t: 'Toko disetujui', d: 'Halaman toko tayang di icraftds.id/toko/creative-studio', state: 'todo' },
+  { t: 'Toko disetujui', d: 'Halaman toko tayang di market.icraftds.id/store/creative-studio', state: 'todo' },
   { t: 'Produk pertama tayang', d: 'Draf produk otomatis dipublikasikan', state: 'todo' }
 ]
 

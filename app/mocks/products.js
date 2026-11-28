@@ -22,7 +22,7 @@ export const sellers = [
   {
     slug: 'creative-studio', name: 'Creative Studio', initial: 'C', verified: true,
     products: 14, liveCount: 6, joined: '[BULAN TAHUN]', support: '30 hari',
-    tagline: '[TAGLINE TOKO]', domain: 'icraftds.id/toko/creative-studio',
+    tagline: '[TAGLINE TOKO]', domain: 'market.icraftds.id/store/creative-studio',
     shortDesc: '[DESKRIPSI SINGKAT TOKO DARI SELLER]',
     about: '[DESKRIPSI TOKO DARI SELLER: siapa mereka, spesialisasi, dan jenis produk yang dibuat. Teks ini di-render server dan ikut terindeks.]'
   }

@@ -286,7 +286,7 @@ export function voucherToBody(f = {}) {
   return body
 }
 
-export const STORE_LINK_BASE = 'icraftds.id/toko/'
+export const STORE_LINK_BASE = 'market.icraftds.id/store/'
 
 /** GET /seller/settings -> { name, slug, link, about, tagline, status, hours, replyHours, notifications:[{id,label,on}], store } */
 export function mapSettings(s) {

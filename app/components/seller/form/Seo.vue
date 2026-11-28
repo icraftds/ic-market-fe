@@ -21,12 +21,12 @@ function onSlug(e) {
   <SellerFormSection id="seo" num="06" title="Link & tampilan di pencarian">
     <SellerFormField label="Link produk" :hint="slugHint" :error="slugError">
       <span class="tw:flex tw:overflow-hidden tw:rounded-[10px] tw:border tw:border-solid tw:border-[#cbd5e1] tw:bg-white tw:focus-within:border-brand tw:focus-within:ring-4 tw:focus-within:ring-brand/15">
-        <span class="tw:flex tw:items-center tw:border-0 tw:border-r tw:border-solid tw:border-panel-line tw:bg-[#f8fafc] tw:px-3 tw:font-mono tw:text-[13px] tw:font-medium tw:text-panel-ink">icraftds.id/produk/</span>
+        <span class="tw:flex tw:items-center tw:border-0 tw:border-r tw:border-solid tw:border-panel-line tw:bg-[#f8fafc] tw:px-3 tw:font-mono tw:text-[13px] tw:font-medium tw:text-panel-ink">market.icraftds.id/product/</span>
         <input :value="form.slug" :readonly="api" class="tw:min-h-11 tw:min-w-0 tw:flex-1 tw:border-0 tw:bg-transparent tw:px-3 tw:font-mono tw:text-[13.5px] tw:font-medium tw:outline-none" @input="onSlug">
       </span>
     </SellerFormField>
     <div class="tw:rounded-xl tw:border tw:border-solid tw:border-panel-line tw:px-4 tw:py-3.5">
-      <div class="tw:font-sans tw:text-[12px] tw:font-medium tw:text-panel-ink">icraftds.id › produk › {{ form.slug }}</div>
+      <div class="tw:font-sans tw:text-[12px] tw:font-medium tw:text-panel-ink">market.icraftds.id › product › {{ form.slug }}</div>
       <div class="tw:mt-1 tw:font-sans tw:text-[17px] tw:leading-[1.3] tw:text-[#1a0dab]">{{ form.name.trim() || '[Nama produk]' }} | IC Market</div>
       <div class="tw:mt-1 tw:font-sans tw:text-[13px] tw:leading-normal tw:text-[#4b4b46]">{{ form.summary.trim() || '[Ringkasan singkat dari bagian 01]' }}</div>
     </div>

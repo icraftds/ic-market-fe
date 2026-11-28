@@ -70,7 +70,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     if (step.value === 2 && !form.value.bank && !form.value.accountNo && !accountSaved.value) return 'Lewati dulu'
     return 'Lanjut'
   })
-  const url = computed(() => 'icraftds.id/toko/' + form.value.slug)
+  const url = computed(() => 'market.icraftds.id/store/' + form.value.slug)
   const chosenKinds = computed(() => form.value.kinds)
   const busy = computed(() => loading.value || saving.value || submitting.value)
   const accountSaved = computed(() => !mock && !!form.value.accountLast4)

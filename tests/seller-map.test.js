@@ -116,7 +116,7 @@ test('voucher: pemetaan dan body request', () => {
 
 test('pengaturan: baca, body, notifikasi alias', () => {
   const s = mapSettings({ store: { id: 1, name: 'Creative Studio', slug: 'creative-studio', status: 'active', about: 'Halo', tagline: 'T' }, business_hours: 'Sen-Jum', reply_estimate_hours: 24, notifications: [{ id: 'order', label: 'Pesanan baru', on: true }] })
-  assert.deepEqual([s.name, s.link, s.about, s.hours, s.replyHours], ['Creative Studio', 'icraftds.id/toko/creative-studio', 'Halo', 'Sen-Jum', 24])
+  assert.deepEqual([s.name, s.link, s.about, s.hours, s.replyHours], ['Creative Studio', 'market.icraftds.id/store/creative-studio', 'Halo', 'Sen-Jum', 24])
   assert.deepEqual(s.notifications, [{ id: 'order', label: 'Pesanan baru', on: true }])
   assert.deepEqual(settingsToBody({ about: 'x', hours: '', replyHours: '', notifications: [{ id: 'order', on: true }, { id: 'payout', on: false }] }),
     { about: 'x', business_hours: null, reply_estimate_hours: null, notification_prefs: { order: true, payout: false } })

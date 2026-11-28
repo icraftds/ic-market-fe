@@ -18,7 +18,7 @@ export function fallbackSeller(p) {
   return {
     slug: p?.seller || '', name, initial: name.charAt(0).toUpperCase() || '?', verified: !!p?.sellerVerified,
     products: 0, liveCount: 0, joined: '', support: `${Number(p?.supportDays) || 30} hari`,
-    tagline: '', shortDesc: '', about: '', domain: p?.seller ? `icraftds.id/toko/${p.seller}` : ''
+    tagline: '', shortDesc: '', about: '', domain: p?.seller ? `market.icraftds.id/store/${p.seller}` : ''
   }
 }
 

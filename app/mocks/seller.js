@@ -5,7 +5,7 @@ export const sellerProfile = {
   name: 'Creative Studio',
   initial: 'C',
   slug: 'creative-studio',
-  link: 'icraftds.id/toko/creative-studio',
+  link: 'market.icraftds.id/store/creative-studio',
   status: 'Disetujui',
   commission: 10,
   about: ''

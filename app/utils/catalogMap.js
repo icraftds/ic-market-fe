@@ -147,7 +147,7 @@ export function mapStore(s) {
     replyTime: s.reply_time_label || '',
     refundPolicy: s.refund_policy || '',
     supportPolicy: s.support_policy || '',
-    domain: s.slug ? `icraftds.id/toko/${s.slug}` : ''
+    domain: s.slug ? `market.icraftds.id/store/${s.slug}` : ''
   }
 }
 
