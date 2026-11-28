@@ -20,7 +20,7 @@ const images = computed(() => seller.form.images || [])
 const error = computed(() => seller.errors.product?.gallery || '')
 const uploading = ref(false)
 
-async function onPick(event) {
+function onPick(event) {
   const files = Array.from(event.target.files || [])
   event.target.value = ''
   const okType = /^image\/(jpeg|png|webp)$/
@@ -31,27 +31,31 @@ async function onPick(event) {
     if (!okType.test(f.type) || f.size > MAX_BYTES || seller.form.gallery + added >= MAX) rejected++
     else { added++; accepted.push(f) }
   }
-  if (api) {
-    uploading.value = true
-    for (const f of accepted) await seller.uploadFormImage(f)
-    uploading.value = false
-  } else seller.form.gallery = Math.min(MAX, seller.form.gallery + added)
+  for (const f of accepted) seller.stageFormImage(f)
   if (rejected) ui.push({ tone: 'warn', title: 'Sebagian gambar ditolak', message: 'Maks. 6 gambar, JPG/PNG/WebP, 5 MB per file.' })
 }
 </script>
 
 <template>
   <SellerFormSection id="galeri" num="03" title="Galeri">
-    <p class="tw:-mt-1.5 tw:mb-0 tw:font-sans tw:text-[13px] tw:text-panel-ink">Maks. 6 gambar, JPG/PNG/WebP, 5 MB per file. Gambar pertama jadi sampul kartu dan gambar link preview.</p>
+    <p class="tw:-mt-1.5 tw:mb-0 tw:font-sans tw:text-[13px] tw:text-panel-ink">Maks. 6 gambar, JPG/PNG/WebP, 5 MB per file. Gambar pertama jadi sampul. Gambar baru diunggah saat Anda menyimpan atau memublikasikan produk.</p>
     <ul class="tw:m-0 tw:grid tw:list-none tw:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] tw:gap-3 tw:p-0">
       <li
         v-for="n in count"
-        :key="n"
+        :key="images[n - 1] || n"
         class="tw:relative tw:aspect-[4/3] tw:rounded-xl tw:border-solid"
         :class="[tiles[(n - 1) % tiles.length], n === 1 ? 'tw:border-2 tw:border-seller' : 'tw:border tw:border-panel-line']"
       >
         <img v-if="images[n - 1]" :src="images[n - 1]" alt="" class="tw:absolute tw:inset-0 tw:size-full tw:rounded-[10px] tw:object-cover">
         <span v-if="n === 1" class="tw:absolute tw:top-2 tw:left-2 tw:rounded-full tw:bg-seller tw:px-2 tw:py-[3px] tw:font-sans tw:text-[10.5px] tw:font-bold tw:text-white">Sampul</span>
+        <button
+          type="button"
+          :aria-label="`Hapus gambar ${n}`"
+          class="tw:absolute tw:top-1.5 tw:right-1.5 tw:m-0 tw:grid tw:size-7 tw:cursor-pointer tw:place-items-center tw:rounded-full tw:border-0 tw:bg-black/65 tw:p-0 tw:text-white tw:hover:bg-black/85 tw:focus-visible:ring-2 tw:focus-visible:ring-white tw:focus-visible:outline-none"
+          @click="seller.removeFormImage(n - 1)"
+        >
+          <Icon name="material-symbols:close" class="tw:size-4" aria-hidden="true" />
+        </button>
         <span class="tw:sr-only">Gambar {{ n }}{{ n === 1 ? ', sampul' : '' }}</span>
       </li>
       <li v-if="count < MAX" class="tw:contents">

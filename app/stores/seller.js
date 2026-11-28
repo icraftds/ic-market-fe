@@ -623,6 +623,7 @@ export const useSellerStore = defineStore('seller', () => {
       const up = await sellerApi.uploadFile(file)
       form.value.digitalFiles = [up]
       form.value.file = { name: up.fileName || file.name, meta: `${(up.fileSizeBytes / 1048576).toFixed(1).replace('.', ',')} MB · tersimpan` }
+      form.value.pendingFile = null
       return up
     } catch (e) { fail(e, 'product'); return null }
   }
@@ -638,9 +639,44 @@ export const useSellerStore = defineStore('seller', () => {
     } catch (e) { fail(e, 'product'); return null }
   }
 
+  /** Tahan gambar secara lokal (blob URL) sampai seller benar-benar menyimpan/publikasikan produk, agar tidak ada file yatim di GCS. */
+  function revokePendingImages(list) {
+    if (!import.meta.client || !Array.isArray(list)) return
+    for (const item of list) {
+      if (item?.previewUrl?.startsWith('blob:')) try { URL.revokeObjectURL(item.previewUrl) } catch { /* abaikan */ }
+    }
+  }
+  function stageFormImage(file) {
+    if (mock) { form.value.gallery = Math.min(6, form.value.gallery + 1); return true }
+    if (form.value.images.length >= 6) { notify('warn', 'Maksimal 6 gambar.'); return false }
+    const previewUrl = import.meta.client ? URL.createObjectURL(file) : ''
+    form.value.pendingImages = [...(form.value.pendingImages || []), { file, previewUrl }]
+    form.value.images = [...form.value.images, previewUrl]
+    form.value.gallery = form.value.images.length
+    return true
+  }
+  function removeFormImage(index) {
+    const imgs = [...(form.value.images || [])]
+    const [removed] = imgs.splice(index, 1)
+    if (removed && removed.startsWith('blob:')) {
+      if (import.meta.client) try { URL.revokeObjectURL(removed) } catch { /* abaikan */ }
+      form.value.pendingImages = (form.value.pendingImages || []).filter((p) => p.previewUrl !== removed)
+    }
+    form.value.images = imgs
+    form.value.gallery = imgs.length
+  }
+  /** Tahan file ZIP secara lokal sampai produk disimpan/dipublikasikan agar tidak mengunggah file besar bila batal. */
+  function stageFormFile(file) {
+    const sizeText = (file.size / 1048576).toFixed(1).replace('.', ',') + ' MB'
+    form.value.pendingFile = mock ? null : file
+    form.value.fileBlob = file
+    form.value.file = { name: file.name, meta: mock ? `${sizeText} · dipindai, aman` : `${sizeText} · siap diunggah saat disimpan` }
+  }
+
   // ===== Aksi: form produk =====
-  function newForm() { form.value = mock ? m.emptyForm() : apiEmptyForm(); clearErrors('product'); resetDraftBuild() }
+  function newForm() { revokePendingImages(form.value?.pendingImages); form.value = mock ? m.emptyForm() : apiEmptyForm(); clearErrors('product'); resetDraftBuild() }
   function loadForm(id) {
+    revokePendingImages(form.value?.pendingImages)
     const p = products.value.find((x) => x.id === Number(id))
     if (!p) return newForm()
     clearErrors('product')
@@ -682,6 +718,25 @@ export const useSellerStore = defineStore('seller', () => {
   async function saveProductApi(status) {
     const f = form.value
     clearErrors('product')
+    // Unggah gambar & file ZIP yang ditahan lokal baru saat seller benar-benar menyimpan/memublikasikan.
+    const pendingImgs = [...(f.pendingImages || [])]
+    for (const item of pendingImgs) {
+      const idx = f.images.indexOf(item.previewUrl)
+      if (idx === -1) continue
+      try {
+        const up = await sellerApi.uploadFile(item.file, 'image')
+        f.images[idx] = up.url
+        if (import.meta.client && item.previewUrl?.startsWith('blob:')) try { URL.revokeObjectURL(item.previewUrl) } catch { /* abaikan */ }
+        f.pendingImages = (f.pendingImages || []).filter((p) => p.previewUrl !== item.previewUrl)
+      } catch (e) {
+        const err = fail(e, 'product')
+        return { ok: false, product: null, missing: [], errors: errors.value.product, error: err }
+      }
+    }
+    if (f.pendingFile) {
+      const up = await uploadFormFile(f.pendingFile)
+      if (!up) return { ok: false, product: null, missing: [], errors: errors.value.product }
+    }
     const body = productToBody(f, status, { create: f.id == null })
     try {
       const saved = f.id != null ? await sellerApi.updateProduct(f.id, body) : await sellerApi.createProduct(body)
@@ -867,7 +922,7 @@ export const useSellerStore = defineStore('seller', () => {
     checklistPct, canPublish,
     format: fmt, rupiah: rp, shortDate, statusLabel, statusTone,
     setPeriod, setProductTab, setFilter, toggleSelect, toggleAll, clearSelection, setProductStatus, bulkSetStatus, bulkSetPrice,
-    deleteProduct, duplicateProduct, startPreview, stopPreview, uploadZip, uploadFormFile, uploadFormImage, newForm, loadForm,
+    deleteProduct, duplicateProduct, startPreview, stopPreview, uploadZip, uploadFormFile, uploadFormImage, stageFormImage, removeFormImage, stageFormFile, newForm, loadForm,
     addFeature, removeFeature, addTag, removeTag, startDraftBuild, failDraftBuild, resetDraftBuild, saveProduct, replyReview,
     createVoucher, updateVoucher, toggleVoucher, deleteVoucher, requestPayout, setLedgerFilter, toggleNotification, saveNotifications,
     saveSettings, clearErrors,

@@ -10,19 +10,9 @@ const uploading = ref(false)
 const MAX_BYTES = 100 * 1024 * 1024
 
 const sizeText = (b) => (b / 1048576).toFixed(1).replace('.', ',') + ' MB'
-async function setFile(file) {
-  if (!api) {
-    seller.form.file = { name: file.name, meta: `${sizeText(file.size)} · dipindai, aman` }
-    return
-  }
-  if (file.size > MAX_BYTES) { ui.push({ tone: 'warn', title: 'File ditolak', message: 'Ukuran file maks. 100 MB.' }); return }
-  const before = seller.form.file
-  uploading.value = true
-  seller.form.file = { name: file.name, meta: 'Mengunggah…' }
-  const up = await seller.uploadFormFile(file)
-  uploading.value = false
-  if (up) seller.form.fileBlob = file // dipakai ulang sebagai source preview ("Sama dengan file pembeli")
-  else seller.form.file = before
+function setFile(file) {
+  if (api && file.size > MAX_BYTES) { ui.push({ tone: 'warn', title: 'File ditolak', message: 'Ukuran file maks. 100 MB.' }); return }
+  seller.stageFormFile(file)
 }
 function onPick(event) {
   const f = event.target.files?.[0]
