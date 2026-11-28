@@ -264,13 +264,17 @@ export async function getPreview(id) {
   return mapPreview(await api(`seller/products/${Number(id)}/preview`, REQ))
 }
 
-/** startPreview(id, { archive: File(.zip, <=50 MB), profile: static|node-spa|node-server|php-laravel }) -> 202; unggah ulang = ganti (409 bila build berjalan, 503 engine mati). */
-export async function startPreview(id, { archive, profile }) {
-  const problem = validateUpload(archive, 'previewZip')
-  if (problem) throw new ApiError({ status: 422, code: 'invalid_file', message: problem, fieldErrors: { archive: problem } })
+/** startPreview(id, { archive?: File(.zip, <=50 MB), useBuyerFile?: boolean, profile: static|node-spa|node-server|php-laravel }) -> 202; unggah ulang = ganti (409 bila build berjalan, 503 engine mati). */
+export async function startPreview(id, { archive, profile, useBuyerFile = false }) {
   const api = useApi()
   const body = new FormData()
-  body.append('archive', archive)
+  if (useBuyerFile && !archive) {
+    body.append('use_buyer_file', '1')
+  } else {
+    const problem = validateUpload(archive, 'previewZip')
+    if (problem) throw new ApiError({ status: 422, code: 'invalid_file', message: problem, fieldErrors: { archive: problem } })
+    body.append('archive', archive)
+  }
   body.append('profile', profile)
   return mapPreview(await api(`seller/products/${Number(id)}/preview`, { ...REQ, method: 'POST', body }))
 }

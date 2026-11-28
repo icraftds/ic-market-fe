@@ -568,10 +568,10 @@ export const useSellerStore = defineStore('seller', () => {
     if (!mock) {
       const p = products.value.find((x) => x.id === Number(id))
       if (!p) return Promise.resolve(false)
-      if (!opts.archive) { notify('info', 'Pilih berkas ZIP preview terlebih dahulu.'); return Promise.resolve(false) }
+      if (!opts.archive && !opts.useBuyerFile) { notify('info', 'Pilih berkas ZIP preview terlebih dahulu.'); return Promise.resolve(false) }
       setPreviewOnProduct(p.id, 'building')
-      return sellerApi.startPreview(p.id, { archive: opts.archive, profile: opts.profile || p.previewProfile || 'static' })
-        .then((pv) => { previews.value = { ...previews.value, [p.id]: pv }; setPreviewOnProduct(p.id, pv.state); pollPreview(p.id); notify('info', 'Berkas diunggah, preview sedang dibangun.'); return true })
+      return sellerApi.startPreview(p.id, { archive: opts.archive, profile: opts.profile || p.previewProfile || 'static', useBuyerFile: !!opts.useBuyerFile })
+        .then((pv) => { previews.value = { ...previews.value, [p.id]: pv }; setPreviewOnProduct(p.id, pv.state); pollPreview(p.id); notify('info', opts.useBuyerFile ? 'Menggunakan file pembeli tersimpan, preview sedang dibangun.' : 'Berkas diunggah, preview sedang dibangun.'); return true })
         .catch((e) => { fail(e); loadPreview(p.id); return false })
     }
     const p = products.value.find((x) => x.id === Number(id))

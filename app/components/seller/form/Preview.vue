@@ -45,7 +45,8 @@ function onReject() {
       <span class="tw:flex tw:flex-[1_1_240px] tw:flex-col tw:gap-0.5">
         <span class="tw:font-sans tw:text-[14px] tw:font-semibold">Source ZIP untuk preview</span>
         <span class="tw:font-sans tw:text-[12.5px] tw:text-panel-ink">Maks. 50 MB. Tanpa node_modules, vendor, atau file rahasia (.env).</span>
-        <span v-if="!form.previewSameAsFile && form.previewZip" class="tw:font-mono tw:text-[12px] tw:text-panel-ink">{{ form.previewZip.name }}</span>
+        <span v-if="form.previewSameAsFile && form.file" class="tw:font-mono tw:text-[12px] tw:text-panel-ink">Menggunakan: {{ form.file.name }}</span>
+        <span v-else-if="!form.previewSameAsFile && form.previewZip" class="tw:font-mono tw:text-[12px] tw:text-panel-ink">{{ form.previewZip.name }}</span>
       </span>
       <UiCheckbox v-model="form.previewSameAsFile" label="Sama dengan file pembeli" />
     </div>

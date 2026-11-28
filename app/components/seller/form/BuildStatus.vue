@@ -33,24 +33,36 @@ if (api) {
 }
 function sourceArchive() {
   const f = seller.form
-  const file = f.previewSameAsFile ? f.fileBlob : f.previewZip?.file
+  if (f.previewSameAsFile) {
+    if (f.fileBlob) {
+      if (f.fileBlob.size > MAX_ZIP) { ui.push({ tone: 'warn', title: 'ZIP terlalu besar', message: 'ZIP source preview maks. 50 MB.' }); return null }
+      return { archive: f.fileBlob, useBuyerFile: false }
+    }
+    if (f.file && f.id != null) {
+      return { archive: null, useBuyerFile: true }
+    }
+    ui.push({ tone: 'info', title: 'Pilih ZIP preview', message: 'Unggah file ZIP di bagian 04 terlebih dahulu, atau matikan "Sama dengan file pembeli" lalu pilih ZIP source.' })
+    return null
+  }
+  const file = f.previewZip?.file
   if (!file) {
-    ui.push({ tone: 'info', title: 'Pilih ZIP preview', message: f.previewSameAsFile ? 'Unggah ulang ZIP di bagian 04, atau matikan "Sama dengan file pembeli" lalu pilih ZIP source.' : 'Pilih ZIP source untuk preview di bagian 05.' })
+    ui.push({ tone: 'info', title: 'Pilih ZIP preview', message: 'Pilih ZIP source untuk preview di bagian 05.' })
     return null
   }
   if (file.size > MAX_ZIP) { ui.push({ tone: 'warn', title: 'ZIP terlalu besar', message: 'ZIP source preview maks. 50 MB.' }); return null }
-  return file
+  return { archive: file, useBuyerFile: false }
 }
 /** Build / coba lagi / ganti versi: simpan draf dulu bila produk baru (preview butuh id produk), lalu unggah ZIP ke engine. */
-async function build(archive = sourceArchive()) {
-  if (!archive || busy.value) return
+async function build(overrideFile = null) {
+  const src = overrideFile ? { archive: overrideFile, useBuyerFile: false } : sourceArchive()
+  if (!src || busy.value) return
   busy.value = true
   try {
     if (seller.form.id == null) {
       const res = await seller.saveProduct('draf')
       if (!res.ok) { ui.push({ tone: 'warn', title: 'Simpan draf dulu', message: 'Lengkapi isian produk yang ditandai sebelum membangun preview.' }); return }
     }
-    await seller.startPreview(seller.form.id, { archive, profile: seller.form.profile })
+    await seller.startPreview(seller.form.id, { archive: src.archive, useBuyerFile: src.useBuyerFile, profile: seller.form.profile })
   } finally { busy.value = false }
 }
 function onReplace(e) {
